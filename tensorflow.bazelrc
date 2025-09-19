@@ -26,6 +26,7 @@
 #     cuda:         Build with CUDA support.
 #     cuda_clang    Build with CUDA Clang support.
 #     rocm:         Build with AMD GPU support (rocm)
+#     musa:         Build with MT GPU support (musa)
 #     mkl:          Enable full mkl support.
 #     nonccl:       Disable nccl support.
 #
@@ -286,6 +287,33 @@ build:rocm_ci_hermetic --repo_env="OS=ubuntu_22.04"
 build:rocm_ci_hermetic --repo_env="ROCM_VERSION=6.4.1"
 build:rocm_ci_hermetic --@local_config_rocm//rocm:rocm_path_type=hermetic
 
+# For musa
+build:musa_base --config=clang_local
+build:musa_base --copt=-Wno-gnu-offsetof-extensions
+build:musa_base --crosstool_top=@local_config_musa//crosstool:toolchain
+build:musa_base --define=using_musa_mcc=true
+build:musa_base --define=tensorflow_mkldnn_contraction_kernel=0
+build:musa_base --define=xnn_enable_avxvnniint8=false
+build:musa_base --define=xnn_enable_avx512fp16=false
+build:musa_base --repo_env TF_NEED_MUSA=1
+
+build:musa --config=musa_base 
+
+build:musa_gcc --config=musa_base
+build:musa_gcc --copt=-Wno-stringop-truncation
+
+build:musa_clang_official --config=musa_base
+build:musa_clang_official --action_env=CLANG_COMPILER_PATH="/usr/local/musa/bin/mcc"
+build:musa_clang_official --action_env=TF_MUSA_CLANG="1"
+build:musa_clang_official --linkopt="-fuse-ld=lld"
+build:musa_clang_official --host_linkopt="-fuse-ld=lld"
+
+build:musa_ci --config=musa_clang_official
+
+build:musa_ci_hermetic --config=musa_clang_official
+build:musa_ci_hermetic --repo_env="OS=ubuntu_22.04"
+build:musa_ci_hermetic --repo_env="MUSA_VERSION=6.4.1"
+build:musa_ci_hermetic --@local_config_musa//musa:musa_path_type=hermetic
 # This config option is used for SYCL as GPU backend.
 # SYCL Configuration (non-hermetic)
 build:sycl --crosstool_top=@local_config_sycl//crosstool:toolchain

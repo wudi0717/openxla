@@ -199,6 +199,7 @@ class Backend(ArgparseableEnum):
   CUDA = enum.auto()
   ROCM = enum.auto()
   SYCL = enum.auto()
+  MUSA = enum.auto()
 
 
 class HostCompiler(ArgparseableEnum):
@@ -213,6 +214,9 @@ class CudaCompiler(ArgparseableEnum):
 
 class RocmCompiler(ArgparseableEnum):
   HIPCC = enum.auto()
+
+class MusaCompiler(ArgparseableEnum):
+  MCC = enum.auto()
 
 
 class SyclCompiler(ArgparseableEnum):
@@ -312,6 +316,9 @@ class XLAConfigOptions:
 
   # ROCM specific
   rocm_compiler: RocmCompiler
+
+  # MUSA specific
+  musa_compiler: MusaCompiler
 
   # SYCL specific
   sycl_compiler: SyclCompiler
@@ -427,6 +434,21 @@ class XLAConfigOptions:
         rc.append("build --config rocm")
       else:
         raise NotImplementedError("ROCm clang with host compiler not supported")
+    elif self.backend == Backend.MUSA:
+      build_and_test_tag_filters.append("-cuda-only")
+      build_and_test_tag_filters.append("-rocm-only")
+      build_and_test_tag_filters.append("-oneapi-only")
+
+      compiler_pair = self.musa_compiler, self.host_compiler
+
+      if compiler_pair == (MusaCompiler.MCC, HostCompiler.CLANG):
+        rc.append("build --config musa")
+        # This is demanded by rocm_configure.bzl.
+        rc.append(f"build --action_env CLANG_COMPILER_PATH={dpav.clang_path}")
+      elif compiler_pair == (MusaCompiler.MCC, HostCompiler.GCC):
+        rc.append("build --config musa")
+      else:
+        raise NotImplementedError("ROCm clang with host compiler not supported")
     elif self.backend == Backend.SYCL:
       build_and_test_tag_filters.append("-cuda-only")
       build_and_test_tag_filters.append("-rocm-only")
@@ -520,6 +542,12 @@ def _parse_args():
       default="hipcc",
   )
   parser.add_argument(
+      "--musa_compiler",
+      type=MusaCompiler.from_str,
+      choices=list(MusaCompiler),
+      default="mcc",
+  )
+  parser.add_argument(
       "--sycl_compiler",
       type=SyclCompiler.from_str,
       choices=list(SyclCompiler),
@@ -601,6 +629,7 @@ def main():
       compiler_options=args.compiler_options,
       using_nccl=args.nccl,
       rocm_compiler=args.rocm_compiler,
+      musa_compiler=args.musa_compiler,
       sycl_compiler=args.sycl_compiler,
   )
 
@@ -631,6 +660,7 @@ def is_hermetic_build(backend: Backend, os_host: OS):
   return (
       backend != Backend.ROCM
       and backend != Backend.SYCL
+      and backend != Backend.MUSA
       and os_host == OS.LINUX
   )
 
