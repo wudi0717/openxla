@@ -70,14 +70,6 @@ def is_musa_configured():
     """
     return %{musa_is_configured}
 
-def musa_mublaslt():
-    return %{musa_is_configured} and %{musa_mublaslt}
-
-def if_musa_mublaslt(x):
-    if %{musa_is_configured} and (%{musa_mublaslt} == "True"):
-      return select({"//conditions:default": x})
-    return select({"//conditions:default": []})
-
 def musa_library(copts = [], deps = [], **kwargs):
     """Wrapper over cc_library which adds default MUSa options."""
     if "@local_config_musa//musa:musa_headers" not in deps:

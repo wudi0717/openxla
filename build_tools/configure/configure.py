@@ -435,10 +435,11 @@ class XLAConfigOptions:
       else:
         raise NotImplementedError("ROCm clang with host compiler not supported")
     elif self.backend == Backend.MUSA:
-      build_and_test_tag_filters.append("-cuda-only")
+      #test_tag_filters.append("-gpu")
       build_and_test_tag_filters.append("-rocm-only")
+      build_and_test_tag_filters.append("-cuda-only")
       build_and_test_tag_filters.append("-oneapi-only")
-
+      build_and_test_tag_filters.append("-no-oneapi")
       compiler_pair = self.musa_compiler, self.host_compiler
 
       if compiler_pair == (MusaCompiler.MCC, HostCompiler.CLANG):
@@ -527,7 +528,7 @@ def _parse_args():
       "--host_compiler",
       type=HostCompiler.from_str,
       choices=list(HostCompiler),
-      default="clang",
+      default="gcc",
   )
   parser.add_argument(
       "--cuda_compiler",

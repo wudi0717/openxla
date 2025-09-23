@@ -6,6 +6,10 @@ load(
     "if_rocm_is_configured",
 )
 load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
+load(
     "@local_config_sycl//sycl:build_defs.bzl",
     "if_sycl_is_configured",
 )
@@ -260,12 +264,16 @@ cc_library(
         "TENSORFLOW_USE_ROCM=1",
     ]) + if_sycl_is_configured([
         "TENSORFLOW_USE_SYCL=1",
+    ]) + if_musa_is_configured([
+        "TENSORFLOW_USE_MUSA=1",
     ]),
     tags = ["gpu"],
     deps = if_cuda_is_configured([
         "@local_config_cuda//cuda:cuda_headers",
     ]) + if_rocm_is_configured([
         "@local_config_rocm//rocm:rocm_headers",
+    ]) + if_musa_is_configured([
+        "@local_config_musa//musa:musa_headers",
     ]) + if_sycl_is_configured([
         "@local_config_sycl//sycl:sycl_headers",
     ]),

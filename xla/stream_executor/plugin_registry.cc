@@ -32,6 +32,9 @@ namespace stream_executor {
   return instance;
 }
 
+template <typename T>
+struct dependent_false : std::false_type {};
+
 template <typename FactoryT>
 PluginKind GetPluginKind() {
   if constexpr (std::is_same_v<FactoryT, PluginRegistry::BlasFactory>) {
@@ -41,7 +44,7 @@ PluginKind GetPluginKind() {
   } else if constexpr (std::is_same_v<FactoryT, PluginRegistry::FftFactory>) {
     return PluginKind::kFft;
   } else {
-    static_assert(false, "Unsupported factory type");
+    static_assert(dependent_false<FactoryT>::value, "Unsupported factory type");
   }
 }
 template <typename FactoryT>
@@ -53,7 +56,7 @@ absl::string_view GetPluginName() {
   } else if constexpr (std::is_same_v<FactoryT, PluginRegistry::FftFactory>) {
     return "FFT";
   } else {
-    static_assert(false, "Unsupported factory type");
+    static_assert(dependent_false<FactoryT>::value, "Unsupported factory type");
   }
 }
 

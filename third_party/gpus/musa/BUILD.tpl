@@ -85,16 +85,9 @@ cc_library(
     name = "musa_headers",
     hdrs = glob([
         "%{musa_root}/include/**",
-        "%{musa_root}/lib/llvm/lib/**/*.h",
     ]),
-    defines = ["MIOPEN_BETA_API=1"],
-    include_prefix = "musa",
-    strip_include_prefix = "%{musa_root}",
+    strip_include_prefix = "%{musa_root}/include",
     visibility = ["//visibility:public"],
-    deps = [
-        ":musa_headers_includes",
-        ":musa_rpath",
-    ],
 )
 
 cc_library(

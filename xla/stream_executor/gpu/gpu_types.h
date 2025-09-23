@@ -27,6 +27,10 @@ limitations under the License.
 #include "rocm/include/hip/hip_runtime.h"
 #include "rocm/include/hiprand/hiprand.h"
 
+#elif TENSORFLOW_USE_MUSA
+#include "musa_runtime.h"
+#include "murand.h"
+
 #else  // CUDA
 
 #include "third_party/gpus/cuda/include/cuda.h"
@@ -43,6 +47,9 @@ using GpuStreamHandle = ::sycl::queue*;
 #elif TENSORFLOW_USE_ROCM
 
 using GpuStreamHandle = hipStream_t;
+#elif TENSORFLOW_USE_MUSA
+
+using GpuStreamHandle = musaStream_t;
 #else  // CUDA
 
 using GpuStreamHandle = CUstream;

@@ -168,7 +168,8 @@ void ConnectContextGroups(const ContextGroupMap& context_groups) {
 
 bool IsImplicitRootEvent(const XEventVisitor& event) {
   static const absl::NoDestructor<absl::flat_hash_set<int64_t>>
-      kImplicitRootEvents({
+      kImplicitRootEvents(
+	  absl::flat_hash_set<int64_t>{
           HostEventType::kFunctionRun,
           HostEventType::kSessionRun,
           HostEventType::kRunGraph,

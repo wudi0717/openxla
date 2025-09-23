@@ -409,8 +409,8 @@ class IsSolLatencyEstimatorEnabledTest : public HloTestBase {
     HloComputation* subcomp =
         module->AddEmbeddedComputation(wrapped_computation.Build());
     entry->AddInstruction(HloInstruction::CreateAllReduce(
-        shape, {dummy_operand}, subcomp,
-        /*replica_groups=*/{}, /*constrain_layout=*/false,
+        shape, absl::Span<HloInstruction* const>{dummy_operand}, subcomp,
+        /*replica_groups=*/CollectiveDeviceList{}, /*constrain_layout=*/false,
         /*channel_id=*/std::nullopt, /*use_global_device_ids=*/false));
   }
 

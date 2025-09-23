@@ -313,7 +313,7 @@ build:musa_ci --config=musa_clang_official
 build:musa_ci_hermetic --config=musa_clang_official
 build:musa_ci_hermetic --repo_env="OS=ubuntu_22.04"
 build:musa_ci_hermetic --repo_env="MUSA_VERSION=6.4.1"
-build:musa_ci_hermetic --@local_config_musa//musa:musa_path_type=hermetic
+#build:musa_ci_hermetic --@local_config_musa//musa:musa_path_type=hermetic
 # This config option is used for SYCL as GPU backend.
 # SYCL Configuration (non-hermetic)
 build:sycl --crosstool_top=@local_config_sycl//crosstool:toolchain

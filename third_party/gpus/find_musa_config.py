@@ -71,8 +71,7 @@ def _find_musa_config(musa_install_path):
 
   def musa_version_numbers(path):
     possible_version_files = [
-        "include/musa-core/musa_version.h",  # MUSa 5.2
-        "include/musa_version.h",  # MUSa 5.1 and prior
+        "include/musa.h",  # MUSa 5.1 and prior
     ]
     version_file = None
     for f in possible_version_files:
@@ -84,58 +83,22 @@ def _find_musa_config(musa_install_path):
       raise ConfigError(
           "MUSa version file not found in {}".format(possible_version_files))
 
-    major = _get_header_version(version_file, "MUSA_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "MUSA_VERSION_MINOR")
-    patch = _get_header_version(version_file, "MUSA_VERSION_PATCH")
-    return major, minor, patch
-
-  major, minor, patch = musa_version_numbers(musa_install_path)
+    version = _get_header_version(version_file, "MUSA_VERSION")
+    return version
 
   musa_config = {
-      "musa_version_number": _get_composite_version_number(major, minor, patch)
+      "musa_version_number": musa_version_numbers(musa_install_path)
   }
 
   return musa_config
 
 
-def _find_hipruntime_config(musa_install_path):
 
-  def hipruntime_version_number(path):
+def _find_mublas_config(musa_install_path):
+
+  def mublas_version_numbers(path):
     possible_version_files = [
-        "include/hip/hip_version.h",  # MUSa 5.2
-        "hip/include/hip/hip_version.h",  # MUSa 5.1 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError("HIP Runtime version file not found in {}".format(
-          possible_version_files))
-
-    # This header file has an explicit #define for HIP_VERSION, whose value
-    # is (HIP_VERSION_MAJOR * 100 + HIP_VERSION_MINOR)
-    # Retreive the major + minor and re-calculate here, since we do not
-    # want get into the business of parsing arith exprs
-    major = _get_header_version(version_file, "HIP_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "HIP_VERSION_MINOR")
-    return 100 * major + minor
-
-  hipruntime_config = {
-      "hipruntime_version_number": hipruntime_version_number(musa_install_path)
-  }
-
-  return hipruntime_config
-
-
-def _find_miopen_config(musa_install_path):
-
-  def miopen_version_numbers(path):
-    possible_version_files = [
-        "include/miopen/version.h",  # MUSa 5.2 and prior
-        "miopen/include/miopen/version.h",  # MUSa 5.1 and prior
+        "include/internal/mublas-version.h",  # MUSa 5.2
     ]
     version_file = None
     for f in possible_version_files:
@@ -145,60 +108,28 @@ def _find_miopen_config(musa_install_path):
         break
     if not version_file:
       raise ConfigError(
-          'MIOpen version file "{}" not found'.format(version_file))
-    major = _get_header_version(version_file, "MIOPEN_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "MIOPEN_VERSION_MINOR")
-    patch = _get_header_version(version_file, "MIOPEN_VERSION_PATCH")
-    return major, minor, patch
-
-  major, minor, patch = miopen_version_numbers(musa_install_path)
-
-  miopen_config = {
-      "miopen_version_number":
-          _get_composite_version_number(major, minor, patch)
-  }
-
-  return miopen_config
-
-
-def _find_rocblas_config(musa_install_path):
-
-  def rocblas_version_numbers(path):
-    possible_version_files = [
-        "include/rocblas/internal/rocblas-version.h",  # MUSa 5.2
-        "rocblas/include/internal/rocblas-version.h",  # MUSa 5.1 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError(
-          "rocblas version file not found in {}".format(
+          "mublas version file not found in {}".format(
               possible_version_files))
-    major = _get_header_version(version_file, "ROCBLAS_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "ROCBLAS_VERSION_MINOR")
-    patch = _get_header_version(version_file, "ROCBLAS_VERSION_PATCH")
+    major = _get_header_version(version_file, "MUBLAS_VERSION_MAJOR")
+    minor = _get_header_version(version_file, "MUBLAS_VERSION_MINOR")
+    patch = _get_header_version(version_file, "MUBLAS_VERSION_PATCH")
     return major, minor, patch
 
-  major, minor, patch = rocblas_version_numbers(musa_install_path)
+  major, minor, patch = mublas_version_numbers(musa_install_path)
 
-  rocblas_config = {
-      "rocblas_version_number":
+  mublas_config = {
+      "mublas_version_number":
           _get_composite_version_number(major, minor, patch)
   }
 
-  return rocblas_config
+  return mublas_config
 
 
-def _find_rocrand_config(musa_install_path):
+def _find_murand_config(musa_install_path):
 
-  def rocrand_version_number(path):
+  def murand_version_number(path):
     possible_version_files = [
-        "include/rocrand/rocrand_version.h",  # MUSa 5.1
-        "rocrand/include/rocrand_version.h",  # MUSa 5.0 and prior
+        "include/murand_version.h",  # MUSa 5.1
     ]
     version_file = None
     for f in possible_version_files:
@@ -208,23 +139,21 @@ def _find_rocrand_config(musa_install_path):
         break
     if not version_file:
       raise ConfigError(
-          "rocrand version file not found in {}".format(possible_version_files))
-    version_number = _get_header_version(version_file, "ROCRAND_VERSION")
+          "murand version file not found in {}".format(possible_version_files))
+    version_number = _get_header_version(version_file, "MURAND_VERSION")
     return version_number
 
-  rocrand_config = {
-      "rocrand_version_number": rocrand_version_number(musa_install_path)
+  murand_config = {
+      "murand_version_number": murand_version_number(musa_install_path)
   }
 
-  return rocrand_config
+  return murand_config
 
+def _find_musparse_config(musa_install_path):
 
-def _find_rocfft_config(musa_install_path):
-
-  def rocfft_version_numbers(path):
+  def musparse_version_numbers(path):
     possible_version_files = [
-        "include/rocfft/rocfft-version.h",  # MUSa 5.2
-        "rocfft/include/rocfft-version.h",  # MUSa 5.1 and prior
+        "include/musparse-version.h",  # MUSa 5.2
     ]
     version_file = None
     for f in possible_version_files:
@@ -233,92 +162,27 @@ def _find_rocfft_config(musa_install_path):
         version_file = version_file_path
         break
     if not version_file:
-      raise ConfigError(
-          "rocfft version file not found in {}".format(possible_version_files))
-    major = _get_header_version(version_file, "rocfft_version_major")
-    minor = _get_header_version(version_file, "rocfft_version_minor")
-    patch = _get_header_version(version_file, "rocfft_version_patch")
-    return major, minor, patch
-
-  major, minor, patch = rocfft_version_numbers(musa_install_path)
-
-  rocfft_config = {
-      "rocfft_version_number":
-          _get_composite_version_number(major, minor, patch)
-  }
-
-  return rocfft_config
-
-
-def _find_hipfft_config(musa_install_path):
-
-  def hipfft_version_numbers(path):
-    possible_version_files = [
-        "include/hipfft/hipfft-version.h",  # MUSa 5.2
-        "hipfft/include/hipfft-version.h",  # MUSa 5.1 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError(
-          "hipfft version file not found in {}".format(possible_version_files))
-    major = _get_header_version(version_file, "hipfftVersionMajor")
-    minor = _get_header_version(version_file, "hipfftVersionMinor")
-    patch = _get_header_version(version_file, "hipfftVersionPatch")
-    return major, minor, patch
-
-  major, minor, patch = hipfft_version_numbers(musa_install_path)
-
-  hipfft_config = {
-      "hipfft_version_number":
-          _get_composite_version_number(major, minor, patch)
-  }
-
-  return hipfft_config
-
-
-def _find_roctracer_config(musa_install_path):
-
-  def roctracer_version_numbers(path):
-    possible_version_files = [
-        "include/roctracer/roctracer.h",  # MUSa 5.2
-        "roctracer/include/roctracer.h",  # MUSa 5.1 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError("roctracer version file not found in {}".format(
+      raise ConfigError("musparse version file not found in {}".format(
           possible_version_files))
-    major = _get_header_version(version_file, "ROCTRACER_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "ROCTRACER_VERSION_MINOR")
-    # roctracer header does not have a patch version number
-    patch = 0
+    major = _get_header_version(version_file, "MUSPARSE_VERSION_MAJOR")
+    minor = _get_header_version(version_file, "MUSPARSE_VERSION_MINOR")
+    patch = _get_header_version(version_file, "MUSPARSE_VERSION_PATCH")
     return major, minor, patch
 
-  major, minor, patch = roctracer_version_numbers(musa_install_path)
+  major, minor, patch = musparse_version_numbers(musa_install_path)
 
-  roctracer_config = {
-      "roctracer_version_number":
+  musparse_config = {
+      "musparse_version_number":
           _get_composite_version_number(major, minor, patch)
   }
 
-  return roctracer_config
+  return musparse_config
 
+def _find_musolver_config(musa_install_path):
 
-def _find_hipsparse_config(musa_install_path):
-
-  def hipsparse_version_numbers(path):
+  def musolver_version_numbers(path):
     possible_version_files = [
-        "include/hipsparse/hipsparse-version.h",  # MUSa 5.2
-        "hipsparse/include/hipsparse-version.h",  # MUSa 5.1 and prior
+        "include/musolver_version.h",  # MUSa 5.2
     ]
     version_file = None
     for f in possible_version_files:
@@ -327,83 +191,21 @@ def _find_hipsparse_config(musa_install_path):
         version_file = version_file_path
         break
     if not version_file:
-      raise ConfigError("hipsparse version file not found in {}".format(
+      raise ConfigError("musolver version file not found in {}".format(
           possible_version_files))
-    major = _get_header_version(version_file, "hipsparseVersionMajor")
-    minor = _get_header_version(version_file, "hipsparseVersionMinor")
-    patch = _get_header_version(version_file, "hipsparseVersionPatch")
+    major = _get_header_version(version_file, "MUSOLVER_VERSION_MAJOR")
+    minor = _get_header_version(version_file, "MUSOLVER_VERSION_MINOR")
+    patch = _get_header_version(version_file, "MUSOLVER_VERSION_PATCH")
     return major, minor, patch
 
-  major, minor, patch = hipsparse_version_numbers(musa_install_path)
+  major, minor, patch = musolver_version_numbers(musa_install_path)
 
-  hipsparse_config = {
-      "hipsparse_version_number":
+  musolver_config = {
+      "musolver_version_number":
           _get_composite_version_number(major, minor, patch)
   }
 
-  return hipsparse_config
-
-def _find_hipsolver_config(musa_install_path):
-
-  def hipsolver_version_numbers(path):
-    possible_version_files = [
-        "include/hipsolver/internal/hipsolver-version.h",  # MUSa 5.2
-        "hipsolver/include/internal/hipsolver-version.h",  # MUSa 5.1
-        "hipsolver/include/hipsolver-version.h",  # MUSa 5.0 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError("hipsolver version file not found in {}".format(
-          possible_version_files))
-    major = _get_header_version(version_file, "hipsolverVersionMajor")
-    minor = _get_header_version(version_file, "hipsolverVersionMinor")
-    patch = _get_header_version(version_file, "hipsolverVersionPatch")
-    return major, minor, patch
-
-  major, minor, patch = hipsolver_version_numbers(musa_install_path)
-
-  hipsolver_config = {
-      "hipsolver_version_number":
-          _get_composite_version_number(major, minor, patch)
-  }
-
-  return hipsolver_config
-
-
-def _find_rocsolver_config(musa_install_path):
-
-  def rocsolver_version_numbers(path):
-    possible_version_files = [
-        "include/rocsolver/rocsolver-version.h",  # MUSa 5.2
-        "rocsolver/include/rocsolver-version.h",  # MUSa 5.1 and prior
-    ]
-    version_file = None
-    for f in possible_version_files:
-      version_file_path = os.path.join(path, f)
-      if os.path.exists(version_file_path):
-        version_file = version_file_path
-        break
-    if not version_file:
-      raise ConfigError("rocsolver version file not found in {}".format(
-          possible_version_files))
-    major = _get_header_version(version_file, "ROCSOLVER_VERSION_MAJOR")
-    minor = _get_header_version(version_file, "ROCSOLVER_VERSION_MINOR")
-    patch = _get_header_version(version_file, "ROCSOLVER_VERSION_PATCH")
-    return major, minor, patch
-
-  major, minor, patch = rocsolver_version_numbers(musa_install_path)
-
-  rocsolver_config = {
-      "rocsolver_version_number":
-          _get_composite_version_number(major, minor, patch)
-  }
-
-  return rocsolver_config
+  return musolver_config
 
 
 def find_musa_config():
@@ -417,18 +219,10 @@ def find_musa_config():
 
   result["musa_toolkit_path"] = musa_install_path
   result.update(_find_musa_config(musa_install_path))
-  result.update(_find_hipruntime_config(musa_install_path))
-  result.update(_find_miopen_config(musa_install_path))
-  result.update(_find_rocblas_config(musa_install_path))
-  result.update(_find_rocrand_config(musa_install_path))
-  result.update(_find_rocfft_config(musa_install_path))
-  if result["musa_version_number"] >= 40100:
-    result.update(_find_hipfft_config(musa_install_path))
-  result.update(_find_roctracer_config(musa_install_path))
-  result.update(_find_hipsparse_config(musa_install_path))
-  if result["musa_version_number"] >= 40500:
-    result.update(_find_hipsolver_config(musa_install_path))
-  result.update(_find_rocsolver_config(musa_install_path))
+  result.update(_find_mublas_config(musa_install_path))
+  result.update(_find_murand_config(musa_install_path))
+  result.update(_find_musparse_config(musa_install_path))
+  result.update(_find_musolver_config(musa_install_path))
 
   return result
 

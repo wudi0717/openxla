@@ -50,7 +50,7 @@ TEST(CollectiveDeviceListTest, DefaultListToString) {
   std::vector<std::vector<int64_t>> empty_groups2;
   EXPECT_EQ(CollectiveDeviceList(empty_groups2).ToString(), "{}");
 
-  EXPECT_EQ(CollectiveDeviceList({{1}}).ToString(), "{{1}}");
+  EXPECT_EQ(CollectiveDeviceList(std::vector<std::vector<int64_t>>{{1}}).ToString(), "{{1}}");
   EXPECT_EQ(CollectiveDeviceList({{1, 2}, {3, 4}}).ToString(), "{{1,2},{3,4}}");
   EXPECT_EQ(CollectiveDeviceList({{1, 2, 3, 4, 5, 6, 7}}).ToString(),
             "{{1,2,3,4,5,6,7}}");

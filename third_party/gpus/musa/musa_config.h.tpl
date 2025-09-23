@@ -19,6 +19,6 @@ limitations under the License.
 #define TF_MUSA_TOOLKIT_PATH "%{musa_toolkit_path}"
 
 #define TF_MUSA_VERSION %{musa_version_number}
-#define TF_ROCBLAS_SOVERSION "%{rocblas_soversion_number}"
+#define TF_MUBLAS_SOVERSION "%{mublas_soversion_number}"
 
 #endif  // MUSA_MUSA_CONFIG_H_
