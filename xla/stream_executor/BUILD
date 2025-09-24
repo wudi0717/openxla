@@ -994,6 +994,17 @@ alias(
 )
 
 alias(
+    name = "musa_platform",
+    actual = "//xla/stream_executor/musa:all_runtime",
+    tags = [
+        "gpu",
+        "musa-only",
+    ] + if_google([
+        "manual",
+    ]),
+)
+
+alias(
     name = "sycl_platform",
     actual = "//xla/stream_executor/sycl:all_runtime",
     tags = [

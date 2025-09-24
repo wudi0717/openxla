@@ -1,0 +1,59 @@
+/* Copyright 2024 The OpenXLA Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+#include "xla/stream_executor/musa/musa_status.h"
+
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "musa_runtime.h"
+
+namespace stream_executor::gpu {
+
+// Formats musaError_t to output prettified values into a log stream.
+// Error summaries taken from:
+std::string ToString(musaError_t result) {
+#define OSTREAM_MUSA_ERROR(__name) \
+  case musaError##__name:           \
+    return "MUSA_ERROR_" #__name;
+
+  switch (result) {
+
+    // Load/store on an invalid address. Must reboot all context.
+    case 700:
+      return "MUSA_ERROR_ILLEGAL_ADDRESS";
+    // Passed too many / wrong arguments, too many threads for register count.
+    case 701:
+      return "MUSA_ERROR_LAUNCH_OUT_OF_RESOURCES";
+
+    default:
+      return absl::StrCat("musaError_t(", static_cast<int>(result), ")");
+  }
+#undef OSTREAM_MUSA_ERROR
+}
+
+namespace internal {
+absl::Status ToStatusSlow(musaError_t result, absl::string_view detail) {
+  std::string error_message = absl::StrCat(detail, ": ", ToString(result));
+  if (result == musaErrorOutOfMemory) {
+    return absl::ResourceExhaustedError(error_message);
+  }
+  return absl::InternalError(error_message);
+}
+}  // namespace internal
+
+}  // namespace stream_executor::gpu

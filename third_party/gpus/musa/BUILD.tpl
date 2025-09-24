@@ -37,37 +37,6 @@ config_setting(
     },
 )
 
-cc_library(
-    name = "config",
-    hdrs = [
-        "musa_config/musa_config.h",
-    ],
-    include_prefix = "musa",
-    strip_include_prefix = "musa_config",
-)
-
-cc_library(
-    name = "config_hermetic",
-    hdrs = [
-        "musa_config_hermetic/musa_config.h",
-    ],
-    include_prefix = "musa",
-    strip_include_prefix = "musa_config_hermetic",
-)
-
-cc_library(
-    name = "musa_config",
-    visibility = ["//visibility:public"],
-    deps = select({
-        ":build_hermetic": [
-            ":config_hermetic",
-        ],
-        "//conditions:default": [
-            "config",
-        ],
-    }),
-)
-
 # This target is required to
 # add includes that are used by musa headers themself
 # through the virtual includes
@@ -95,11 +64,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":mublas",
-        ":mublaslt",
         ":murand",
         ":musolver",
         ":musparse",
-        ":musa_config",
         ":mufft",
     ]
 )
@@ -132,7 +99,6 @@ cc_library(
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
     deps = [
-        ":musa_config",
         ":system_libs",
     ],
 )
@@ -152,7 +118,6 @@ cc_library(
     linkopts = ["-Wl,-rpath,local_config_musa/musa/musa_dis/lib"],
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
-    deps = [":musa_config"],
 )
 
 cc_library(
@@ -164,7 +129,6 @@ cc_library(
     ],
     linkstatic = 1,
     visibility = ["//visibility:public"],
-    deps = [":musa_config"],
 )
 
 cc_library(
@@ -178,7 +142,6 @@ cc_library(
     linkstatic = 1,
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
-    deps = [":musa_config"],
 )
 
 
@@ -199,7 +162,6 @@ cc_library(
     ],
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
-    deps = [":musa_config"],
 )
 
 cc_library(
@@ -212,7 +174,6 @@ cc_library(
     ],
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
-    deps = [":musa_config"],
 )
 
 cc_library(

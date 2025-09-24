@@ -2,6 +2,10 @@ load(
     "@local_config_rocm//rocm:build_defs.bzl",
     "if_rocm_is_configured",
 )
+load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//xla:lit.bzl", "enforce_glob", "lit_test_suite")
 load(
@@ -146,6 +150,8 @@ cc_library(
         "//xla/service/gpu:gpu_executable",
     ]) + if_cuda_is_configured([
         "//xla/stream_executor:cuda_platform",
+    ]) + if_musa_is_configured([
+        "//xla/stream_executor:musa_platform",
     ]) + if_rocm_is_configured([
         "//xla/stream_executor:rocm_platform",
     ]),
