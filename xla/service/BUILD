@@ -8,6 +8,10 @@ load(
     "if_rocm_is_configured",
 )
 load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
+load(
     "//xla:xla.default.bzl",
     "xla_cc_binary",
     "xla_cc_test",
@@ -1048,6 +1052,7 @@ cc_library(
         "//xla/stream_executor/cuda:cuda_platform_id",
         "//xla/stream_executor/host:host_platform_id",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/tsl/platform:env",
         "//xla/tsl/platform:errors",
         "//xla/tsl/platform:statusor",
@@ -1417,6 +1422,9 @@ cc_library(
     ]) + if_cuda_is_configured([
         "//xla/service/gpu:nvptx_compiler",
         "//xla/stream_executor/cuda:stream_executor_cuda",
+    ]) + if_musa_is_configured([
+        "//xla/service/gpu:mcc_compiler",
+        "//xla/stream_executor/musa:stream_executor_musa",
     ]) + if_rocm_is_configured([
         "//xla/service/gpu:amdgpu_compiler",
         "//xla/stream_executor/rocm:stream_executor_rocm",
@@ -3197,6 +3205,7 @@ cc_library(
         "//xla/stream_executor/cuda:cuda_platform_id",
         "//xla/stream_executor/host:host_platform_id",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/stream_executor/sycl:sycl_platform_id",
         "//xla/tsl/platform:errors",
         "//xla/tsl/platform:statusor",
@@ -5814,6 +5823,12 @@ xla_cc_binary(
         "//xla/service/gpu:amdgpu_compiler_impl",
         "//xla/stream_executor/rocm:all_runtime",
         "//xla/stream_executor/rocm:rocm_platform",
+    ]) + if_musa_is_configured([
+        # keep sorted
+        "//xla/service/gpu:mcc_compiler",
+        "//xla/service/gpu:mcc_compiler_impl",
+        "//xla/stream_executor/musa:all_runtime",
+        "//xla/stream_executor/musa:musa_platform",
     ]) + xla_internal(["tools:xsymbol_repository"]),
 )
 

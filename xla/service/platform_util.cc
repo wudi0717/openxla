@@ -36,6 +36,7 @@ limitations under the License.
 #include "xla/stream_executor/platform.h"
 #include "xla/stream_executor/platform_manager.h"
 #include "xla/stream_executor/rocm/rocm_platform_id.h"
+#include "xla/stream_executor/musa/musa_platform_id.h"
 #include "xla/stream_executor/stream_executor.h"
 #include "xla/tsl/platform/env.h"
 #include "xla/tsl/platform/errors.h"
@@ -68,6 +69,8 @@ std::string CanonicalPlatformName(absl::string_view platform_name) {
     return "rocm";
 #elif TENSORFLOW_USE_SYCL
     return "sycl";
+#elif TENSORFLOW_USE_MUSA
+    return "musa";
 #else
     return "cuda";
 #endif

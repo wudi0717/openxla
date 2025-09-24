@@ -6,6 +6,10 @@ load(
     "@local_config_rocm//rocm:build_defs.bzl",
     "if_rocm_is_configured",
 )
+load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//xla:xla.default.bzl", "xla_cc_test", "xla_internal")
 load("//xla/tests:build_defs.bzl", "xla_test")
@@ -638,6 +642,7 @@ cc_library(
         "//xla/stream_executor/cuda:cuda_compute_capability",
         "//xla/stream_executor/cuda:cuda_platform_id",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/stream_executor/sycl:sycl_platform_id",
         "//xla/tsl/platform:env_time",
         "//xla/tsl/platform:errors",
@@ -1248,6 +1253,7 @@ cc_library(
         "//xla/stream_executor:stream_executor_h",
         "//xla/stream_executor/cuda:cuda_platform_id",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/stream_executor/sycl:sycl_platform_id",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/cleanup",
@@ -1323,6 +1329,7 @@ cc_library(
         "//xla/stream_executor:platform",
         "//xla/stream_executor/cuda:cuda_compute_capability",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/tsl/platform:env",
         "//xla/tsl/platform:errors",
         "//xla/tsl/platform:statusor",
@@ -2162,6 +2169,92 @@ cc_library(
         "//xla/stream_executor:stream_executor_memory_allocator",
         "//xla/stream_executor/rocm:rocm_platform_id",
         "//xla/stream_executor/rocm:rocm_solver_context",
+        "//xla/tsl/platform:env",
+        "//xla/tsl/platform:errors",
+        "//xla/tsl/platform:statusor",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@llvm-project//llvm:ir_headers",
+    ],
+)
+
+cc_library(
+    name = "mcc_compiler",
+    srcs = [
+        "mcc_compiler_registration.cc",
+    ],
+    tags = [
+        "gpu",
+        "manual",
+        "musa-only",
+    ],
+    deps = [
+        ":mcc_compiler_impl",
+        "//xla/service:compiler",
+        "//xla/stream_executor/musa:musa_platform_id",
+    ],
+    alwayslink = True,  # Contains compiler registration
+)
+
+cc_library(
+    name = "mcc_compiler_impl",
+    srcs = [
+        "mcc_compiler.cc",
+    ],
+    hdrs = [
+        "mcc_compiler.h",
+    ],
+    tags = [
+        "gpu",
+        "manual",
+        "musa-only",
+    ],
+    deps = [
+        ":alias_info",
+        ":cublas_cudnn",
+        ":cublas_padding_requirements",
+        ":gpu_compiler",
+        ":target_constants",
+        "//xla:util",
+        "//xla:xla_data_proto_cc",
+        "//xla:xla_proto_cc",
+        "//xla/backends/autotuner:codegen_backend",
+        "//xla/backends/gpu/autotuner:cublas",
+        "//xla/hlo/ir:hlo",
+        "//xla/hlo/pass:hlo_pass",
+        "//xla/hlo/pass:hlo_pass_pipeline",
+        "//xla/hlo/transforms/simplifiers:algebraic_simplifier",
+        "//xla/hlo/transforms/simplifiers:convert_mover",
+        "//xla/hlo/transforms/simplifiers:dot_dimension_merger",
+        "//xla/hlo/transforms/simplifiers:float_normalization",
+        "//xla/hlo/transforms/simplifiers:hlo_constant_folding",
+        "//xla/hlo/transforms/simplifiers:reshape_mover",
+        "//xla/hlo/transforms/simplifiers:tuple_simplifier",
+        "//xla/pjrt/distributed:key_value_store_interface",
+        "//xla/service:call_inliner",
+        "//xla/service:float_support",
+        "//xla/service:hlo_module_config",
+        "//xla/service:hlo_verifier",
+        "//xla/service/gpu/autotuning:autotuner_pass",
+        "//xla/service/gpu/autotuning:autotuner_util",
+        "//xla/service/gpu/autotuning:conv_algorithm_picker",
+        "//xla/service/gpu/autotuning:gemm_fusion_autotuner",
+        "//xla/service/gpu/llvm_gpu_backend:amdgpu_backend",
+        "//xla/service/gpu/transforms:algebraic_simplifier",
+        "//xla/service/gpu/transforms:conv_padding_legalization",
+        "//xla/service/gpu/transforms:conv_rewriter",
+        "//xla/service/gpu/transforms:cublas_pad_for_gemms",
+        "//xla/service/gpu/transforms:cudnn_fused_conv_rewriter",
+        "//xla/service/gpu/transforms:gpusolver_rewriter",
+        "//xla/service/gpu/transforms:triangular_solve_rewriter",
+        "//xla/stream_executor:device_description",
+        "//xla/stream_executor:device_memory_allocator",
+        "//xla/stream_executor:dnn",
+        "//xla/stream_executor:semantic_version",
+        "//xla/stream_executor:stream_executor_h",
+        "//xla/stream_executor:stream_executor_memory_allocator",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/tsl/platform:env",
         "//xla/tsl/platform:errors",
         "//xla/tsl/platform:statusor",
