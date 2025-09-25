@@ -29,6 +29,40 @@ limitations under the License.
 
 namespace stream_executor {
 
+absl::StatusOr<MusaComputeCapability> MusaComputeCapability::FromString(
+    absl::string_view musa_arch_name) {
+  std::vector<absl::string_view> split = absl::StrSplit(musa_arch_name, '.');
+  if (split.size() != 2) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid MUSA architecture name: ", musa_arch_name));
+  }
+
+  int major, minor;
+  if (!absl::SimpleAtoi(split[0], &major) ||
+      !absl::SimpleAtoi(split[1], &minor)) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid MUSA architecture name: ", musa_arch_name));
+  }
+  return CudaComputeCapability{major, minor};
+}
+std::string MusaComputeCapability::ToString() const {
+  return absl::StrCat(major, ".", minor);
+}
+absl::StatusOr<MusaComputeCapability> MusaComputeCapability::FromProto(
+    const MusaComputeCapabilityProto& proto) {
+  MusaComputeCapability cc;
+  cc.major = proto.major();
+  cc.minor = proto.minor();
+  return cc;
+}
+
+MusaComputeCapabilityProto MusaComputeCapability::ToProto() const {
+  MusaComputeCapabilityProto proto;
+  proto.set_major(major);
+  proto.set_minor(minor);
+  return proto;
+}
+
 absl::StatusOr<DeviceDescription> DeviceDescription::FromProto(
     const GpuDeviceInfoProto& proto) {
   DeviceDescription device_description;
@@ -60,6 +94,11 @@ absl::StatusOr<DeviceDescription> DeviceDescription::FromProto(
     device_description.gpu_compute_capability_ =
         RocmComputeCapability(proto.rocm_compute_capability());
   }
+  if (proto.has_musa_compute_capability()) {
+    TF_ASSIGN_OR_RETURN(
+        device_description.gpu_compute_capability_,
+        MusaComputeCapability::FromProto(proto.musa_compute_capability()));
+  }
   device_description.core_count_ = proto.core_count();
   device_description.fpus_per_core_ = proto.fpus_per_core();
 
@@ -75,6 +114,10 @@ GpuDeviceInfoProto DeviceDescription::ToGpuProto() const {
   if (auto* ptr = std::get_if<stream_executor::RocmComputeCapability>(
           &gpu_compute_capability_)) {
     *proto.mutable_rocm_compute_capability() = ptr->ToProto();
+  }
+  if (auto* ptr = std::get_if<stream_executor::MusaComputeCapability>(
+          &gpu_compute_capability_)) {
+    *proto.mutable_musa_compute_capability() = ptr->ToProto();
   }
 
   proto.set_threads_per_block_limit(threads_per_block_limit_);
@@ -112,6 +155,15 @@ CudaComputeCapability DeviceDescription::cuda_compute_capability() const {
   }
   // Fallback for backwards compatibility.
   return CudaComputeCapability{-1, -1};
+}
+
+MusaComputeCapability DeviceDescription::musa_compute_capability() const {
+  if (auto *ptr =
+          std::get_if<MusaComputeCapability>(&gpu_compute_capability_)) {
+    return *ptr;
+  }
+  // Fallback for backwards compatibility.
+  return MusaComputeCapability{-1, -1};
 }
 
 RocmComputeCapability DeviceDescription::rocm_compute_capability() const {

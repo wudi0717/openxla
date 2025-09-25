@@ -47,6 +47,7 @@ limitations under the License.
 #include "xla/stream_executor/memory_allocation.h"
 #include "xla/stream_executor/platform.h"
 #include "xla/stream_executor/rocm/rocm_platform_id.h"
+#include "xla/stream_executor/musa/musa_platform_id.h"
 #include "xla/stream_executor/stream_executor.h"
 #include "xla/stream_executor/sycl/sycl_platform_id.h"
 #include "xla/util.h"
@@ -371,6 +372,13 @@ static std::unique_ptr<xla::TransferManager> CreateAMDGPUTransferManager() {
           .getPointerSize(0 /* default address space */));
 }
 
+static std::unique_ptr<xla::TransferManager> CreateMTGPUTransferManager() {
+  return std::make_unique<xla::gpu::GpuTransferManager>(
+      /*id=*/stream_executor::musa::kMUSaPlatformId,
+      /*pointer_size=*/llvm::DataLayout(xla::gpu::mtgpu::DataLayout())
+          .getPointerSize(0 /* default address space */));
+}
+
 static std::unique_ptr<xla::TransferManager> CreateSYCLTransferManager() {
   return std::make_unique<xla::gpu::GpuTransferManager>(
       /*id=*/stream_executor::sycl::kSyclPlatformId,
@@ -383,6 +391,8 @@ static bool InitModule() {
       stream_executor::cuda::kCudaPlatformId, &CreateNVPTXTransferManager);
   xla::TransferManager::RegisterTransferManager(
       stream_executor::rocm::kROCmPlatformId, &CreateAMDGPUTransferManager);
+  xla::TransferManager::RegisterTransferManager(
+      stream_executor::musa::kMUSaPlatformId, &CreateMTGPUTransferManager);
   xla::TransferManager::RegisterTransferManager(
       stream_executor::sycl::kSyclPlatformId, &CreateSYCLTransferManager);
   return true;

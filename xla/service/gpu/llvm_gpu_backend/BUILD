@@ -190,6 +190,61 @@ cc_library(
 )
 
 cc_library(
+    name = "mtgpu_backend",
+    srcs = [
+        "mtgpu_backend.cc",
+    ],
+    hdrs = [
+        "mtgpu_backend.h",
+    ],
+    local_defines = if_oss(["HAS_SUPPORT_FOR_LLD_AS_A_LIBRARY=1"]),
+    deps = [
+        ":llvm_gpu_backend",
+        ":load_ir_module",
+        "//xla:util",
+        "//xla:xla_proto_cc",
+        "//xla/service/llvm_ir:llvm_command_line_options",
+        "//xla/service/llvm_ir:llvm_type_conversion_util",
+        "//xla/stream_executor:device_description",
+        "//xla/tsl/platform:env",
+        "//xla/tsl/platform:errors",
+        "//xla/tsl/platform:musa_musdl_path",
+        "//xla/tsl/platform:status",
+        "//xla/tsl/platform:statusor",
+        "//xla/tsl/util:env_var",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
+        "@llvm-project//llvm:MTGPUAsmParser",  # buildcleaner: keep
+        "@llvm-project//llvm:Analysis",
+        "@llvm-project//llvm:BitReader",
+        "@llvm-project//llvm:BitWriter",
+        "@llvm-project//llvm:CodeGen",
+        "@llvm-project//llvm:Core",
+        "@llvm-project//llvm:IPO",
+        "@llvm-project//llvm:Linker",
+        "@llvm-project//llvm:MC",
+        "@llvm-project//llvm:ObjCARC",  # buildcleaner: keep
+        "@llvm-project//llvm:Passes",
+        "@llvm-project//llvm:Scalar",
+        "@llvm-project//llvm:Support",
+        "@llvm-project//llvm:Target",
+        "@tsl//tsl/platform:path",
+        "@tsl//tsl/platform:random",
+        "@tsl//tsl/profiler/lib:traceme",
+    ] + if_oss([
+        # keep sorted
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/synchronization",
+        "@llvm-project//lld:Common",
+        "@llvm-project//lld:ELF",  # buildcleaner: keep
+    ]),
+)
+
+cc_library(
     name = "load_ir_module",
     hdrs = ["load_ir_module.h"],
     deps = [

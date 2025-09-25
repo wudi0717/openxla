@@ -1,6 +1,7 @@
 # Tensorflow default + linux implementations of tensorflow/core/platform libraries.
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm_is_configured")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa_is_configured")
 load(
     "//xla/tsl:tsl.bzl",
     "if_not_fuchsia",

@@ -2180,9 +2180,9 @@ cc_library(
 )
 
 cc_library(
-    name = "mcc_compiler",
+    name = "mtgpu_compiler",
     srcs = [
-        "mcc_compiler_registration.cc",
+        "mtgpu_compiler_registration.cc",
     ],
     tags = [
         "gpu",
@@ -2190,7 +2190,7 @@ cc_library(
         "musa-only",
     ],
     deps = [
-        ":mcc_compiler_impl",
+        ":mtgpu_compiler_impl",
         "//xla/service:compiler",
         "//xla/stream_executor/musa:musa_platform_id",
     ],
@@ -2198,12 +2198,12 @@ cc_library(
 )
 
 cc_library(
-    name = "mcc_compiler_impl",
+    name = "mtgpu_compiler_impl",
     srcs = [
-        "mcc_compiler.cc",
+        "mtgpu_compiler.cc",
     ],
     hdrs = [
-        "mcc_compiler.h",
+        "mtgpu_compiler.h",
     ],
     tags = [
         "gpu",
@@ -2240,7 +2240,7 @@ cc_library(
         "//xla/service/gpu/autotuning:autotuner_util",
         "//xla/service/gpu/autotuning:conv_algorithm_picker",
         "//xla/service/gpu/autotuning:gemm_fusion_autotuner",
-        "//xla/service/gpu/llvm_gpu_backend:amdgpu_backend",
+        "//xla/service/gpu/llvm_gpu_backend:mtgpu_backend",
         "//xla/service/gpu/transforms:algebraic_simplifier",
         "//xla/service/gpu/transforms:conv_padding_legalization",
         "//xla/service/gpu/transforms:conv_rewriter",

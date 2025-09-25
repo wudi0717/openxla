@@ -221,8 +221,51 @@ class RocmComputeCapability {
   std::string gcn_arch_name_{kInvalidGfx};  // default to invalid arch.
 };
 
+struct MusaComputeCapability {
+  int major = 0;
+  int minor = 0;
+
+  constexpr MusaComputeCapability() = default;
+  constexpr MusaComputeCapability(int major, int minor)
+      : MusaComputeCapability(major, minor) {}
+
+  constexpr MusaComputeCapability(int major, int minor)
+      : major{major}, minor{minor} {}
+
+  static absl::StatusOr<MusaComputeCapability> FromProto(
+      const MusaComputeCapabilityProto& proto);
+
+  // Parses the architecture name in the format
+  // "major.minor<feature_extension>", example: "8.6" or "9.0a" or "10.0f".
+  static absl::StatusOr<MusaComputeCapability> FromString(
+      absl::string_view musa_arch_name);
+
+  // Returns a string representation of the compute capability. The format is
+  // not guaranteed to follow any standard and should only be used for logging.
+  std::string ToString() const;
+
+  friend bool operator==(const MusaComputeCapability& lhs,
+                         const MusaComputeCapability& rhs) {
+    return std::tie(lhs.major, lhs.minor) ==
+           std::tie(rhs.major, rhs.minor);
+  }
+
+  friend bool operator!=(const MusaComputeCapability& lhs,
+                         const MusaComputeCapability& rhs) {
+    return !(lhs == rhs);
+  }
+
+  MusaComputeCapabilityProto ToProto() const;
+
+  template <typename H>
+  friend H AbslHashValue(H state, const MusaComputeCapability& cc) {
+    return H::combine(std::move(state), cc.major, cc.minor);
+  }
+
+};
+
 using GpuComputeCapability =
-    std::variant<CudaComputeCapability, RocmComputeCapability>;
+    std::variant<CudaComputeCapability, RocmComputeCapability, MusaComputeCapability>;
 
 // Data that describes the execution target of the StreamExecutor, in terms of
 // important logical parameters. These include dimensionality limits and
@@ -354,6 +397,8 @@ class DeviceDescription {
   // If a ROCm compute capability is not available, the default gfx_arch will
   // be "gfx000" (which is an invalid gfx arch).
   RocmComputeCapability rocm_compute_capability() const;
+
+  MusaComputeCapability musa_compute_capability() const;
 
   const GpuComputeCapability& gpu_compute_capability() const;
 
@@ -514,6 +559,10 @@ class DeviceDescription {
   void set_clock_rate_ghz(float value) { clock_rate_ghz_ = value; }
 
   void set_cuda_compute_capability(const CudaComputeCapability& cc) {
+    gpu_compute_capability_ = cc;
+  }
+
+  void set_musa_compute_capability(const MusaComputeCapability& cc) {
     gpu_compute_capability_ = cc;
   }
 

@@ -1423,7 +1423,7 @@ cc_library(
         "//xla/service/gpu:nvptx_compiler",
         "//xla/stream_executor/cuda:stream_executor_cuda",
     ]) + if_musa_is_configured([
-        "//xla/service/gpu:mcc_compiler",
+        "//xla/service/gpu:mtgpu_compiler",
         "//xla/stream_executor/musa:stream_executor_musa",
     ]) + if_rocm_is_configured([
         "//xla/service/gpu:amdgpu_compiler",
@@ -5825,8 +5825,8 @@ xla_cc_binary(
         "//xla/stream_executor/rocm:rocm_platform",
     ]) + if_musa_is_configured([
         # keep sorted
-        "//xla/service/gpu:mcc_compiler",
-        "//xla/service/gpu:mcc_compiler_impl",
+        "//xla/service/gpu:mtgpu_compiler",
+        "//xla/service/gpu:mtgpu_compiler_impl",
         "//xla/stream_executor/musa:all_runtime",
         "//xla/stream_executor/musa:musa_platform",
     ]) + xla_internal(["tools:xsymbol_repository"]),

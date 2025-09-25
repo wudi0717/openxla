@@ -73,6 +73,8 @@ class MockStream : public Stream {
               (const, override));
   MOCK_METHOD(RocmComputeCapability, GetRocmComputeCapability, (),
               (const, override));
+  MOCK_METHOD(MusaComputeCapability, GetMusaComputeCapability, (),
+              (const, override));
   MOCK_METHOD((std::variant<StreamPriority, int>), priority, (),
               (const, override));
   MOCK_METHOD(absl::Status, LaunchKernel,

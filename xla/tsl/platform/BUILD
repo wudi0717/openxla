@@ -49,6 +49,7 @@ exports_files(
         "recordphase.h",
         "resource.h",
         "rocm_rocdl_path.h",
+        "musa_musdl_path.h",
         "resource_loader.h",
         "file_system.cc",
         "file_system.h",
@@ -835,6 +836,12 @@ cc_library(
     name = "rocm_rocdl_path",
     textual_hdrs = ["rocm_rocdl_path.h"],
     deps = tf_platform_deps("rocm_rocdl_path"),
+)
+
+cc_library(
+    name = "musa_musdl_path",
+    textual_hdrs = ["musa_musdl_path.h"],
+    deps = tf_platform_deps("musa_musdl_path"),
 )
 
 cc_library(
