@@ -53,6 +53,10 @@ inline const char* RocmName() {
   static constexpr char kRocmName[] = "rocm";
   return kRocmName;
 }
+inline const char* MusaName() {
+  static constexpr char kMusaName[] = "musa";
+  return kMusaName;
+}
 inline const char* SyclName() {
   static constexpr char kSyclName[] = "sycl";
   return kSyclName;
@@ -72,6 +76,10 @@ inline PjRtPlatformId CudaId() {
 inline PjRtPlatformId RocmId() {
   static const PjRtPlatformId kRocmId = tsl::Fingerprint64(RocmName());
   return kRocmId;
+}
+inline PjRtPlatformId MusaId() {
+  static const PjRtPlatformId kMusaId = tsl::Fingerprint64(MusaName());
+  return kMusaId;
 }
 inline PjRtPlatformId SyclId() {
   static const PjRtPlatformId kSyclId = tsl::Fingerprint64(SyclName());
