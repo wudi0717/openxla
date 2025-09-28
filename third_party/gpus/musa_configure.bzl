@@ -96,6 +96,30 @@ def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
         substitutions,
     )
 
+def _mcc_env(repository_ctx):
+    """Returns the environment variable string for mcc.
+
+    Args:
+        repository_ctx: The repository context.
+
+    Returns:
+        A string containing environment variables for mcc.
+    """
+    mcc_env = ""
+    for name in [
+        "MUSA_CLANG_PATH",
+        "DEVICE_LIB_PATH",
+        "MUSA_VDI_HOME",
+        "MCC_VERBOSE",
+        "MCC_COMPILE_FLAGS_APPEND",
+        "MCC_LINK_FLAGS_APPEND",
+        "MCC_PLATFORM",
+    ]:
+        env_value = get_host_environ(repository_ctx, name)
+        if env_value:
+            mcc_env = (mcc_env + " " + name + "=\"" + env_value + "\";")
+    return mcc_env.strip()
+
 def _musa_autoconf_impl(repository_ctx):
     """Implementation of the musa_autoconf repository rule."""
     root = repository_ctx.os.environ.get("MUSA_HOME", "/usr/local/musa")
@@ -132,12 +156,12 @@ def _musa_autoconf_impl(repository_ctx):
         _tpl_path(repository_ctx, "crosstool:clang/bin/crosstool_wrapper_driver_musa"),
         {
             "%{cpu_compiler}": "gcc",
-            "%{compiler_is_clang}": "True",
-            "%{mcc_path}": "/usr/loca/musa/bin/mcc",
-            "%{mcc_env}": "",
-            "%{musa_path}": "/usr/loca/musa",
-            "%{musa_runtime_path}": "/usr/loca/musa/lib",
-            "%{musa_runtime_library}": "",
+            "%{compiler_is_clang}": "False",
+            "%{mcc_path}": "/usr/local/musa/bin/mcc",
+            "%{mcc_env}":  _mcc_env(repository_ctx),
+            "%{musa_path}": "/usr/local/musa",
+            "%{musa_runtime_path}": "/usr/local/musa/lib",
+            "%{musa_runtime_library}": "musart",
             "%{crosstool_verbose}": _crosstool_verbose(repository_ctx),
         },
     )

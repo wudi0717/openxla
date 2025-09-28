@@ -96,7 +96,7 @@ def GetHostCompilerOptions(argv):
 
   return opts
 
-def GetHipccOptions(argv):
+def GetMccOptions(argv):
   """Collect the -mcc_options values from argv.
   Args:
     argv: A list of strings, possibly the argv passed to main().
@@ -134,7 +134,7 @@ def system(cmd):
     return -os.WTERMSIG(retv)
 
 
-def InvokeHipcc(argv, log=False):
+def InvokeMcc(argv, log=False):
   """Call mcc with arguments assembled from argv.
 
   Args:
@@ -146,7 +146,7 @@ def InvokeHipcc(argv, log=False):
   """
 
   host_compiler_options = GetHostCompilerOptions(argv)
-  mcc_compiler_options = GetHipccOptions(argv)
+  mcc_compiler_options = GetMccOptions(argv)
   opt_option = GetOptionValue(argv, 'O')
   m_options = GetOptionValue(argv, 'm')
   m_options = ''.join([' -m' + m for m in m_options if m in ['32', '64']])
@@ -185,13 +185,13 @@ def InvokeHipcc(argv, log=False):
   srcs = ' '.join(src_files)
   out = ' -o ' + out_file[0]
 
-  mccopts = mcc_compiler_options + ' '
-  # In hip-clang environment, we need to make sure that hip header is included
+  mccopts = mcc_compiler_options + ' -x musa '
+  # In mcc-clang environment, we need to make sure that musa header is included
   # before some standard math header like <complex> is included in any source.
   # Otherwise, we get build error.
   # Also we need to retain warning about uninitialised shared variable as
   # warning only, even when -Werror option is specified.
-  mccopts += ' --include=hip/hip_runtime.h '
+  mccopts += ' --include=musa_runtime.h '
   # Force C++17 dialect (note, everything in just one string!)
   mccopts += ' --std=c++17 '
   # Use -fno-gpu-rdc by default for early GPU kernel finalization
@@ -209,21 +209,21 @@ def InvokeHipcc(argv, log=False):
   if depfiles:
     # Generate the dependency file
     depfile = depfiles[0]
-    cmd = (HIPCC_PATH + ' ' + mccopts +
+    cmd = (MCC_PATH + ' ' + mccopts +
            host_compiler_options +
            ' -I .' + includes + ' ' + srcs + ' -M -o ' + depfile)
-    cmd = HIPCC_ENV.replace(';', ' ') + ' ' + cmd
+    cmd = MCC_ENV.replace(';', ' ') + ' ' + cmd
     if log: Log(cmd)
     if VERBOSE: print(cmd)
     exit_status = os.system(cmd)
     if exit_status != 0:
       return exit_status
 
-  cmd = (HIPCC_PATH + ' ' + mccopts +
+  cmd = (MCC_PATH + ' ' + mccopts +
          host_compiler_options + ' -fPIC' +
          ' -I .' + opt + includes + ' -c ' + srcs + out)
 
-  cmd = HIPCC_ENV.replace(';', ' ') + ' '\
+  cmd = MCC_ENV.replace(';', ' ') + ' '\
         + cmd
   if log: Log(cmd)
   if VERBOSE: print(cmd)
@@ -241,30 +241,27 @@ def main():
   args, leftover = parser.parse_known_args(sys.argv[1:])
 
   if VERBOSE: print('PWD=' + os.getcwd())
-  if VERBOSE: print('HIPCC_ENV=' + HIPCC_ENV)
+  if VERBOSE: print('MCC_ENV=' + MCC_ENV)
 
   if args.x and args.x[0] == 'musa':
     # compilation for GPU objects
     if args.musa_log: Log('-x musa')
     leftover = [shlex.quote(s) for s in leftover]
     if args.musa_log: Log('using mcc')
-    return InvokeHipcc(leftover, log=args.musa_log)
+    return InvokeMcc(leftover, log=args.musa_log)
 
   elif args.pass_exit_codes:
     # link
     # with mcc compiler invoked with -fno-gpu-rdc by default now, it's ok to
-    # use host compiler as linker, but we have to link with HCC/HIP runtime.
+    # use host compiler as linker, but we have to link with MUSA runtime.
     # Such restriction would be revised further as the bazel script get
     # improved to fine tune dependencies to MUSa libraries.
     gpu_linker_flags = [flag for flag in sys.argv[1:]
                                if not flag.startswith(('--musa_log'))]
 
-    gpu_linker_flags.append('-L' + ROCR_RUNTIME_PATH)
-    gpu_linker_flags.append('-Wl,-rpath=' + ROCR_RUNTIME_PATH)
-    gpu_linker_flags.append('-l' + ROCR_RUNTIME_LIBRARY)
-    gpu_linker_flags.append('-L' + HIP_RUNTIME_PATH)
-    gpu_linker_flags.append('-Wl,-rpath=' + HIP_RUNTIME_PATH)
-    gpu_linker_flags.append('-l' + HIP_RUNTIME_LIBRARY)
+    gpu_linker_flags.append('-L' + MUSA_RUNTIME_PATH)
+    gpu_linker_flags.append('-Wl,-rpath=' + MUSA_RUNTIME_PATH)
+    gpu_linker_flags.append('-l' + MUSA_RUNTIME_LIBRARY)
     gpu_linker_flags.append("-lrt")
     gpu_linker_flags.append("-lstdc++")
 
@@ -283,7 +280,7 @@ def main():
                                if not flag.startswith(('--musa_log'))]
 
     # XXX: SE codes need to be built with gcc, but need this macro defined
-    cpu_compiler_flags.append("-D__HIP_PLATFORM_HCC__")
+    cpu_compiler_flags.append("-D__MUSA_PLATFORM_HCC__")
     if VERBOSE: print(' '.join([CPU_COMPILER] + cpu_compiler_flags))
     return subprocess.call([CPU_COMPILER] + cpu_compiler_flags)
 
