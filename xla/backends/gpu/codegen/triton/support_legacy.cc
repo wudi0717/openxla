@@ -73,7 +73,8 @@ bool IsTritonSupportedDotOutputType(
               [](const se::CudaComputeCapability& cc) {
                 return cc.IsAtLeastAmpere();
               },
-              [](const se::RocmComputeCapability& cc) { return false; }),
+              [](const se::RocmComputeCapability& cc) { return false; },
+	      [](const se::MusaComputeCapability& cc) { return false; }),
           gpu_version);
 
     case F8E4M3FN:
@@ -82,12 +83,14 @@ bool IsTritonSupportedDotOutputType(
               [](const se::CudaComputeCapability& cc) {
                 return cc.IsAtLeastHopper();
               },
+              [](const se::MusaComputeCapability& cc) { return false; },
               [](const se::RocmComputeCapability& cc) { return false; }),
           gpu_version);
     case BF16:
       return std::visit(
           absl::Overload(
               [](const se::CudaComputeCapability& cc) { return true; },
+              [](const se::MusaComputeCapability& cc) { return false; },
               [](const se::RocmComputeCapability& cc) {
                 return cc.has_bf16_dtype_support();
               }),
@@ -98,6 +101,7 @@ bool IsTritonSupportedDotOutputType(
               [](const se::CudaComputeCapability& cc) {
                 return cc.IsAtLeastAmpere();
               },
+              [](const se::MusaComputeCapability& cc) { return false; },
               [](const se::RocmComputeCapability& cc) { return false; }),
           gpu_version);
     default:
@@ -233,6 +237,8 @@ bool IsDotAlgorithmSupportedByTriton(
       std::get_if<se::CudaComputeCapability>(&gpu_version);
   auto rocm_compute_capability =
       std::get_if<se::RocmComputeCapability>(&gpu_version);
+  auto musa_compute_capability =
+      std::get_if<se::MusaComputeCapability>(&gpu_version);
   switch (algorithm) {
     case PrecisionConfig::ALG_DOT_TF32_TF32_F32:
     case PrecisionConfig::ALG_DOT_TF32_TF32_F32_X3:
@@ -293,6 +299,8 @@ CodegenDecision CanTritonHandleGEMM(
       std::get_if<se::CudaComputeCapability>(&gpu_version);
   auto rocm_compute_capability =
       std::get_if<se::RocmComputeCapability>(&gpu_version);
+  auto musa_compute_capability =
+      std::get_if<se::MusaComputeCapability>(&gpu_version);
 
   CHECK(cuda_compute_capability || rocm_compute_capability);
 

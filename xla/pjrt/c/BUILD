@@ -3,6 +3,10 @@ load(
     "if_rocm_is_configured",
 )
 load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
+load(
     "//xla:xla.default.bzl",
     "xla_cc_binary",
     "xla_cc_test",
@@ -475,6 +479,8 @@ xla_cc_binary(
         "noasan",
         "nomsan",
         "notsan",
+        "notsan",
+        "no-oneapi",  #For musa test
     ],
     deps = [
         ":pjrt_c_api_gpu",
@@ -483,6 +489,8 @@ xla_cc_binary(
         "//xla/stream_executor:cuda_platform",
     ]) + if_rocm_is_configured([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa_is_configured([
+        "//xla/stream_executor:musa_platform",
     ]),
 )
 

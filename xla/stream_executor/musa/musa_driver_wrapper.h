@@ -20,46 +20,20 @@ limitations under the License.
 #ifndef XLA_STREAM_EXECUTOR_MUSA_MUSA_DRIVER_WRAPPER_H_
 #define XLA_STREAM_EXECUTOR_MUSA_MUSA_DRIVER_WRAPPER_H_
 
+#include "musa.h"
 #include "musa_runtime.h"
 #include "xla/tsl/platform/env.h"
 #include "tsl/platform/dso_loader.h"
 
 namespace stream_executor {
 namespace wrap {
-#ifdef PLATFORM_GOOGLE
+	/*
 // Use static linked library
 #define STREAM_EXECUTOR_MUSA_WRAP(musaSymbolName)                            \
   template <typename... Args>                                              \
   auto musaSymbolName(Args... args) -> decltype(::musaSymbolName(args...)) { \
     return ::musaSymbolName(args...);                                       \
   }
-
-// This macro wraps a global identifier, given by musaSymbolName, in a callable
-// structure that loads the DLL symbol out of the DSO handle in a thread-safe
-// manner on first use. This dynamic loading technique is used to avoid DSO
-// dependencies on vendor libraries which may or may not be available in the
-// deployed binary environment.
-#else
-#define TO_STR_(x) #x
-#define TO_STR(x) TO_STR_(x)
-
-#define STREAM_EXECUTOR_MUSA_WRAP(musaSymbolName)                             \
-  template <typename... Args>                                               \
-  auto musaSymbolName(Args... args) -> decltype(::musaSymbolName(args...)) {  \
-    using FuncPtrT = std::add_pointer<decltype(::musaSymbolName)>::type;     \
-    static FuncPtrT loaded = []() -> FuncPtrT {                             \
-      static const char *kName = TO_STR(musaSymbolName);                     \
-      void *f;                                                              \
-      auto s = tsl::Env::Default()->GetSymbolFromLibrary(                   \
-          tsl::internal::CachedDsoLoader::GetMusaDsoHandle().value(), kName, \
-          &f);                                                              \
-      CHECK(s.ok()) << "could not find " << kName                           \
-                    << " in MUSA DSO; dlerror: " << s.message();             \
-      return reinterpret_cast<FuncPtrT>(f);                                 \
-    }();                                                                    \
-    return loaded(args...);                                                 \
-  }
-#endif
 
 // clang-format off
 // IMPORTANT: if you add a new MUSA API to this list, please notify
@@ -174,9 +148,7 @@ MUSA_ROUTINE_EACH(STREAM_EXECUTOR_MUSA_WRAP)
 
 #undef MUSA_ROUTINE_EACH
 #undef STREAM_EXECUTOR_MUSA_WRAP
-#undef TO_STR
-#undef TO_STR_
-
+*/
 }  // namespace wrap
 }  // namespace stream_executor
 

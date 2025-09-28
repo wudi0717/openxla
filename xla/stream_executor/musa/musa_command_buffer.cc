@@ -55,14 +55,14 @@ namespace {
 absl::StatusOr<musaGraph_t> CreateGraph() {
   VLOG(2) << "Create new MUSA graph";
   musaGraph_t graph;
-  TF_RETURN_IF_ERROR(ToStatus(wrap::musaGraphCreate(&graph, /*flags=*/0),
+  TF_RETURN_IF_ERROR(ToStatus(musaGraphCreate(&graph, /*flags=*/0),
                               "Failed to create MUSA graph"));
   VLOG(2) << "Created MUSA graph " << graph;
   return graph;
 }
 
-MUdeviceptr AsDevicePtr(const DeviceMemoryBase& mem) {
-  return absl::bit_cast<MUdeviceptr>(mem.opaque());
+void *AsDevicePtr(const DeviceMemoryBase& mem) {
+  return absl::bit_cast<void *>(mem.opaque());
 }
 
 using GraphNodeHandle = GpuCommandBuffer::GraphNodeHandle;
@@ -156,7 +156,7 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateMemsetNode(
 
   musaGraphNode_t node_handle = nullptr;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaGraphAddMemsetNode(&node_handle, graph_, deps.data(),
+      ToStatus(musaGraphAddMemsetNode(&node_handle, graph_, deps.data(),
                                            deps.size(), &params),
                "Failed to add memset node to a HIP graph"));
   return FromMusaGraphHandle(node_handle);
@@ -171,17 +171,7 @@ absl::Status MusaCommandBuffer::UpdateMemsetNode(GraphNodeHandle node_handle,
           << "; bit_pattern: " << bit_pattern.ToString()
           << "; num_elements: " << num_elements;
 
-  musaMemsetParams params{};
-  params.dst = AsDevicePtr(destination);
-  params.elementSize = bit_pattern.GetElementSize();
-  params.height = 1;
-  params.pitch = 0;  // unused if height is 1
-  params.value = bit_pattern.GetPatternBroadcastedToUint32();
-  params.width = num_elements;
-
-  return ToStatus(wrap::musaGraphExecMemsetNodeSetParams(
-                      exec_, ToMusaGraphHandle(node_handle), &params),
-                  "Failed to set memset node params");
+  return absl::UnimplementedError("Empty nodes are not supported on MUSA.");
 }
 
 absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateMemcpyD2DNode(
@@ -195,7 +185,7 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateMemcpyD2DNode(
 
   musaGraphNode_t node_handle = nullptr;
   TF_RETURN_IF_ERROR(ToStatus(
-      wrap::musaGraphAddMemcpyNode1D(&node_handle, graph_, deps.data(),
+      musaGraphAddMemcpyNode1D(&node_handle, graph_, deps.data(),
                                     deps.size(), AsDevicePtr(destination),
                                     AsDevicePtr(source), size,
                                     musaMemcpyDeviceToDevice),
@@ -211,11 +201,7 @@ absl::Status MusaCommandBuffer::UpdateMemcpyD2DNode(
           << "; dst: " << destination.opaque() << "; src: " << source.opaque()
           << "; size: " << size;
 
-  return ToStatus(
-      wrap::musaGraphExecMemcpyNodeSetParams1D(
-          exec_, ToMusaGraphHandle(node_handle), AsDevicePtr(destination),
-          AsDevicePtr(source), size, musaMemcpyDeviceToDevice),
-      "Failed to set memcpy d2d node params");
+  return absl::InternalError("Not Support");
 }
 
 absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateChildNode(
@@ -236,7 +222,7 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateChildNode(
 
   musaGraphNode_t node_handle = nullptr;
   TF_RETURN_IF_ERROR(ToStatus(
-      wrap::musaGraphAddChildGraphNode(&node_handle, graph_, deps.data(),
+      musaGraphAddChildGraphNode(&node_handle, graph_, deps.data(),
                                       deps.size(), child_graph),
       "Failed to create a child graph node and add it to a HIP graph"));
   return FromMusaGraphHandle(node_handle);
@@ -253,9 +239,8 @@ absl::Status MusaCommandBuffer::UpdateChildNode(ChildCommandType type,
   VLOG(2) << "Set child node params " << node_handle << " in graph executable "
           << exec_ << "to params contained in " << child_graph;
 
-  return ToStatus(wrap::musaGraphExecChildGraphNodeSetParams(
-                      exec_, ToMusaGraphHandle(node_handle), child_graph),
-                  "Failed to set HIP graph child node params");
+    return absl::InternalError(
+        "Not support");
 }
 
 absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateKernelNode(
@@ -288,7 +273,7 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateKernelNode(
 
   if (shared_mem_bytes != 0) {
     TF_RETURN_IF_ERROR(ToStatus(
-        wrap::musaFuncSetAttribute(function,
+        musaFuncSetAttribute(function,
                                   musaFuncAttributeMaxDynamicSharedMemorySize,
                                   shared_mem_bytes),
         "Failed to set shared memory size"));
@@ -298,7 +283,7 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateKernelNode(
 
   musaGraphNode_t node_handle = nullptr;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaGraphAddKernelNode(&node_handle, graph_, deps.data(),
+      ToStatus(musaGraphAddKernelNode(&node_handle, graph_, deps.data(),
                                            deps.size(), &params),
                "Failed to add kernel node to a HIP graph"));
 
@@ -334,13 +319,13 @@ absl::Status MusaCommandBuffer::UpdateKernelNode(
 
   if (shared_mem_bytes != 0) {
     TF_RETURN_IF_ERROR(ToStatus(
-        wrap::musaFuncSetAttribute(function,
+        musaFuncSetAttribute(function,
                                   musaFuncAttributeMaxDynamicSharedMemorySize,
                                   shared_mem_bytes),
         "Failed to set shared memory size"));
   }
 
-  return ToStatus(wrap::musaGraphExecKernelNodeSetParams(
+  return ToStatus(musaGraphExecKernelNodeSetParams(
                       exec_, ToMusaGraphHandle(node_handle), &params),
                   "Failed to set HIP graph kernel node params");
 }
@@ -367,7 +352,7 @@ absl::Status MusaCommandBuffer::Trace(
   // Switch stream into the capture mode.
   uint64_t start_nanos = tsl::Env::Default()->NowNanos();
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaStreamBeginCapture(stream_handle,
+      ToStatus(musaStreamBeginCapture(stream_handle,
                                            musaStreamCaptureModeThreadLocal),
                "Failed to begin stream capture"));
   auto traced = function();
@@ -376,10 +361,10 @@ absl::Status MusaCommandBuffer::Trace(
   VLOG(5) << "End stream " << stream << " capture";
   musaGraph_t captured_graph;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaStreamEndCapture(stream_handle, &captured_graph),
+      ToStatus(musaStreamEndCapture(stream_handle, &captured_graph),
                "Failed to end stream capture"));
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaGraphDestroy(std::exchange(graph_, captured_graph)),
+      ToStatus(musaGraphDestroy(std::exchange(graph_, captured_graph)),
                "Failed to destroy HIP graph"));
   uint64_t end_nanos = tsl::Env::Default()->NowNanos();
 
@@ -396,7 +381,7 @@ absl::Status MusaCommandBuffer::Trace(
 absl::Status MusaCommandBuffer::LaunchGraph(Stream* stream) {
   VLOG(3) << "Launch command buffer executable graph " << exec_
           << " on a stream: " << stream;
-  return ToStatus(wrap::musaGraphLaunch(
+  return ToStatus(musaGraphLaunch(
                       exec_, static_cast<musaStream_t>(
                                  stream->platform_specific_handle().stream)),
                   "Failed to launch HIP graph");
@@ -404,7 +389,7 @@ absl::Status MusaCommandBuffer::LaunchGraph(Stream* stream) {
 absl::StatusOr<size_t> MusaCommandBuffer::GetNodeCount() const {
   size_t numNodes;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaGraphGetNodes(graph_, /*nodes=*/nullptr, &numNodes),
+      ToStatus(musaGraphGetNodes(graph_, /*nodes=*/nullptr, &numNodes),
                "Failed to get HIP graph node count"));
 
   return numNodes;
@@ -424,15 +409,14 @@ absl::Status MusaCommandBuffer::WriteGraphToDotFile(absl::string_view path) {
   VLOG(2) << "Print HIP graph " << graph_ << " debug dot file to " << path;
 
   int flags = musaGraphDebugDotFlagsVerbose;
-  return ToStatus(
-      wrap::musaGraphDebugDotPrint(graph_, std::string{path}.c_str(), flags),
-      "Failed to print gpu graph debug file");
+  return absl::UnimplementedError(
+      "Graph conditionals are not yet supported on HIP graphs.");
 }
 
 absl::Status MusaCommandBuffer::InstantiateGraph() {
   VLOG(2) << "Instantiate HIP executable graph from graph " << graph_;
   return ToStatus(
-      wrap::musaGraphInstantiate(&exec_, graph_, nullptr, nullptr, 0),
+      musaGraphInstantiate(&exec_, graph_, nullptr, nullptr, 0),
       "Failed to instantiate HIP graph");
 }
 

@@ -21,6 +21,7 @@ limitations under the License.
 #include "absl/base/optimization.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "musa.h"
 #include "musa_runtime.h"
 
 namespace stream_executor::gpu {
@@ -29,6 +30,7 @@ namespace internal {
 // Helper method to handle the slow path of ToStatus.  Assumes a non-successful
 // result code.
 absl::Status ToStatusSlow(musaError_t result, absl::string_view detail);
+absl::Status ToStatusSlow(MUresult result, absl::string_view detail);
 }  // namespace internal
 
 // Returns an absl::Status corresponding to the musaError_t.
@@ -39,8 +41,16 @@ inline absl::Status ToStatus(musaError_t result, absl::string_view detail = "") 
   return internal::ToStatusSlow(result, detail);
 }
 
+inline absl::Status ToStatus(MUresult result, absl::string_view detail = "") {
+  if (ABSL_PREDICT_TRUE(result == MUSA_SUCCESS)) {
+    return absl::OkStatus();
+  }
+  return internal::ToStatusSlow(result, detail);
+}
+
 // Returns a textual description of the given musaError_t.
 std::string ToString(musaError_t result);
+std::string ToString(MUresult result);
 
 }  // namespace stream_executor::gpu
 

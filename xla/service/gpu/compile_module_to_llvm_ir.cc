@@ -154,6 +154,9 @@ std::string GetDumpName(const se::DeviceDescription& device_desc) {
     std::string operator()(const se::RocmComputeCapability& cc) const {
       return cc.gfx_version();
     }
+    std::string operator()(const se::MusaComputeCapability& cc) const {
+      return absl::StrCat("mp_", cc.ToString());
+    }
   };
   std::string prefix =
       std::visit(GetCcStr(), device_desc.gpu_compute_capability());

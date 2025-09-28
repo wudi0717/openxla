@@ -118,13 +118,13 @@ absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
       /*allow_mixed_precision=*/false);
 
   // Convert unsupported bf16 convolutions to f32.
-  ConvBfloat16Support conv_bf16_support();
-  pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
+  //ConvBfloat16Support conv_bf16_support();
+  //pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
 
   //pipeline.AddPass<GpusolverRewriter>(
   //    stream_executor::RocmSolverContext::Create);
-  pipeline.AddPass<ConvRewriter>(gpu_version);
-  pipeline.AddPass<ConvPaddingLegalization>();
+  //pipeline.AddPass<ConvRewriter>(gpu_version);
+  //pipeline.AddPass<ConvPaddingLegalization>();
   //auto rcc = std::get<se::RocmComputeCapability>(gpu_version);
   //pipeline.AddPass<CudnnFusedConvRewriter>(rcc, dnn_version, toolkit_version);
 

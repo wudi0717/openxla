@@ -63,11 +63,8 @@ cc_library(
     name = "musa",
     visibility = ["//visibility:public"],
     deps = [
-        ":mublas",
-        ":murand",
-        ":musolver",
-        ":musparse",
-        ":mufft",
+	":musa_runtime",
+	":musart",
     ]
 )
 
@@ -87,15 +84,26 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
-# Used by jax_musa_plugin to minimally link to hip runtime.
 cc_library(
-    name = "musa_runtime",
-    srcs = glob(["%{musa_root}/lib/libmusa*.so"]),
-    hdrs = glob(["%{musa_root}/include/musa/**"]),
-    include_prefix = "musa",
+    name = "musart",
+    srcs = glob(["%{musa_root}/lib/libmusart*.a"]),
+    hdrs = glob(["%{musa_root}/include/**"]),
     includes = [
         "%{musa_root}/include",
     ],
+    linkstatic = 1,
+    strip_include_prefix = "%{musa_root}",
+)
+
+# Used by jax_musa_plugin to minimally link to hip runtime.
+cc_library(
+    name = "musa_runtime",
+    srcs = glob(["%{musa_root}/lib/libmusa*.a"]),
+    hdrs = glob(["%{musa_root}/include/musa/**"]),
+    includes = [
+        "%{musa_root}/include",
+    ],
+    linkstatic = 1,
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
     deps = [
@@ -109,13 +117,12 @@ cc_library(
     data = glob([
         "%{musa_root}/lib/libmublas*.so*",
     ]),
-    include_prefix = "musa",
     includes = [
         "%{musa_root}/include",
     ],
     # workaround to  bring tensile files to the same fs layout as expected in the lib
     # rocblas assumes that tensile files are located in ../roblas/libraries directory
-    linkopts = ["-Wl,-rpath,local_config_musa/musa/musa_dis/lib"],
+    linkopts = ["-Wl,-rpath,local_config_musa/musa/env/lib"],
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
 )
@@ -123,7 +130,6 @@ cc_library(
 cc_library(
     name = "mufft",
     srcs = glob(["%{musa_root}/lib/libmufft*.so*"]),
-    include_prefix = "musa",
     includes = [
         "%{musa_root}/include",
     ],
@@ -135,7 +141,6 @@ cc_library(
     name = "murand",
     srcs = glob(["%{musa_root}/lib/libmurand*.so*"]),
     hdrs = glob(["%{musa_root}/include/murand*.h"]),
-    include_prefix = "musa",
     includes = [
         "%{musa_root}/include",
     ],
@@ -156,7 +161,6 @@ cc_library(
     srcs = glob(["%{musa_root}/lib/libmusparse*.so*"]),
     hdrs = glob(["%{musa_root}/include/musparse*.h"]),
     data = glob(["%{musa_root}/lib/libmusparse*.so*"]),
-    include_prefix = "musa",
     includes = [
         "%{musa_root}/include/",
     ],
@@ -168,7 +172,6 @@ cc_library(
     name = "musolver",
     srcs = glob(["%{musa_root}/lib/libmusolver*.so*"]),
     hdrs = glob(["%{musa_root}/include/musolver*.h"]),
-    include_prefix = "musa",
     includes = [
         "%{musa_root}/include/",
     ],

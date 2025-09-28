@@ -54,6 +54,23 @@ inline const char* DataLayout() {
 
 }  // namespace amdgpu
 
+namespace mtgpu {
+
+// The triple that represents our target on LLVM AMDGPU backend.
+inline const char* TargetTriple() {
+  static constexpr char kTargetTriple[] = "nvptx64-nvidia-cuda";
+  return kTargetTriple;
+}
+
+// The data layout of the emitted module.
+inline const char* DataLayout() {
+  static constexpr char kDataLayout[] =
+      "e-p6:32:32-i64:64-i128:128-v16:16-v32:32-n16:32:64";
+  return kDataLayout;
+}
+
+}  // namespace mtgpu
+
 namespace spir {
 // The triple that represents our target on SPIR backend.
 inline const char* TargetTriple() {

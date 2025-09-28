@@ -35,18 +35,18 @@ limitations under the License.
 namespace stream_executor::gpu {
 namespace {
 absl::StatusOr<float> GetEventElapsedTime(StreamExecutor* executor,
-                                          hipEvent_t start, hipEvent_t stop) {
+                                          musaEvent_t start, musaEvent_t stop) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   // The stop event must have completed in order for hipEventElapsedTime to
   // work.
-  musaError_t res = wrap::musaEventSynchronize(stop);
+  musaError_t res = musaEventSynchronize(stop);
   if (res != musaSuccess) {
     LOG(ERROR) << "failed to synchronize the stop event: " << ToString(res);
     return false;
   }
   float elapsed_milliseconds;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaEventElapsedTime(&elapsed_milliseconds, start, stop),
+      ToStatus(musaEventElapsedTime(&elapsed_milliseconds, start, stop),
                "failed to get elapsed time between events"));
 
   return elapsed_milliseconds;

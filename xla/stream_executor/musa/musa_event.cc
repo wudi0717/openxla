@@ -39,7 +39,7 @@ absl::Status WaitStreamOnEvent(StreamExecutor *executor, musaStream_t stream,
                                musaEvent_t event) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaStreamWaitEvent(stream, event, 0 /* = flags */),
+      ToStatus(musaStreamWaitEvent(stream, event, 0 /* = flags */),
                "could not wait stream on event"));
   return absl::OkStatus();
 }
@@ -61,7 +61,7 @@ absl::StatusOr<musaEvent_t> InitEvent(StreamExecutor *executor,
 
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   musaEvent_t event;
-  musaError_t res = wrap::musaEventCreateWithFlags(&event, hipflags);
+  musaError_t res = musaEventCreateWithFlags(&event, hipflags);
 
   if (res == musaSuccess) {
     return event;
@@ -80,7 +80,7 @@ void DestroyEvent(StreamExecutor *executor, musaEvent_t event) {
   }
 
   std::unique_ptr<ActivateContext> activation = executor->Activate();
-  musaError_t res = wrap::musaEventDestroy(event);
+  musaError_t res = musaEventDestroy(event);
 
   if (res != musaSuccess) {
     LOG(ERROR) << absl::StrFormat(
@@ -93,7 +93,7 @@ void DestroyEvent(StreamExecutor *executor, musaEvent_t event) {
 
 Event::Status MusaEvent::PollForStatus() {
   std::unique_ptr<ActivateContext> activated = executor_->Activate();
-  musaError_t res = wrap::musaEventQuery(handle_);
+  musaError_t res = musaEventQuery(handle_);
 
   if (res == musaSuccess) {
     return Event::Status::kComplete;

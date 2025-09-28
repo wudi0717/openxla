@@ -56,7 +56,7 @@ int GetGpuStreamPriority(StreamExecutor* executor,
     return 0;
   }
   int lowest, highest;
-  musaError_t res = wrap::musaDeviceGetStreamPriorityRange(&lowest, &highest);
+  musaError_t res = musaDeviceGetStreamPriorityRange(&lowest, &highest);
   if (res != musaSuccess) {
     LOG(ERROR)
         << "Could not query stream priority range. Returning default priority.";
@@ -72,11 +72,11 @@ absl::StatusOr<musaStream_t> CreateStream(StreamExecutor* executor,
   musaStream_t stream;
   if (priority == 0) {
     TF_RETURN_IF_ERROR(ToStatus(
-        wrap::musaStreamCreateWithFlags(&stream, musaStreamDefault),
+        musaStreamCreateWithFlags(&stream, musaStreamDefault),
         "Failed to create stream"));  // switch to hipStreamNonBlocking?
   } else {
     TF_RETURN_IF_ERROR(ToStatus(
-        wrap::musaStreamCreateWithPriority(&stream, musaStreamDefault, priority),
+        musaStreamCreateWithPriority(&stream, musaStreamDefault, priority),
         "Failed to create stream"));  // switch to hipStreamNonBlocking?
   }
 
@@ -88,7 +88,7 @@ absl::StatusOr<musaStream_t> CreateStream(StreamExecutor* executor,
 absl::Status RecordEvent(StreamExecutor* executor, musaEvent_t event,
                          musaStream_t stream) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
-  musaError_t res = wrap::musaEventRecord(event, stream);
+  musaError_t res = musaEventRecord(event, stream);
   switch (res) {
     case musaSuccess:
       return absl::OkStatus();
@@ -108,7 +108,7 @@ absl::Status WaitStreamOnEvent(StreamExecutor* executor, musaStream_t stream,
                                musaEvent_t event) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaStreamWaitEvent(stream, event, 0 /* = flags */),
+      ToStatus(musaStreamWaitEvent(stream, event, 0 /* = flags */),
                "could not wait stream on event"));
   return absl::OkStatus();
 }
@@ -118,7 +118,7 @@ absl::Status AsynchronousMemcpyD2H(StreamExecutor* executor, void* host_dst,
                                    musaStream_t stream) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   TF_RETURN_IF_ERROR(ToStatus(
-      wrap::muMemcpyDtoHAsync(host_dst, gpu_src, size, stream),
+      muMemcpyDtoHAsync(host_dst, gpu_src, size, stream),
       absl::StrFormat(
           "failed to enqueue async memcpy from device to host: host dst: %p; "
           "Gpu src: %p; size: %llu=0x%llx",
@@ -136,7 +136,7 @@ absl::Status AsynchronousMemcpyH2D(StreamExecutor* executor,
                                    uint64_t size, musaStream_t stream) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   TF_RETURN_IF_ERROR(ToStatus(
-      wrap::muMemcpyHtoDAsync(gpu_dst, const_cast<void*>(host_src), size,
+      muMemcpyHtoDAsync(gpu_dst, const_cast<void*>(host_src), size,
                                stream),
       absl::StrFormat(
           "failed to enqueue async memcpy from host to device: Gpu dst: %p; "
@@ -156,7 +156,7 @@ absl::Status AsynchronousMemcpyD2D(StreamExecutor* executor,
                                    musaStream_t stream) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
   TF_RETURN_IF_ERROR(ToStatus(
-      wrap::muMemcpyDtoDAsync(gpu_dst, gpu_src, size, stream),
+      muMemcpyDtoDAsync(gpu_dst, gpu_src, size, stream),
       absl::StrFormat("failed to enqueue async memcpy from device to device: "
                       "Gpu dst: %p ; Gpu src: %p ; size: %llu=0x%llx",
                       absl::bit_cast<void*>(gpu_dst),
@@ -171,7 +171,7 @@ absl::Status AsynchronousMemcpyD2D(StreamExecutor* executor,
 
 absl::Status SynchronizeStream(StreamExecutor* executor, musaStream_t stream) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
-  TF_RETURN_IF_ERROR(ToStatus(wrap::musaStreamSynchronize(stream),
+  TF_RETURN_IF_ERROR(ToStatus(musaStreamSynchronize(stream),
                               "Could not synchronize on MUSA stream"));
   VLOG(2) << "successfully synchronized stream " << stream << " on device "
           << executor->device_ordinal();
@@ -230,13 +230,13 @@ void DestroyStream(StreamExecutor* executor, musaStream_t stream) {
   if (stream == nullptr) {
     return;
   }
-  musaError_t res = wrap::musaStreamQuery(stream);
+  musaError_t res = musaStreamQuery(stream);
   if (res != musaSuccess) {
     LOG(ERROR) << "stream not idle on destroy: " << ToString(res);
   }
 
   std::unique_ptr<ActivateContext> activation = executor->Activate();
-  res = wrap::musaStreamDestroy(stream);
+  res = musaStreamDestroy(stream);
   if (res != musaSuccess) {
     LOG(ERROR) << "failed to destroy MUSA stream for device "
                << executor->device_ordinal() << ": " << ToString(res);
@@ -262,7 +262,7 @@ absl::Status MusaStream::Memset32(DeviceMemoryBase* location, uint32_t pattern,
   if (size % sizeof(uint32_t) != 0) {
     return absl::InvalidArgumentError("size must be a multiple of 4 bytes.");
   }
-  return ToStatus(wrap::muMemsetD32Async(location->opaque(), pattern, size / 4,
+  return ToStatus(musaMemsetAsync(location->opaque(), pattern, size / 4,
                                           stream_handle_),
                   "Failed to memset memory");
 }
@@ -274,7 +274,7 @@ absl::Status MusaStream::MemZero(DeviceMemoryBase* location, uint64_t size) {
   } else {
     std::unique_ptr<ActivateContext> activation = executor_->Activate();
     return ToStatus(
-        wrap::musaMemsetAsync(location->opaque(), 0x0, size, stream_handle_),
+        musaMemsetAsync(location->opaque(), 0x0, size, stream_handle_),
         "Failed to enqueue async memset operation");
   }
 }
@@ -319,7 +319,7 @@ absl::Status MusaStream::DoHostCallbackWithStatus(
         }
       });
   return ToStatus(
-      wrap::musaLaunchHostFunc(stream_handle_, (musaHostFn_t)InternalHostCallback,
+      musaLaunchHostFunc(stream_handle_, (musaHostFn_t)InternalHostCallback,
                               callback_ptr),
       "unable to add host callback");
 }
@@ -338,9 +338,9 @@ absl::Status LaunchMusaKernel(
           << " bdz: " << block_dim_z << " smem: " << shared_mem_bytes
           << " func: " << (const void*)function;
 
-  auto res = musaSuccess;
+  auto res = MUSA_SUCCESS;
   {
-    res = wrap::muLaunchKernel(
+    res = muLaunchKernel(
         function, grid_dim_x, grid_dim_y, grid_dim_z, block_dim_x, block_dim_y,
         block_dim_z, shared_mem_bytes, stream, kernel_params, extra);
   }

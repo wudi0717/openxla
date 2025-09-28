@@ -42,7 +42,7 @@ namespace {
 absl::Status FuncGetAttribute(MUfunction_attribute attribute,
                               MUfunction func, int* attribute_value) {
   return ToStatus(
-      wrap::muFuncGetAttribute(attribute_value, attribute, func),
+      muFuncGetAttribute(attribute_value, attribute, func),
       absl::StrCat("Failed to query kernel attribute: ", attribute));
 }
 
@@ -58,7 +58,7 @@ absl::StatusOr<int32_t> MusaKernel::GetMaxOccupiedBlocksPerCore(
 
   int max_blocks = 0;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaOccupancyMaxActiveBlocksPerMultiprocessor(
+      ToStatus(musaOccupancyMaxActiveBlocksPerMultiprocessor(
                    &max_blocks, musa_function_, threads_per_block,
                    dynamic_shared_memory_bytes),
                "Failed to calculate maximal active blocks per SM"));

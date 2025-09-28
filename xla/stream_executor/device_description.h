@@ -226,8 +226,6 @@ struct MusaComputeCapability {
   int minor = 0;
 
   constexpr MusaComputeCapability() = default;
-  constexpr MusaComputeCapability(int major, int minor)
-      : MusaComputeCapability(major, minor) {}
 
   constexpr MusaComputeCapability(int major, int minor)
       : major{major}, minor{minor} {}

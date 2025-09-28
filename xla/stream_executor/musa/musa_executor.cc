@@ -127,9 +127,9 @@ absl::StatusOr<MUmodule> LoadHsaco(Context* context,
   GetDriverExecutor()->Schedule(
       [context, hsaco_contents, &module, &returned_status, &notification]() {
         ScopedActivateContext activation(context);
-        musaError_t res = wrap::muModuleLoadData(&module, hsaco_contents);
+        MUresult res = muModuleLoadData(&module, hsaco_contents);
 
-        if (res != musaSuccess) {
+        if (res != MUSA_SUCCESS) {
           returned_status = absl::InternalError(
               absl::StrCat("Failed to load HSACO: ", ToString(res)));
           notification.Notify();
@@ -154,7 +154,7 @@ absl::StatusOr<MUfunction> GetModuleFunction(Context* context,
   CHECK(module != nullptr && kernel_name != nullptr);
   MUfunction function;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::muModuleGetFunction(&function, module, kernel_name),
+      ToStatus(muModuleGetFunction(&function, module, kernel_name),
                "Failed to get kernel"));
   return function;
 }
@@ -169,15 +169,15 @@ absl::Status GetModuleSymbol(Context* context, MUmodule module,
   ScopedActivateContext activated(context);
   CHECK(module != nullptr && symbol_name != nullptr &&
         (dptr != nullptr || bytes != nullptr));
-  return ToStatus(wrap::muModuleGetGlobal(dptr, bytes, module, symbol_name),
+  return ToStatus(muModuleGetGlobal(dptr, bytes, module, symbol_name),
                   absl::StrCat("Failed to get symbol '", symbol_name, "'"));
 }
 
 // Unloads module from the current context via cuModuleUnload.
 void UnloadMusaModule(Context* context, MUmodule module) {
   ScopedActivateContext activated(context);
-  musaError_t res = wrap::muModuleUnload(module);
-  if (res != musaSuccess) {
+  MUresult res = muModuleUnload(module);
+  if (res != MUSA_SUCCESS) {
     LOG(ERROR) << "failed to unload module " << module
                << "; leaking: " << ToString(res);
   }
@@ -188,7 +188,7 @@ absl::StatusOr<std::string> GetDeviceName(MUdevice device) {
   static const size_t kCharLimit = 64;
   absl::InlinedVector<char, 4> chars(kCharLimit);
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::muDeviceGetName(chars.begin(), kCharLimit - 1, device),
+      ToStatus(muDeviceGetName(chars.begin(), kCharLimit - 1, device),
                "Failed to get device name"));
   chars[kCharLimit - 1] = '\0';
   return chars.begin();
@@ -196,9 +196,9 @@ absl::StatusOr<std::string> GetDeviceName(MUdevice device) {
 
 absl::StatusOr<int> GetGpuISAVersion(MUdevice device) {
   musaDeviceProp props;
-  musaError_t result = wrap::musaGetDeviceProperties(&props, device);
+  musaError_t result = musaGetDeviceProperties(&props, device);
   if (result == musaSuccess) {
-    std::string gcnName = props.gcnArchName;
+    std::string gcnName = props.name;
     std::vector<std::string> tokens = absl::StrSplit(gcnName, ':');
     std::string amdgpu_version = gcnName;
     if (!tokens.empty() && tokens[0].size() >= 3) {
@@ -215,9 +215,9 @@ absl::StatusOr<int> GetGpuISAVersion(MUdevice device) {
 // for eg: amdgcn-amd-amdhsa--gfx908:sramecc+:xnack-
 absl::StatusOr<std::string> GetGpuGCNArchName(MUdevice device) {
   musaDeviceProp props;
-  musaError_t result = wrap::musaGetDeviceProperties(&props, device);
+  musaError_t result = musaGetDeviceProperties(&props, device);
   if (result == musaSuccess) {
-    return props.gcnArchName;
+    return props.name;
   }
   return absl::InternalError(absl::StrFormat(
       "failed to determine MTGpu GCN Arch Name for device %d", device));
@@ -229,7 +229,7 @@ template <typename T>
 static absl::StatusOr<T> GetSimpleAttribute(MUdevice device,
                                             musaDeviceAttr attribute) {
   int value = -1;
-  musaError_t result = wrap::musaDeviceGetAttribute(&value, attribute, device);
+  musaError_t result = musaDeviceGetAttribute(&value, attribute, device);
   if (result != musaSuccess) {
     return absl::NotFoundError(
         absl::StrCat("could not retrieve MUSA device attribute (", attribute,
@@ -273,19 +273,19 @@ absl::StatusOr<int64_t> GetThreadsPerWarp(MUdevice device) {
 absl::Status GetGridLimits(int* x, int* y, int* z, MUdevice device) {
   int value;
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaDeviceGetAttribute(
+      ToStatus(musaDeviceGetAttribute(
                    &value, musaDevAttrMaxGridDimX, device),
                "failed to query max grid dim x"));
   *x = value;
 
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaDeviceGetAttribute(
+      ToStatus(musaDeviceGetAttribute(
                    &value, musaDevAttrMaxGridDimY, device),
                "failed to query max grid dim y"));
   *y = value;
 
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaDeviceGetAttribute(
+      ToStatus(musaDeviceGetAttribute(
                    &value, musaDevAttrMaxGridDimZ, device),
                "failed to query max grid dim z"));
   *z = value;
@@ -295,8 +295,8 @@ absl::Status GetGridLimits(int* x, int* y, int* z, MUdevice device) {
 // Returns the device associated with the given device_ordinal.
 absl::StatusOr<MUdevice> GetDevice(int device_ordinal) {
   MUdevice device;
-  musaError_t res = wrap::muDeviceGet(&device, device_ordinal);
-  if (res == musaSuccess) {
+  MUresult res = muDeviceGet(&device, device_ordinal);
+  if (res == MUSA_SUCCESS) {
     return device;
   }
 
@@ -308,8 +308,8 @@ absl::StatusOr<MUdevice> GetDevice(int device_ordinal) {
 absl::StatusOr<MUdevice> DeviceFromContext(Context* context) {
   ScopedActivateContext activated(context);
   MUdevice device = -1;
-  musaError_t result = wrap::muCtxGetDevice(&device);
-  if (result == musaSuccess) return device;
+  MUresult result = muCtxGetDevice(&device);
+  if (result == MUSA_SUCCESS) return device;
 
   return absl::InternalError(
       absl::StrCat("failed to get device for context: ", ToString(result)));
@@ -317,8 +317,8 @@ absl::StatusOr<MUdevice> DeviceFromContext(Context* context) {
 
 bool CanEnablePeerAccess(MUdevice from, MUdevice to) {
   int can_access_peer = -1;
-  musaError_t result = wrap::muDeviceCanAccessPeer(&can_access_peer, from, to);
-  if (result != musaSuccess) {
+  MUresult result = muDeviceCanAccessPeer(&can_access_peer, from, to);
+  if (result != MUSA_SUCCESS) {
     LOG(ERROR) << "failed to detect peer access capability: "
                << ToString(result);
     return false;
@@ -353,7 +353,7 @@ absl::Status EnablePeerAccess(Context* from, Context* to) {
 
   ScopedActivateContext activated(from);
   musaError_t result =
-      wrap::musaDeviceEnablePeerAccess(to->device_ordinal(), 0 /* = flags */);
+      musaDeviceEnablePeerAccess(to->device_ordinal(), 0 /* = flags */);
 
   if (result != musaSuccess && result != musaErrorPeerAccessAlreadyEnabled) {
     return absl::InternalError(
@@ -371,7 +371,7 @@ std::string GetPCIBusID(MUdevice device) {
   absl::InlinedVector<char, 4> chars(kBufferSize);
   chars[kBufferSize - 1] = '\0';
   musaError_t res =
-      wrap::musaDeviceGetPCIBusId(chars.begin(), kBufferSize - 1, device);
+      musaDeviceGetPCIBusId(chars.begin(), kBufferSize - 1, device);
   if (res != musaSuccess) {
     LOG(ERROR) << "failed to query PCI bus id for device: " << ToString(res);
     return pci_bus_id;
@@ -383,7 +383,7 @@ std::string GetPCIBusID(MUdevice device) {
 bool GetDeviceProperties(musaDeviceProp* device_properties,
                          int device_ordinal) {
   musaError_t res =
-      wrap::musaGetDeviceProperties(device_properties, device_ordinal);
+      musaGetDeviceProperties(device_properties, device_ordinal);
   if (res != musaSuccess) {
     LOG(ERROR) << "failed to query device properties: " << ToString(res);
     return false;
@@ -399,8 +399,8 @@ void* DeviceAllocate(Context* context, uint64_t bytes) {
   }
 
   ScopedActivateContext activated(context);
-  MUdeviceptr result = nullptr;
-  musaError_t res = wrap::musaMalloc(&result, bytes);
+  void * ptr = nullptr;
+  musaError_t res = musaMalloc(&ptr, bytes);
   if (res != musaSuccess) {
     // LOG(INFO) because this isn't always important to users (e.g. BFCAllocator
     // implements a retry if the first allocation fails).
@@ -409,7 +409,6 @@ void* DeviceAllocate(Context* context, uint64_t bytes) {
               << " bytes) from device: " << ToString(res);
     return nullptr;
   }
-  void* ptr = reinterpret_cast<void*>(result);
   VLOG(2) << "allocated " << ptr << " for device " << context->device_ordinal()
           << " of " << bytes << " bytes";
   return ptr;
@@ -419,8 +418,7 @@ void* DeviceAllocate(Context* context, uint64_t bytes) {
 // DeviceAllocate.
 void DeviceDeallocate(Context* context, void* location) {
   ScopedActivateContext activation(context);
-  MUdeviceptr pointer = absl::bit_cast<MUdeviceptr>(location);
-  musaError_t res = wrap::musaFree(pointer);
+  musaError_t res = musaFree(location);
   if (res != musaSuccess) {
     LOG(ERROR) << "failed to free device memory at " << location
                << "; result: " << ToString(res);
@@ -436,19 +434,19 @@ absl::StatusOr<void*> HostAllocate(Context* context, uint64_t bytes) {
   void* host_mem = nullptr;
   // "Portable" memory is visible to all MUSA contexts. Safe for our use model.
   TF_RETURN_IF_ERROR(
-      ToStatus(wrap::musaHostAlloc(&host_mem, bytes, musaHostAllocPortable),
+      ToStatus(musaHostAlloc(&host_mem, bytes, musaHostAllocPortable),
                "failed to allocate host memory"));
   return host_mem;
 }
 
 absl::StatusOr<std::unique_ptr<MemoryAllocation>> AllocateHostMemory(
-    MUcontext* musa_context, uint64_t size) {
+    MusaContext* musa_context, uint64_t size) {
   TF_ASSIGN_OR_RETURN(void* ptr, HostAllocate(musa_context, size));
   VLOG(2) << "allocated " << ptr << " for context " << musa_context << " of "
           << size << " bytes of host memory";
   return std::make_unique<GenericMemoryAllocation>(
       ptr, size, [musa_context](void* location, uint64_t size) {
-        musaError_t res = wrap::musaFreeHost(location);
+        musaError_t res = musaFreeHost(location);
         if (res != musaSuccess) {
           LOG(ERROR) << "error deallocating host memory at " << location << ": "
                      << ToString(res);
@@ -481,10 +479,10 @@ absl::StatusOr<DeviceMemoryBase> MusaExecutor::GetMemoryRange(
     const DeviceMemoryBase& location) {
   MUdeviceptr device_pointer;
   size_t size;
-  musaError_t result = wrap::muMemGetAddressRange(
-      &device_pointer, &size, const_cast<void*>(location.opaque()));
-  if (result == musaSuccess) {
-    return DeviceMemoryBase(device_pointer, size);
+  MUresult result = muMemGetAddressRange(
+      &device_pointer, &size,reinterpret_cast<MUdeviceptr>(location.opaque()));
+  if (result == MUSA_SUCCESS) {
+    return DeviceMemoryBase(reinterpret_cast<void *>(device_pointer), size);
   } else if (result == MUSA_ERROR_NOT_FOUND) {
     // We differentiate between "this pointer is unknown" (return here) and
     // "there was an internal error while performing this operation" (return
@@ -553,6 +551,12 @@ MusaExecutor::CreateOrShareConstant(Stream* stream,
   return shared_constant;
 }
 
+absl::StatusOr<std::unique_ptr<EventBasedTimer>>
+MusaExecutor::CreateEventBasedTimer(Stream* stream, bool use_delay_kernel) {
+  TF_ASSIGN_OR_RETURN(auto timer, MusaTimer::Create(this, stream));
+  return std::make_unique<MusaTimer>(std::move(timer));
+}
+
 bool MusaExecutor::UnloadGpuBinary(ModuleHandle module_handle) {
   auto module_it = gpu_binary_to_module_.find(module_handle);
   if (gpu_binary_to_module_.end() == module_it) {
@@ -596,7 +600,7 @@ absl::Status MusaExecutor::Init() {
   TF_ASSIGN_OR_RETURN(device_, GetDevice(device_ordinal()));
 
   TF_ASSIGN_OR_RETURN(musa_context_,
-                      MUcontext::Create(device_ordinal(), device_));
+                      MusaContext::Create(device_ordinal(), device_));
   TF_ASSIGN_OR_RETURN(version_, GetGpuISAVersion(device_));
   // We initialize BLAS interfaces early here since otherwise it might create
   // us problems during musaBlasLt initialization under graph capture.
@@ -604,7 +608,7 @@ absl::Status MusaExecutor::Init() {
   // MUSA platform because rocBLAS/musaBlasLt already use 'lazy initialization'
   // internally
   //return InitBlas();
-  return ;
+  return absl::OkStatus();
 }
 
 absl::StatusOr<std::unique_ptr<Kernel>> MusaExecutor::LoadKernel(
@@ -632,11 +636,14 @@ absl::StatusOr<std::unique_ptr<Kernel>> MusaExecutor::LoadKernel(
   } else if (spec.has_in_process_symbol()) {
     void* symbol = spec.in_process_symbol()->symbol;
 
-    VLOG(1) << "Resolve MUSA kernel " << kernel_name
-            << " from symbol pointer: " << symbol;
-
-    musa_kernel->set_gpu_function(
-        static_cast<MUfunction>(spec.in_process_symbol().symbol()));
+    VLOG(2) << "[" << device_ordinal() << "] Resolve MUSA kernel "
+            << kernel_name << " from symbol pointer: " << symbol;
+    musaFunction_t func;
+    TF_RETURN_IF_ERROR(gpu::ToStatus(
+        musaGetFuncBySymbol(&func, symbol),
+        absl::StrFormat("[%d] Failed call to cudaGetFuncBySymbol",
+                        device_ordinal())));
+    musa_kernel->set_gpu_function(func);
 
   } else {
     return absl::InternalError("No method of loading MUSA kernel provided");
@@ -727,20 +734,17 @@ MusaExecutor::CreateMemoryAllocator(MemoryType type) {
           [this](uint64_t size)
               -> absl::StatusOr<std::unique_ptr<MemoryAllocation>> {
             std::unique_ptr<ActivateContext> activation = Activate();
-            MUdeviceptr result = nullptr;
             // "managed" memory is visible to both CPU and GPU.
+	    void * ptr;
             TF_RETURN_IF_ERROR(ToStatus(
-                wrap::musaMallocManaged(&result, size, musaMemAttachGlobal),
+                musaMallocManaged(&ptr, size, musaMemAttachGlobal),
                 "Failed to allocate managed memory"));
-            void* ptr = reinterpret_cast<void*>(result);
             VLOG(2) << "allocated " << ptr << " for context " << musa_context_
                     << " of " << size << " bytes in unified memory";
             return std::make_unique<GenericMemoryAllocation>(
                 ptr, size, [this](void* location, uint64_t size) {
                   std::unique_ptr<ActivateContext> activation = Activate();
-                  MUdeviceptr pointer =
-                      absl::bit_cast<MUdeviceptr>(location);
-                  musaError_t res = wrap::musaFree(pointer);
+                  musaError_t res = musaFree(location);
                   if (res != musaSuccess) {
                     LOG(ERROR) << "failed to free unified memory at "
                                << location << "; result: " << ToString(res);
@@ -755,7 +759,7 @@ MusaExecutor::CreateMemoryAllocator(MemoryType type) {
           [](uint64_t size)
               -> absl::StatusOr<std::unique_ptr<MemoryAllocation>> {
             void* ptr = nullptr;
-            auto musaResult = wrap::musaMalloc(&ptr, size);
+            auto musaResult = musaMalloc(&ptr, size);
             if (musaResult != musaSuccess) {
               return absl::InternalError(absl::StrFormat(
                   "failed to allocate %s (%llu bytes) from device collective "
@@ -768,7 +772,7 @@ MusaExecutor::CreateMemoryAllocator(MemoryType type) {
                     << " bytes of collective memory";
             return std::make_unique<GenericMemoryAllocation>(
                 ptr, size, [](void* location, uint64_t size) {
-                  auto status = wrap::musaFree(location);
+                  auto status = musaFree(location);
                   if (status != musaSuccess) {
                     LOG(ERROR) << "failed to free collective memory at "
                                << location << "; result: " << status;
@@ -960,7 +964,7 @@ MusaExecutor::CreateDeviceDescription(int device_ordinal) {
   desc.set_ecc_enabled(false);
 
   uint64_t device_memory_size = -1;
-  (void)MUcontext::GetDeviceTotalMemory(device, &device_memory_size);
+  (void)MusaContext::GetDeviceTotalMemory(device, &device_memory_size);
   desc.set_device_memory_size(device_memory_size);
 
   {
@@ -996,12 +1000,12 @@ MusaExecutor::CreateDeviceDescription(int device_ordinal) {
   desc.set_threads_per_warp(GetThreadsPerWarp(device).value());
   desc.set_registers_per_core_limit(64 * 1024);
   int32_t runtime_version;
-  TF_RETURN_IF_ERROR(ToStatus(wrap::musaRuntimeGetVersion(&runtime_version),
+  TF_RETURN_IF_ERROR(ToStatus(musaRuntimeGetVersion(&runtime_version),
                               "Failed call to musaRuntimeGetVersion"));
   desc.set_runtime_version(
       ParseMusaVersion(runtime_version).value_or(SemanticVersion{0, 0, 0}));
   int32_t driver_version;
-  TF_RETURN_IF_ERROR(ToStatus(wrap::musaDriverGetVersion(&driver_version),
+  TF_RETURN_IF_ERROR(ToStatus(musaDriverGetVersion(&driver_version),
                               "Could not get driver version"));
   desc.set_driver_version(
       ParseMusaVersion(driver_version).value_or(SemanticVersion{0, 0, 0}));
@@ -1023,25 +1027,83 @@ MusaExecutor::CreateDeviceDescription(int device_ordinal) {
 
 absl::StatusOr<MemoryType> MusaExecutor::GetPointerMemorySpace(
     const void* ptr) {
-  MUdeviceptr pointer =
-      reinterpret_cast<MUdeviceptr>(const_cast<void*>(ptr));
-  musaPointerAttributes value;
-  musaError_t result = wrap::musaPointerGetAttribute(
-      &value, pointer);
-  if (result == musaSuccess) {
-    switch (value.type) {
-      case musaMemoryTypeDevice:
-        return MemoryType::kDevice;
-      case musaMemoryTypeHost:
-        return MemoryType::kHost;
-      default:
-        return absl::InternalError(
-            absl::StrCat("unknown memory space provided by MUSA API: ", value));
-    }
+  MUdeviceptr pointer = reinterpret_cast<MUdeviceptr>(const_cast<void*>(ptr));
+  unsigned int value;
+  TF_RETURN_IF_ERROR(gpu::ToStatus(muPointerGetAttribute(
+      &value, MU_POINTER_ATTRIBUTE_MEMORY_TYPE, pointer)));
+  switch (value) {
+    case MU_MEMORYTYPE_DEVICE:
+      return MemoryType::kDevice;
+    case MU_MEMORYTYPE_HOST:
+      return MemoryType::kHost;
+    default:
+      return absl::InternalError(
+          absl::StrCat("unknown memory space provided by MUSA API: ", value));
   }
+}
 
-  return absl::InternalError(absl::StrCat(
-      "failed to query device pointer for memory space: ", ToString(result)));
+static MUdeviceptr AsMusaDevicePtr(const DeviceMemoryBase& gpu_mem) {
+  return reinterpret_cast<MUdeviceptr>(gpu_mem.opaque());
+}
+// See description on const version above.
+static MUdeviceptr AsMusaDevicePtr(DeviceMemoryBase* gpu_mem) {
+  return AsMusaDevicePtr(*gpu_mem);
+}
+absl::Status MusaExecutor::SynchronousMemZero(DeviceMemoryBase* location,
+                                              uint64_t size) {
+  std::unique_ptr<ActivateContext> activation = Activate();
+  MUdeviceptr musa_location = AsMusaDevicePtr(location);
+  if (reinterpret_cast<uintptr_t>(location->opaque()) % sizeof(uint32_t) == 0 &&
+      size % sizeof(uint32_t) == 0) {
+    return ToStatus(
+        muMemsetD32(musa_location, 0x0, size / sizeof(uint32_t)),
+        "Failed to memset memory");
+  }
+  return ToStatus(muMemsetD8(musa_location, 0x0, size),
+                        "Failed to memset memory");
+}
+
+absl::Status MusaExecutor::SynchronousMemcpy(DeviceMemoryBase* gpu_dst,
+                                             const void* host_src,
+                                             uint64_t size) {
+  std::unique_ptr<ActivateContext> activation = Activate();
+  TF_RETURN_IF_ERROR(
+      gpu::ToStatus(muMemcpyHtoD(AsMusaDevicePtr(gpu_dst), host_src, size),
+                     absl::StrFormat("[%d] failed to synchronous memcpy from "
+                                     "host to device: GPU dst: %llx;"
+                                     " host src: %p; size: %u=0x%x",
+                                     device_ordinal(), AsMusaDevicePtr(gpu_dst),
+                                     host_src, size, size)));
+  VLOG(2) << "[" << device_ordinal()
+          << "] successfully enqueued sync memcpy h2d of " << size << " bytes";
+  return absl::OkStatus();
+}
+
+absl::Status MusaExecutor::SynchronousMemcpy(void* host_dst,
+                                             const DeviceMemoryBase& gpu_src,
+                                             uint64_t size) {
+  std::unique_ptr<ActivateContext> activation = Activate();
+  TF_RETURN_IF_ERROR(gpu::ToStatus(
+      muMemcpyDtoH(host_dst, AsMusaDevicePtr(gpu_src), size),
+      absl::StrFormat("[%d] failed to synchronous memcpy from device to host "
+                      "host dst: %p; GPU src: %llx; size: %u=0x%x",
+                      device_ordinal(), host_dst, AsMusaDevicePtr(gpu_src),
+                      size, size)));
+  VLOG(2) << "[" << device_ordinal() << "] successfully sync memcpy'd d2h of "
+          << size << " bytes to " << host_dst;
+  return absl::OkStatus();
+}
+
+blas::BlasSupport* MusaExecutor::AsBlas() {
+  return nullptr;
+}
+
+dnn::DnnSupport* MusaExecutor::AsDnn() {
+    return nullptr;
+}
+
+fft::FftSupport* MusaExecutor::AsFft() {
+    return nullptr;
 }
 
 absl::StatusOr<const MusaKernel*> MusaExecutor::GetMusaKernel(

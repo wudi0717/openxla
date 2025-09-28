@@ -51,6 +51,9 @@ bool DimensionRequiresPadding(const int64_t size, const PrimitiveType data_type,
               }
             }
             return false;
+          },
+          [&](const se::MusaComputeCapability& cc) {
+            return false;
           }),
       gpu_cc);
 }

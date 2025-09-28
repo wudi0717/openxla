@@ -150,7 +150,7 @@ class MusaExecutor : public GpuExecutor {
   // Guards the in-memory-module mapping.
   absl::Mutex in_memory_modules_mu_;
 
-  absl::flat_hash_map<ModuleHandle, hipModule_t> in_memory_modules_
+  absl::flat_hash_map<ModuleHandle, MUmodule> in_memory_modules_
       ABSL_GUARDED_BY(in_memory_modules_mu_);
 
   absl::Mutex shared_constants_mu_;
@@ -165,12 +165,12 @@ class MusaExecutor : public GpuExecutor {
       ABSL_GUARDED_BY(in_memory_modules_mu_);
 
   // Loaded GPU binary handle -> {module, reference count}.
-  absl::flat_hash_map<ModuleHandle, std::pair<hipModule_t, uint64_t>>
+  absl::flat_hash_map<ModuleHandle, std::pair<MUmodule, uint64_t>>
       gpu_binary_to_module_ ABSL_GUARDED_BY(in_memory_modules_mu_);
 
   // Handle for the ROCm device being operated on. Immutable
   // post-initialization.
-  hipDevice_t device_;
+  MUdevice device_;
 
   // Reader/writer lock for mutable data structures on this object.
   absl::Mutex mu_;

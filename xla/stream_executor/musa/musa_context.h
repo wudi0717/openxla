@@ -23,6 +23,7 @@ limitations under the License.
 #include <cstdint>
 
 #include "absl/status/status.h"
+#include "musa.h"
 #include "musa_runtime.h"
 #include "xla/stream_executor/gpu/context.h"
 #include "xla/stream_executor/gpu/context_map.h"

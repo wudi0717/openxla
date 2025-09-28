@@ -38,7 +38,7 @@ def _musa_include_path(repository_ctx):
     """
     inc_dirs = []
 
-    inc_dirs.append("/usr/local/musa/include")
+    inc_dirs.append("/home/mccxadmin/moon/workspace/install/musa/include")
 
     return inc_dirs
 def _tf_sysroot(repository_ctx):
@@ -122,7 +122,7 @@ def _mcc_env(repository_ctx):
 
 def _musa_autoconf_impl(repository_ctx):
     """Implementation of the musa_autoconf repository rule."""
-    root = repository_ctx.os.environ.get("MUSA_HOME", "/usr/local/musa")
+    root = repository_ctx.os.environ.get("MUSA_HOME", "/home/mccxadmin/moon/workspace/install/musa")
     if not repository_ctx.path(root).exists:
         fail("MUSA not found at " + root)
     repository_ctx.symlink(root, "musa/env")
@@ -176,7 +176,7 @@ def _musa_autoconf_impl(repository_ctx):
     )
 
     musa_defines = {}
-    musa_defines["%{builtin_sysroot}"] = "/usr/local/musa"
+    musa_defines["%{builtin_sysroot}"] = "/home/mccxadmin/moon/workspace/install/musa"
     musa_defines["%{compiler}"] = "mcc"
     host_compiler_prefix = "/usr/bin"
     musa_defines["%{host_compiler_prefix}"] = host_compiler_prefix

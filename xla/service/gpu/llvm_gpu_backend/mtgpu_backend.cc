@@ -283,7 +283,7 @@ absl::StatusOr<std::vector<uint8_t>> EmitModuleToHsaco(
     if (std::getenv("LLVM_PATH")) {
       lld_path = tsl::io::JoinPath(std::getenv("LLVM_PATH"), "bin");
     } else {
-      lld_path = tsl::io::JoinPath(tsl::RocmRoot(), "llvm/bin");
+      lld_path = tsl::io::JoinPath(tsl::MusaRoot(), "llvm/bin");
     }
     auto lld_program = llvm::sys::findProgramByName("ld.lld", {lld_path});
     if (!lld_program) {
@@ -345,13 +345,7 @@ absl::Status MTGPUTargetModuleLinker(
     const std::string& device_bitcode_dir_path) {
   // Link the input module with MUSDL.
 
-  auto compute_capability =
-      std::get_if<se::RocmComputeCapability>(&gpu_version);
-  if (!compute_capability) {
-    return xla::Internal("Incompatible compute capability was specified.");
-  }
-
-  std::string gcn_arch_name = compute_capability->gcn_arch_name();
+  std::string gcn_arch_name = "mtgpu";
   TF_RETURN_IF_ERROR(
       LinkMUSDLIfNecessary(module, gcn_arch_name, device_bitcode_dir_path));
 
@@ -410,37 +404,8 @@ std::pair<std::string, std::string> GetFeatureStrFromGCNArchName(
 std::unique_ptr<llvm::TargetMachine> MTGPUGetTargetMachine(
     llvm::Triple target_triple, se::GpuComputeCapability gpu_version,
     const DebugOptions& debug_options) {
-  auto compute_capability =
-      std::get_if<se::MusaComputeCapability>(&gpu_version);
-
-  std::string gcn_arch_name = compute_capability->gcn_arch_name();
-  auto arch = GetFeatureStrFromGCNArchName(gcn_arch_name);
-  return GetTargetMachine(std::move(target_triple), arch.first, debug_options,
-                          arch.second);
-}
-
-// Returns the directory containing MUSa-Device-Libs files.
-std::string GetMUSDLDir(const DebugOptions& debug_options) {
-  std::vector<std::string> potential_musdl_dirs;
-  const std::string& datadir = debug_options.xla_gpu_cuda_data_dir();
-  if (!datadir.empty()) {
-    potential_musdl_dirs.push_back(datadir);
-  }
-  potential_musdl_dirs.push_back(tsl::MusdlRoot());
-
-  // Tries all potential ROCDL directories in the order they are inserted.
-  // Returns the first directory that exists in the file system.
-  for (const std::string& potential_musdl_dir : potential_musdl_dirs) {
-    if (tsl::Env::Default()->IsDirectory(potential_musdl_dir).ok()) {
-      VLOG(2) << "Found MUSa-Device-Libs dir " << potential_musdl_dir;
-      return potential_musdl_dir;
-    }
-    VLOG(2) << "Unable to find potential MUSa-Device-Libs dir "
-            << potential_musdl_dir;
-  }
-
-  // Last resort: maybe in the current folder.
-  return ".";
+  return GetTargetMachine(std::move(target_triple), "sm1.6", debug_options,
+                          "");
 }
 
 void MTGPUBackendInit(const DebugOptions& debug_options,
@@ -448,6 +413,7 @@ void MTGPUBackendInit(const DebugOptions& debug_options,
   // Initialize the MTGPU target; it's the only target we link with, so call
   // its specific initialization functions instead of the catch-all
   // InitializeAll*.
+  /*
   LLVMInitializeMTGPUTarget();
   LLVMInitializeMTGPUTargetInfo();
   LLVMInitializeMTGPUTargetMC();
@@ -455,6 +421,7 @@ void MTGPUBackendInit(const DebugOptions& debug_options,
   LLVMInitializeMTGPUAsmPrinter();
 
   musdl_dir_path = GetMUSDLDir(debug_options);
+  */
   llvm::PassRegistry* registry = llvm::PassRegistry::getPassRegistry();
   gpu::InitializePasses(registry);
 }
@@ -524,13 +491,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
         tsl::profiler::TraceMeLevel::kInfo);
     XLA_SCOPED_LOGGING_TIMER("Compile module " + module->getName().str());
 
-    auto compute_capability =
-        std::get_if<se::MusaComputeCapability>(&gpu_version);
-    if (!compute_capability) {
-      return xla::Internal("Incompatible compute capability was specified.");
-    }
-
-    std::string gcn_arch_name = compute_capability->gcn_arch_name();
+    std::string gcn_arch_name = "mtgpu";
 
     uint64_t hash;
     if (HsacoCache::Find(str, hash, gcn_arch_name, hsaco)) {

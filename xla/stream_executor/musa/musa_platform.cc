@@ -42,9 +42,9 @@ namespace {
 // Actually performs the work of MUSA initialization. Wrapped up in one-time
 // execution guard.
 static absl::Status InternalInitialize() {
-  musaError_t res = wrap::muInit(0 /* = flags */);
+  MUresult res = muInit(0 /* = flags */);
 
-  if (res == musaSuccess) {
+  if (res == MUSA_SUCCESS) {
     return absl::OkStatus();
   }
 
@@ -77,7 +77,7 @@ int MUSaPlatform::VisibleDeviceCount() const {
   }
 
   int device_count = 0;
-  musaError_t res = wrap::musaGetDeviceCount(&device_count);
+  musaError_t res = musaGetDeviceCount(&device_count);
   if (res != musaSuccess) {
     LOG(ERROR) << "could not retrieve MUSA device count: " << ToString(res);
     return 0;

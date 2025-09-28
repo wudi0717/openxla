@@ -26,6 +26,7 @@ limitations under the License.
 #include <cstdint>
 
 #include "absl/status/statusor.h"
+#include "musa.h"
 #include "musa_runtime.h"
 #include "xla/stream_executor/kernel.h"
 #include "xla/stream_executor/launch_dim.h"

@@ -43,7 +43,7 @@ absl::StatusOr<MusaComputeCapability> MusaComputeCapability::FromString(
     return absl::InvalidArgumentError(
         absl::StrCat("Invalid MUSA architecture name: ", musa_arch_name));
   }
-  return CudaComputeCapability{major, minor};
+  return MusaComputeCapability{major, minor};
 }
 std::string MusaComputeCapability::ToString() const {
   return absl::StrCat(major, ".", minor);

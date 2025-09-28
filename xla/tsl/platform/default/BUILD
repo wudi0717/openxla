@@ -400,6 +400,24 @@ cc_library(
 )
 
 cc_library(
+    name = "musa_musdl_path",
+    srcs = ["musa_musdl_path.cc"],
+    hdrs = ["//xla/tsl/platform:musa_musdl_path.h"],
+    compatible_with = [],
+    tags = [
+        "manual",
+        "no_oss",
+        "nobuilder",
+    ],
+    deps = [
+        "//xla/tsl/platform:logging",
+        "//xla/tsl/platform:types",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform:path",
+    ],
+)
+
+cc_library(
     name = "stacktrace",
     hdrs = ["stacktrace.h"],
     linkopts = ["-ldl"],

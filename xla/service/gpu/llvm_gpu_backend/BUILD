@@ -218,7 +218,6 @@ cc_library(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
-        "@llvm-project//llvm:MTGPUAsmParser",  # buildcleaner: keep
         "@llvm-project//llvm:Analysis",
         "@llvm-project//llvm:BitReader",
         "@llvm-project//llvm:BitWriter",

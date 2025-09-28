@@ -3,6 +3,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@local_config_cuda//cuda:build_defs.bzl", "if_cuda")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm", "if_rocm_is_configured")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa", "if_musa_is_configured")
 load("//xla:lit.bzl", "lit_test_suite")
 load(
     "//xla:xla.default.bzl",
@@ -202,6 +203,8 @@ xla_cc_binary(
         "//xla/stream_executor:cuda_platform",
     ]) + if_rocm_is_configured([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa_is_configured([
+        "//xla/stream_executor:musa_platform",
     ]),
 )
 
@@ -346,6 +349,8 @@ xla_cc_binary(
         "@local_config_cuda//cuda:cuda_runtime",
     ]) + if_rocm([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa([
+        "//xla/stream_executor:musa_platform",
     ]) + xla_internal(
         ["service:hlo_graph_dumper_google"],
     ),
@@ -560,6 +565,8 @@ xla_cc_binary(
         "//xla/stream_executor:cuda_platform",
     ]) + if_rocm([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa([
+        "//xla/stream_executor:musa_platform",
     ]),
 )
 
@@ -1032,6 +1039,8 @@ tsl_gpu_library(
         "//xla/service/gpu:nvptx_compiler",
     ]) + if_rocm_is_configured([
         "//xla/service/gpu:amdgpu_compiler",
+    ]) + if_musa_is_configured([
+        "//xla/service/gpu:mtgpu_compiler",
     ]) + if_google(["@com_google_protobuf//:duration_cc_proto"]),
 )
 

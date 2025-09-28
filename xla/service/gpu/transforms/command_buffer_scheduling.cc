@@ -984,8 +984,11 @@ absl::StatusOr<bool> CommandBufferScheduling::Run(
   auto erase_rocm = [&](const se::RocmComputeCapability& rocm_comp) {
     erase(kRequireConditionals);  // on-device control flow
   };
+  auto erase_musa = [&](const se::MusaComputeCapability& musa_comp) {
+    erase(kRequireConditionals);  // on-device control flow
+  };
 
-  std::visit(absl::Overload(erase_cuda, erase_rocm),
+  std::visit(absl::Overload(erase_cuda, erase_rocm, erase_musa),
              device_description_.gpu_compute_capability());
 
   auto order = module->MakeComputationPostOrder();

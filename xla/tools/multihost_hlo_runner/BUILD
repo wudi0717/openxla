@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@local_config_cuda//cuda:build_defs.bzl", "if_cuda")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa")
 load("//xla:xla.default.bzl", "xla_cc_binary")
 load("//xla/tests:build_defs.bzl", "xla_test")
 load("//xla/tsl:tsl.bzl", "if_cuda_or_rocm", "if_google")
@@ -80,6 +81,8 @@ cc_library(
         ],
     )) + if_rocm([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa([
+        "//xla/stream_executor:musa_platform",
     ]),
     alwayslink = True,
 )
@@ -332,5 +335,7 @@ tsl_pybind_extension(
         ],
     )) + if_rocm([
         "//xla/stream_executor:rocm_platform",
+    ]) + if_musa([
+        "//xla/stream_executor:musa_platform",
     ]),
 )
