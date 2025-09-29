@@ -460,17 +460,12 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     llvm::Module* module, se::GpuComputeCapability gpu_version,
     const DebugOptions& debug_options,
     const std::string& module_config_cache_key) {
-  static absl::once_flag backend_init_flag;
-  // TODO(musa) Ideally this would be refreshed if xla_gpu_cuda_data_dir
-  // changes.
-  static std::string musdl_dir_path;  // NOLINT: static/global vars forbidden
-  absl::call_once(backend_init_flag, MTGPUBackendInit, debug_options,
-                  musdl_dir_path);
-  auto llvm_opts = GetMTGPUBackendOptions(debug_options);
-  llvm_ir::LLVMCommandLineOptionsLock llvm_lock(llvm_opts);
+  //Dump llvm IR
+  
+
+  //Call mcc to compile dump.ll to haso??
 
   std::vector<uint8_t> hsaco;
-  std::unique_ptr<llvm::TargetMachine> target_machine;
   std::string str;
   llvm::raw_string_ostream stream(str);
   stream << *module;
@@ -499,31 +494,15 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
       return hsaco;
     }
     VLOG(1) << "HSACO cache miss";
-    bool dump_lls = false;
-    if (dump_lls) {
-      static int hsaco_count = 0;
-      std::string name = "/tmp/" + std::to_string(hsaco_count) + ".ll";
-      hsaco_count++;
-      std::ofstream ofs(name);
-      ofs << str;
-      ofs.close();
-    }
+    static int hsaco_count = 0;
+    std::string name = "/tmp/mtgpu_kernel_" + std::to_string(hsaco_count) + ".ll";
+    hsaco_count++;
+    std::ofstream ofs(name);
+    ofs << str;
+    ofs.close();
 
-    llvm::Triple default_target_triple("mtgpu-unknown-unknown");
-    // Construct LLVM TargetMachine for MTGPU.
-    std::unique_ptr<llvm::TargetMachine> target_machine =
-        MTGPUGetTargetMachine(default_target_triple, gpu_version,
-                               debug_options);
-
-    // Link with MUSa-Device-Libs, and optimize the LLVM module.
-    TF_RETURN_IF_ERROR(gpu::LinkAndOptimizeModule(
-        module, gpu_version, debug_options, musdl_dir_path,
-        MTGPUTargetModuleLinker, default_target_triple, target_machine.get(),
-        kMTGPUInlineThreshold));
-
-    // Lower optimized LLVM module to HSA code object.
-    TF_ASSIGN_OR_RETURN(
-        hsaco, EmitModuleToHsaco(module, target_machine.get(), debug_options));
+    //hsaco = read("/tmp/mtgpu_kernel_xx.bin");
+    hsaco.assign({0x0,0x2,0x5});
     HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
   }
   return hsaco;
