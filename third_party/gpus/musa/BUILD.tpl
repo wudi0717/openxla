@@ -86,24 +86,22 @@ cc_library(
 
 cc_library(
     name = "musart",
-    srcs = glob(["%{musa_root}/lib/libmusart*.a"]),
+    srcs = glob(["%{musa_root}/lib/libmusart*.so"]),
     hdrs = glob(["%{musa_root}/include/**"]),
     includes = [
         "%{musa_root}/include",
     ],
-    linkstatic = 1,
     strip_include_prefix = "%{musa_root}",
 )
 
 # Used by jax_musa_plugin to minimally link to hip runtime.
 cc_library(
     name = "musa_runtime",
-    srcs = glob(["%{musa_root}/lib/libmusa*.a"]),
+    srcs = glob(["%{musa_root}/lib/stubs/libmusa.so"]),
     hdrs = glob(["%{musa_root}/include/musa/**"]),
     includes = [
         "%{musa_root}/include",
     ],
-    linkstatic = 1,
     strip_include_prefix = "%{musa_root}",
     visibility = ["//visibility:public"],
     deps = [

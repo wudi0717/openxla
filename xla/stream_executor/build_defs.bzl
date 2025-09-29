@@ -5,6 +5,10 @@ load(
     _if_cuda_or_rocm = "if_cuda_or_rocm",
     _if_gpu_is_configured = "if_gpu_is_configured",
 )
+load(
+    "@local_config_musa//musa:build_defs.bzl",
+    _is_musa_configured = "is_musa_configured",
+)
 
 def stream_executor_friends():
     return ["//..."]
@@ -23,7 +27,9 @@ def tf_additional_cudnn_plugin_copts():
 
 # Returns whether any GPU backend is configured.
 def if_gpu_is_configured(if_true, if_false = []):
-    return _if_gpu_is_configured(if_true, if_false)
+    if _if_gpu_is_configured(if_true, if_false) or _is_musa_configured():
+        return if_true
+    return if_false
 
 def if_cuda_or_rocm(if_true, if_false = []):
     return _if_cuda_or_rocm(if_true, if_false)

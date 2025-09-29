@@ -5,6 +5,10 @@ load(
     "@local_config_rocm//rocm:build_defs.bzl",
     "if_rocm_is_configured",
 )
+load(
+    "@local_config_musa//musa:build_defs.bzl",
+    "if_musa_is_configured",
+)
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//xla:xla.default.bzl", "xla_cc_test")
 load("//xla/tests:build_defs.bzl", "xla_test")
@@ -111,6 +115,42 @@ cc_library(
 )
 
 cc_library(
+    name = "gemm_fusion_autotuner_musa",
+    srcs = [
+        "gemm_fusion_autotuner.h",
+        "gemm_fusion_autotuner_musa.cc",
+    ],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = [
+        ":autotuner_compile_util",
+        ":autotuner_util",
+        ":redzone_buffers",
+        ":triton_configs",
+        "//xla:autotuning_proto_cc",
+        "//xla:xla_proto_cc",
+        "//xla/hlo/ir:hlo",
+        "//xla/hlo/pass:hlo_pass",
+        "//xla/pjrt/distributed:key_value_store_interface",
+        "//xla/service:executable",
+        "//xla/service:shaped_buffer",
+        "//xla/service/gpu:matmul_utils",
+        "//xla/stream_executor:device_description",
+        "//xla/stream_executor:semantic_version",
+        "//xla/tsl/platform:env",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_absl//absl/types:span",
+        "@local_config_musa//musa:musa_headers",
+    ],
+)
+
+cc_library(
     name = "gemm_fusion_autotuner",
     srcs = [
         "gemm_fusion_autotuner.cc",
@@ -119,6 +159,8 @@ cc_library(
     tags = ["gpu"],
     deps = if_cuda_is_configured([":gemm_fusion_autotuner_cuda"]) + if_rocm_is_configured([
         ":gemm_fusion_autotuner_rocm",
+    ]) + if_musa_is_configured([
+        ":gemm_fusion_autotuner_musa",
     ]) + [
         ":autotuner_compile_util",
         ":autotuner_status_key",
@@ -568,6 +610,7 @@ cc_library(
         "//xla/stream_executor/cuda:cuda_platform_id",
         "//xla/stream_executor/gpu:redzone_allocator",
         "//xla/stream_executor/rocm:rocm_platform_id",
+        "//xla/stream_executor/musa:musa_platform_id",
         "//xla/tsl/platform:errors",
         "//xla/tsl/platform:logging",
         "//xla/tsl/platform:status",

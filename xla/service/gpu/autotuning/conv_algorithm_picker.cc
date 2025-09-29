@@ -67,6 +67,7 @@ limitations under the License.
 #include "xla/stream_executor/numeric_options.h"
 #include "xla/stream_executor/platform.h"
 #include "xla/stream_executor/rocm/rocm_platform_id.h"
+#include "xla/stream_executor/musa/musa_platform_id.h"
 #include "xla/stream_executor/scratch_allocator.h"
 #include "xla/stream_executor/stream.h"
 #include "xla/stream_executor/stream_executor.h"
@@ -426,6 +427,9 @@ absl::StatusOr<AutotuneResult> GpuConvAlgorithmPicker::PickBestAlgorithmNoCache(
     result_or = PickBestAlgorithmNoCacheRocm(instr);
   } else if (platform_id == se::cuda::kCudaPlatformId) {
     result_or = PickBestAlgorithmNoCacheCuda(instr);
+  } else if (platform_id == se::musa::kMUSaPlatformId) {
+    return Internal(
+        "Unsupport autotuning on MUSA platfrom");
   }
 
   return result_or;
