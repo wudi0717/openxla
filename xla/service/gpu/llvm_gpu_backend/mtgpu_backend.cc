@@ -18,6 +18,7 @@ limitations under the License.
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <random>
 #include <functional>
 #include <ios>
 #include <memory>
@@ -28,6 +29,7 @@ limitations under the License.
 #include <utility>
 #include <variant>
 #include <vector>
+#include <regex>
 
 #include "absl/base/call_once.h"
 #include "absl/log/check.h"
@@ -456,15 +458,65 @@ std::string LibDevicePath(std::string gcn_arch_name,
   return "";
 }
 
+static std::string randomTmpPath(const char *ext) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 15);
+    std::string random_name = "temp_";
+    for (int i = 0; i < 16; ++i) {
+      random_name += "0123456789abcdef"[dis(gen)];
+    }
+    return random_name+ext;
+}
+
+static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
+    // 先收集所有调用
+    std::vector<llvm::CallInst *> CallsToReplace;
+    for (llvm::Function &F : M) {
+        for (llvm::BasicBlock &BB : F) {
+            for (llvm::Instruction &I : BB) {
+                if (auto *CI = llvm::dyn_cast<llvm::CallInst>(&I)) {
+                    llvm::Function *Callee = CI->getCalledFunction();
+                    if (Callee && Callee->getName().starts_with("llvm.nvvm."))
+                        CallsToReplace.push_back(CI);
+                }
+            }
+        }
+    }
+
+    // 逐个替换
+    for (llvm::CallInst *CI : CallsToReplace) {
+        llvm::Function *OldDecl = CI->getCalledFunction();
+        std::string NewName = OldDecl->getName().str();
+        llvm::StringRef prefix = "llvm.nvvm.";
+        NewName.replace(0, prefix.size(), "llvm.musa.");
+
+        llvm::Function *NewDecl = M.getFunction(NewName);
+        if (!NewDecl) {
+            // 创建新声明，属性与旧声明保持一致
+            NewDecl = llvm::Function::Create(
+                llvm::cast<llvm::FunctionType>(OldDecl->getValueType()),
+                llvm::GlobalValue::ExternalLinkage,
+                NewName, &M);
+            NewDecl->setAttributes(OldDecl->getAttributes());
+            NewDecl->setCallingConv(OldDecl->getCallingConv());
+        }
+        CI->setCalledFunction(NewDecl);
+    }
+
+    // 删掉旧声明（如果已无人使用）
+    for (auto It = M.getFunctionList().begin(); It != M.getFunctionList().end();) {
+        llvm::Function &F = *It++;
+        if (F.getName().starts_with("llvm.nvvm.") && F.use_empty())
+            F.eraseFromParent();
+    }
+}
+
+
 absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     llvm::Module* module, se::GpuComputeCapability gpu_version,
     const DebugOptions& debug_options,
     const std::string& module_config_cache_key) {
-  //Dump llvm IR
-  
-
-  //Call mcc to compile dump.ll to haso??
-
   std::vector<uint8_t> hsaco;
   std::string str;
   llvm::raw_string_ostream stream(str);
@@ -480,31 +532,72 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     if (pos != std::string::npos) str = str.substr(pos + 1);
   }
   str += module_config_cache_key;
-  {
-    tsl::profiler::TraceMe activity(
-        [&] { return absl::StrCat("Compiling IR", module->getName().str()); },
-        tsl::profiler::TraceMeLevel::kInfo);
-    XLA_SCOPED_LOGGING_TIMER("Compile module " + module->getName().str());
+  tsl::profiler::TraceMe activity(
+    [&] { return absl::StrCat("Compiling IR", module->getName().str()); },
+    tsl::profiler::TraceMeLevel::kInfo);
+  XLA_SCOPED_LOGGING_TIMER("Compile module " + module->getName().str());
 
-    std::string gcn_arch_name = "mtgpu";
+  std::string gcn_arch_name = "mtgpu";
 
-    uint64_t hash;
-    if (HsacoCache::Find(str, hash, gcn_arch_name, hsaco)) {
-      VLOG(1) << "HSACO cache hit";
-      return hsaco;
-    }
-    VLOG(1) << "HSACO cache miss";
-    static int hsaco_count = 0;
-    std::string name = "/tmp/mtgpu_kernel_" + std::to_string(hsaco_count) + ".ll";
-    hsaco_count++;
-    std::ofstream ofs(name);
-    ofs << str;
-    ofs.close();
-
-    //hsaco = read("/tmp/mtgpu_kernel_xx.bin");
-    hsaco.assign({0x0,0x2,0x5});
-    HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
+  uint64_t hash;
+  if (HsacoCache::Find(str, hash, gcn_arch_name, hsaco)) {
+    VLOG(1) << "HSACO cache hit";
+    return hsaco;
   }
+  VLOG(1) << "HSACO cache miss";
+  
+  //Change func call convension.
+
+  convertNvvmToMusaIntrinsics(*module);
+
+  std::string llFile = randomTmpPath(".ll");
+  std::string objFile = randomTmpPath(".o");
+  std::string mubinFile = randomTmpPath(".mubin");
+
+  std::string ir_content;
+  llvm::raw_string_ostream ir_stream(ir_content);
+  module->print(ir_stream, nullptr);
+  ir_stream.flush();
+
+  //Replace ptx_kernel to mtgpu_kernel
+  std::regex ptx_kernel_regex("ptx_kernel");
+  ir_content = std::regex_replace(ir_content, ptx_kernel_regex, "mtgpu_kernel");
+
+  std::error_code EC;
+  llvm::raw_fd_ostream os(llFile, EC, llvm::sys::fs::OF_Text);
+  if (EC) throw std::runtime_error("cannot open " + llFile);
+  os << ir_content;
+  os.close();
+
+  std::string llcCmd = "llc \"" + llFile + "\" -march=mtgpu -mcpu=mp_31 "
+                         "-filetype=obj -o \"" + objFile + "\"";
+  if (std::system(llcCmd.c_str()) != 0)
+    throw std::runtime_error("llc failed");
+
+    // 5. lld
+  std::string lldCmd = "lld -flavor gnu -shared \"" + objFile + "\" -o \"" + mubinFile + "\"";
+  if (std::system(lldCmd.c_str()) != 0)
+    throw std::runtime_error("lld failed");
+
+    // 6. 读二进制
+  std::ifstream bin(mubinFile, std::ios::binary | std::ios::ate);
+  if (!bin) throw std::runtime_error("cannot open mubin");
+  size_t sz = bin.tellg();
+  bin.seekg(0, std::ios::beg);
+  hsaco.resize(sz);
+  bin.read(reinterpret_cast<char*>(hsaco.data()), sz);
+  bin.close();
+
+    // 7. 清理
+  //std::remove(llFile.c_str());
+  //std::remove(objFile.c_str());
+  //std::remove(mubinFile.c_str());
+  std::cout << llFile;
+
+
+  //Cache hsaco
+  HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
+
   return hsaco;
 }
 
