@@ -566,6 +566,7 @@ xla_cc_binary(
     ]) + if_rocm([
         "//xla/stream_executor:rocm_platform",
     ]) + if_musa([
+        "//xla/service:gpu_plugin",
         "//xla/stream_executor:musa_platform",
     ]),
 )

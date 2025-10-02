@@ -198,13 +198,7 @@ absl::StatusOr<int> GetGpuISAVersion(MUdevice device) {
   musaDeviceProp props;
   musaError_t result = musaGetDeviceProperties(&props, device);
   if (result == musaSuccess) {
-    std::string gcnName = props.name;
-    std::vector<std::string> tokens = absl::StrSplit(gcnName, ':');
-    std::string amdgpu_version = gcnName;
-    if (!tokens.empty() && tokens[0].size() >= 3) {
-      amdgpu_version = tokens[0].substr(3);
-    }
-    int version = std::stoi(amdgpu_version);
+    int version = 4.3;
     return version;
   }
   return absl::InternalError(absl::StrFormat(
