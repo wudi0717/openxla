@@ -185,7 +185,7 @@ def InvokeMcc(argv, log=False):
   srcs = ' '.join(src_files)
   out = ' -o ' + out_file[0]
 
-  mccopts = mcc_compiler_options + ' -x musa '
+  mccopts = mcc_compiler_options + ' -x musa  --offload-arch=mp_31' #TODO(perfxlab): need to adjust
   # In mcc-clang environment, we need to make sure that musa header is included
   # before some standard math header like <complex> is included in any source.
   # Otherwise, we get build error.

@@ -174,6 +174,9 @@ def _musa_autoconf_impl(repository_ctx):
         cc,
         tf_sysroot,
     )
+    # TODO(perfxlab): get path from env
+    host_compiler_includes.append("/usr/local/musa/lib/clang/14.0.0/include/")
+    host_compiler_includes.append("/usr/local/musa/lib/clang/20/include/")
 
     musa_defines = {}
     musa_defines["%{builtin_sysroot}"] = "/home/mccxadmin/moon/workspace/install/musa"
