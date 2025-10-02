@@ -164,6 +164,30 @@ absl::StatusOr<void*> GetNvInferPluginDsoHandle() {
 #endif
 }
 
+absl::StatusOr<void*> GetMublasDsoHandle() {
+  return GetDsoHandle("mublas", "");
+}
+
+absl::StatusOr<void*> GetMurandDsoHandle() {
+  return GetDsoHandle("murand", "");
+}
+
+absl::StatusOr<void*> GetMusolverDsoHandle() {
+  return GetDsoHandle("musolver", "");
+}
+
+// absl::StatusOr<void*> GetMutracerDsoHandle() {
+//   return GetDsoHandle("mutracer", "");
+// }
+
+absl::StatusOr<void*> GetMusparseDsoHandle() {
+  return GetDsoHandle("musparse", "");
+}
+
+absl::StatusOr<void*> GetMusaDsoHandle() {
+  return GetDsoHandle("mcc", "");
+}
+
 absl::StatusOr<void*> GetRocblasDsoHandle() {
   return GetDsoHandle("rocblas", GetRocBlasVersion());
 }
@@ -303,6 +327,35 @@ absl::StatusOr<void*> GetHipblasltDsoHandle() {
 
 absl::StatusOr<void*> GetHipDsoHandle() {
   static auto result = new auto(DsoLoader::GetHipDsoHandle());
+  return *result;
+}
+
+absl::StatusOr<void*> GetMublasDsoHandle() {
+  static auto result = new auto(DsoLoader::GetMublasDsoHandle());
+  return *result;
+}
+
+absl::StatusOr<void*> GetMurandDsoHandle() {
+  static auto result = new auto(DsoLoader::GetMurandDsoHandle());
+  return *result;
+}
+
+absl::StatusOr<void*> GetMusolverDsoHandle() {
+  static auto result = new auto(DsoLoader::GetMusolverDsoHandle());
+  return *result;
+}
+
+// absl::StatusOr<void*> GetMutracerDsoHandle() {
+//   return GetDsoHandle("mutracer", "");
+// }
+
+absl::StatusOr<void*> GetMusparseDsoHandle() {
+  static auto result = new auto(DsoLoader::GetMusparseDsoHandle());
+  return *result;
+}
+
+absl::StatusOr<void*> GetMusaDsoHandle() {
+  static auto result = new auto(DsoLoader::GetMusaDsoHandle());
   return *result;
 }
 

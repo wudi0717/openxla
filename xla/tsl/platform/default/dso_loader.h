@@ -52,6 +52,12 @@ absl::StatusOr<void*> GetHipsolverDsoHandle();
 absl::StatusOr<void*> GetHipsparseDsoHandle();
 absl::StatusOr<void*> GetHipDsoHandle();
 
+absl::StatusOr<void*> GetMublasDsoHandle();
+absl::StatusOr<void*> GetMufftDsoHandle();
+absl::StatusOr<void*> GetMurandDsoHandle();
+absl::StatusOr<void*> GetMusolverDsoHandle();
+absl::StatusOr<void*> GetMusparseDsoHandle();
+absl::StatusOr<void*> GetMusaDsoHandle();
 // The following method tries to dlopen all necessary GPU libraries for the GPU
 // platform TF is built with (CUDA or ROCm) only when these libraries should be
 // dynamically loaded. Error status is returned when any of the libraries cannot
@@ -88,6 +94,13 @@ absl::StatusOr<void*> GetRoctracerDsoHandle();
 absl::StatusOr<void*> GetHipsparseDsoHandle();
 absl::StatusOr<void*> GetHipblasltDsoHandle();
 absl::StatusOr<void*> GetHipDsoHandle();
+
+absl::StatusOr<void*> GetMublasDsoHandle();
+absl::StatusOr<void*> GetMufftDsoHandle();
+absl::StatusOr<void*> GetMurandDsoHandle();
+absl::StatusOr<void*> GetMusolverDsoHandle();
+absl::StatusOr<void*> GetMusparseDsoHandle();
+absl::StatusOr<void*> GetMusaDsoHandle();
 }  // namespace CachedDsoLoader
 
 }  // namespace internal
