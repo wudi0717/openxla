@@ -136,6 +136,16 @@ cc_library(
 )
 
 cc_library(
+    name = "mudnn",
+    srcs = glob(["%{musa_root}/lib/libmudnn*.so*"]),
+    includes = [
+        "%{musa_root}/include",
+    ],
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "murand",
     srcs = glob(["%{musa_root}/lib/libmurand*.so*"]),
     hdrs = glob(["%{musa_root}/include/murand*.h"]),

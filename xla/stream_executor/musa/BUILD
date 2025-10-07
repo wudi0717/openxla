@@ -265,6 +265,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":musa_platform",
+        ":mudnn_plugin",
     ],
     alwayslink = 1,
 )
@@ -379,6 +380,65 @@ cc_library(
         "@local_config_musa//musa:musa_headers",
         "@tsl//tsl/platform:casts",
     ],
+)
+cc_library(
+    name = "mudnn_if_static",
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = if_static([
+        "@local_config_musa//musa:mudnn",
+    ]),
+)
+cc_library(
+    name = "mudnn_plugin",
+    srcs = ["musa_dnn.cc"],
+    hdrs = ["musa_dnn.h"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mudnn_if_static",  # build_cleaner: keep
+        ":musa_diagnostics",
+        ":musa_executor",
+        ":musa_platform_id",
+        "//xla/stream_executor:activate_context",
+        "//xla/stream_executor:blas",
+        "//xla/stream_executor:device_memory",
+        "//xla/stream_executor:device_memory_allocator",
+        "//xla/stream_executor:dnn",
+        "//xla/stream_executor:event_based_timer",
+        "//xla/stream_executor:numeric_options",
+        "//xla/stream_executor:plugin_registry",
+        "//xla/stream_executor:scratch_allocator",
+        "//xla/stream_executor:stream",
+        "//xla/stream_executor:stream_executor_h",
+        "//xla/stream_executor/platform:initialize",
+        "//xla/tsl/platform:env",
+        "//xla/tsl/platform:errors",
+        "//xla/tsl/platform:logging",
+        "//xla/tsl/platform:macros",
+        "//xla/tsl/platform:status",
+        "//xla/tsl/platform:statusor",
+        "//xla/tsl/util:determinism_for_kernels",
+        "//xla/tsl/util:env_var",
+        "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:span",
+        "@eigen_archive//:eigen3",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform:dso_loader",
+        "@tsl//tsl/platform:hash",
+    ],
+    alwayslink = True,
 )
 
 cc_library(

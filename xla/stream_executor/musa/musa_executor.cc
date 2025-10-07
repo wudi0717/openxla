@@ -1093,7 +1093,24 @@ blas::BlasSupport* MusaExecutor::AsBlas() {
 }
 
 dnn::DnnSupport* MusaExecutor::AsDnn() {
+  absl::MutexLock lock(&mu_);
+  if (dnn_ != nullptr) {
+    return dnn_.get();
+  }
+  PluginRegistry* registry = PluginRegistry::Instance();
+  absl::StatusOr<PluginRegistry::DnnFactory> status =
+      registry->GetFactory<PluginRegistry::DnnFactory>(musa::kMUSaPlatformId);
+  if (!status.ok()) {
+    LOG(ERROR) << "Unable to retrieve DNN factory: "
+               << status.status().message();
     return nullptr;
+  }
+
+  auto dnn = status.value()(this);
+
+  dnn_.reset(dnn);
+
+  return dnn_.get();
 }
 
 fft::FftSupport* MusaExecutor::AsFft() {
