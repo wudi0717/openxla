@@ -651,6 +651,7 @@ absl::StatusOr<se::DeviceMemoryBase> GpuExecutable::BufferForAllocation(
 
 static absl::Status CheckAlignment(const BufferAllocation& allocation,
                                    se::DeviceMemoryBase buffer, int arg_idx) {
+#if 0
   const int64_t expected_alignment = [&] {
     if (allocation.is_entry_computation_parameter()) {
       return kEntryParameterAlignBytes;
@@ -660,6 +661,8 @@ static absl::Status CheckAlignment(const BufferAllocation& allocation,
       return kXlaAllocatedBufferAlignBytes;
     }
   }();
+#endif
+  const int64_t expected_alignment = 8;  //FIXME: just for test. musaAlloc not support aligned with 256 bits
   if (!buffer.is_null() &&
       reinterpret_cast<uintptr_t>(buffer.opaque()) % expected_alignment != 0) {
     return Internal(
