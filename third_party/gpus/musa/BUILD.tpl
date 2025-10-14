@@ -65,6 +65,7 @@ cc_library(
     deps = [
 	":musa_runtime",
 	":musart",
+	":mccl",
     ]
 )
 
@@ -149,6 +150,18 @@ cc_library(
     name = "murand",
     srcs = glob(["%{musa_root}/lib/libmurand*.so*"]),
     hdrs = glob(["%{musa_root}/include/murand*.h"]),
+    includes = [
+        "%{musa_root}/include",
+    ],
+    linkstatic = 1,
+    strip_include_prefix = "%{musa_root}",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "mccl",
+    srcs = glob(["%{musa_root}/lib/libmccl*.so*"]),
+    hdrs = glob(["%{musa_root}/include/mccl*"]),
     includes = [
         "%{musa_root}/include",
     ],

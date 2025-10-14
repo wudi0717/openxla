@@ -1,5 +1,6 @@
 load("@local_config_cuda//cuda:build_defs.bzl", "if_cuda")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa")
 load("//xla:xla.default.bzl", "xla_cc_test")
 load("//xla/pjrt/gpu:package_groups.bzl", "xla_gpu_internal_packages")
 load("//xla/stream_executor:build_defs.bzl", "if_cuda_or_rocm")
@@ -51,7 +52,8 @@ cc_library(
     name = "se_gpu_pjrt_client",
     srcs = ["se_gpu_pjrt_client.cc"],
     hdrs = ["se_gpu_pjrt_client.h"],
-    defines = if_cuda(["GOOGLE_CUDA=1"]) + if_rocm(["TENSORFLOW_USE_ROCM=1"]),
+    defines = if_cuda(["GOOGLE_CUDA=1"]) + if_rocm(["TENSORFLOW_USE_ROCM=1"]) +
+              if_musa(["TENSORFLOW_USE_MUSA=1"]),
     visibility = internal_visibility(["//xla/pjrt/gpu:legacy_gpu_client_users"]),
     deps = [
         ":gpu_helpers",
@@ -176,6 +178,9 @@ cc_library(
         "//xla/stream_executor/gpu:gpu_cudamallocasync_allocator",
         "//xla/stream_executor/gpu:gpu_stream",
         "@local_config_cuda//cuda:cuda_headers",
+    ]) + if_musa([
+        # keep sorted
+        "@local_config_musa//musa:musa_headers",
     ]) + if_rocm([
         # keep sorted
         "@local_config_rocm//rocm:rocm_headers",
@@ -515,6 +520,24 @@ cc_library(
 )
 
 cc_library(
+    name = "se_gpu_pjrt_compiler_musa_registration",
+    srcs = ["se_gpu_pjrt_compiler_musa_registration.cc"],
+    compatible_with = [],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = [
+        ":se_gpu_pjrt_compiler_impl",
+        "//xla/pjrt:pjrt_compiler",
+        "//xla/service/gpu:mtgpu_compiler",  # buildcleaner: keep
+        "//xla/stream_executor/platform:initialize",
+        "//xla/stream_executor/musa:musa_platform_id",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "se_gpu_pjrt_compiler",
     hdrs = ["se_gpu_pjrt_compiler.h"],
     # TODO(b/382070262): Migrate users off this target - They should go though the PjRt ABI compatibility layer.
@@ -530,6 +553,8 @@ cc_library(
         "@llvm-project//mlir:IR",
     ] + if_cuda([
         ":se_gpu_pjrt_compiler_cuda_registration",
+    ]) + if_musa([
+        ":se_gpu_pjrt_compiler_musa_registration",
     ]) + if_rocm([
         ":se_gpu_pjrt_compiler_rocm_registration",
     ]),

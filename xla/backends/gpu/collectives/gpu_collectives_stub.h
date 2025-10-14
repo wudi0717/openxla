@@ -69,6 +69,7 @@ class GpuCollectivesStub : public GpuCollectives {
   absl::Status Deallocate(void* buffer) final { return UnimplementedError(); }
 
   absl::Status InitializeTopology(Topology topology) final {
+    printf("[InitializeTopology] check failed\n");
     return UnimplementedError();
   }
 

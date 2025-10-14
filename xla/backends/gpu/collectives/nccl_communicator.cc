@@ -62,6 +62,9 @@ limitations under the License.
 #else
 #include "rocm/include/rccl.h"
 #endif  // TF_ROCM_VERSION >= 50200
+#elif TENSORFLOW_USE_MUSA
+#include "mccl_warp.h"
+#include "mccl.h"
 #else
 #include "third_party/nccl/nccl.h"
 #endif  // TENSORFLOW_USE_ROCM
@@ -391,10 +394,10 @@ absl::StatusOr<std::unique_ptr<Communicator::RegisteredBufferHandle>>
 NcclCommunicator::RegisterBuffer(stream_executor::DeviceMemoryBase buffer,
                                  int device_ordinal,
                                  bool use_symmetric_buffer) {
-#if (NCCL_VERSION_CODE >= 21901)
   using Handle = std::unique_ptr<Communicator::RegisteredBufferHandle>;
 
   if (!use_symmetric_buffer) {
+#if (NCCL_VERSION_CODE >= 21901)
     return BlockAndGet(Execute<Handle>(
         [&buffer, device_ordinal, this]() -> absl::StatusOr<Handle> {
           VLOG(3) << absl::StreamFormat(

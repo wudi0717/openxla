@@ -30,6 +30,9 @@ limitations under the License.
 #include "xla/core/collectives/collectives.h"
 #include "xla/core/collectives/communicator.h"
 #include "xla/core/collectives/rank_id.h"
+#if TENSORFLOW_USE_MUSA
+#include "mccl_warp.h"
+#endif
 
 namespace xla::gpu {
 

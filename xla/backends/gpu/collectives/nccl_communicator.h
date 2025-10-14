@@ -49,6 +49,9 @@ limitations under the License.
 #else
 #include "rocm/include/rccl.h"
 #endif  // TF_ROCM_VERSION >= 50200
+#elif TENSORFLOW_USE_MUSA
+#include "mccl_warp.h"
+#include "mccl.h"
 #else
 #include "third_party/nccl/nccl.h"
 #endif  // TENSORFLOW_USE_ROCM

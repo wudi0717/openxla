@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm_is_configured")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa_is_configured")
 load("//xla:xla.default.bzl", "xla_cc_test")
 load("//xla/stream_executor:build_defs.bzl", "if_cuda_or_rocm_is_configured")
 load("//xla/tests:build_defs.bzl", "xla_test")
@@ -78,6 +79,8 @@ cc_library(
     deps = [
         ":gpu_collectives_stub",
     ] + if_cuda_or_rocm_is_configured([
+        ":nccl_collectives",
+    ]) + if_musa_is_configured([
         ":nccl_collectives",
     ]) + if_cuda_is_configured([
         ":nvshmem_collectives_if_supported",
@@ -249,10 +252,12 @@ cc_library(
 cc_library(
     name = "nccl_errors",
     srcs = ["nccl_errors.cc"],
-    hdrs = ["nccl_errors.h"],
+    hdrs = ["nccl_errors.h", "mccl_warp.h"],
     local_defines =
         if_rocm_is_configured([
             "TENSORFLOW_USE_ROCM=1",
+        ]) + if_musa_is_configured([
+            "TENSORFLOW_USE_MUSA=1",
         ]),
     tags = [
         "gpu",
@@ -268,6 +273,9 @@ cc_library(
         "@com_google_absl//absl/time",
     ] + if_cuda_is_configured([
         "//xla/tsl/cuda:nccl",
+    ]) + if_musa_is_configured([
+        "@local_config_musa//musa:musa_headers",
+        "@local_config_musa//musa:mccl",
     ]) + if_rocm_is_configured([
         "@local_config_rocm//rocm:rocm_headers",
         "@local_config_rocm//rocm:rccl",
@@ -281,6 +289,8 @@ cc_library(
     local_defines =
         if_rocm_is_configured([
             "TENSORFLOW_USE_ROCM=1",
+        ]) + if_musa_is_configured([
+            "TENSORFLOW_USE_MUSA=1",
         ]),
     tags = [
         "gpu",
@@ -332,8 +342,13 @@ cc_library(
         "@com_google_absl//absl/types:span",
         "@tsl//tsl/platform:casts",
         "@tsl//tsl/platform:numbers",
+        "@local_config_musa//musa:musa_headers",
+        "@local_config_musa//musa:mccl",
     ] + if_cuda_is_configured([
         "//xla/tsl/cuda:nccl",
+    ]) + if_musa_is_configured([
+        "@local_config_musa//musa:musa_headers",
+        "@local_config_musa//musa:mccl",
     ]) + if_rocm_is_configured([
         "@local_config_rocm//rocm:rocm_headers",
         "@local_config_rocm//rocm:rccl",
@@ -347,6 +362,8 @@ cc_library(
     hdrs = ["nccl_communicator.h"],
     local_defines = if_rocm_is_configured([
         "TENSORFLOW_USE_ROCM=1",
+    ]) + if_musa_is_configured([
+        "TENSORFLOW_USE_MUSA=1",
     ]),
     tags = [
         "gpu",
@@ -401,6 +418,9 @@ cc_library(
         "@tsl//tsl/platform:numbers",
     ] + if_cuda_is_configured([
         "//xla/tsl/cuda:nccl",
+    ]) + if_musa_is_configured([
+        "@local_config_musa//musa:musa_headers",
+        "@local_config_musa//musa:mccl",
     ]) + if_rocm_is_configured([
         "@local_config_rocm//rocm:rocm_headers",
         "@local_config_rocm//rocm:rccl",
@@ -465,6 +485,8 @@ xla_test(
     local_defines =
         if_rocm_is_configured([
             "TENSORFLOW_USE_ROCM=1",
+        ]) + if_musa_is_configured([
+            "TENSORFLOW_USE_MUSA=1",
         ]),
     tags = [
         # Stop chloroxylenol from running this test with msan because msan does
@@ -497,6 +519,9 @@ xla_test(
         "@com_google_googletest//:gtest_main",
     ] + if_cuda_is_configured([
         "//xla/tsl/cuda:nccl",
+    ]) + if_musa_is_configured([
+        "@local_config_musa//musa:musa_headers",
+        "@local_config_musa//musa:mccl",
     ]) + if_rocm_is_configured([
         "@local_config_rocm//rocm:rocm_headers",
         "@local_config_rocm//rocm:rccl",

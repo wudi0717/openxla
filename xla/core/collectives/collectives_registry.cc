@@ -96,6 +96,7 @@ absl::StatusOr<Collectives*> CollectivesRegistry::Default(
         platform_name, canonical_platform_name);
   }
 
+  std::cout<< "canonical_platform_name:" << canonical_platform_name << std::endl;
   return registry.platform_collectives[canonical_platform_name].begin()->second;
 }
 

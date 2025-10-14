@@ -67,6 +67,8 @@ limitations under the License.
 #else
 #include "rocm/include/rccl.h"
 #endif  // TF_ROCM_VERSION >= 50200
+#elif TENSORFLOW_USE_MUSA
+#include "mccl.h"
 #else
 #include "third_party/nccl/nccl.h"
 #endif  // TENSORFLOW_USE_ROCM
@@ -167,9 +169,13 @@ NcclCollectives::CreateCommunicators(const CliqueKey& clique_key,
     auto activate_context = device->stream_executor()->Activate();
     TF_ASSIGN_OR_RETURN(auto nccl_unique_id, AsNcclUniqueId(clique_ids->at(0)));
     ncclComm_t comm;
+#if 1
+    printf("[ERROR] ncclCommInitRankConfig not impl\n");
+#else
     XLA_NCCL_RETURN_IF_ERROR(
         ncclCommInitRankConfig(&comm, clique_key.num_devices(), nccl_unique_id,
                                ranks[i].rank.value(), &comm_config));
+#endif
     return comm;
   };
 
@@ -225,8 +231,12 @@ NcclCollectives::SplitCommunicators(absl::Span<const Communicator* const> comms,
     VLOG(1) << "Split NCCL communicator " << comms[i] << " with color " << color
             << " and key " << keys[i];
     ncclComm_t split_comm;
+#if 1
+    printf("[ERROR] ncclCommSplit not impl\n");
+#else
     XLA_NCCL_RETURN_IF_ERROR(ncclCommSplit(
         Cast(comms[i]), color, keys[i].value(), &split_comm, &comm_config));
+#endif
     return split_comm;
   };
 
@@ -276,17 +286,22 @@ absl::StatusOr<void*> NcclCollectives::Allocate(uint64_t bytes) {
     return nvshmem_collectives->Allocate(bytes);
   }
 
+#if 1
   void* ptr = nullptr;
-  ncclResult_t res = ncclMemAlloc(&ptr, bytes);
-  if (res != ncclSuccess) {
+  printf("[ERROR] alloc %ld B not impl\n", bytes);
+#else
+  MUdeviceptr ptr = NULL;
+  MUresult res = muMemAlloc(&ptr, bytes);
+  if (res != MUSA_SUCCESS) {
     return absl::InternalError(absl::StrFormat(
         "failed to allocate %s (%llu bytes) from device collective memory: %s, "
-        "Last NCCL warning(error) log entry (may be unrelated): %s",
-        tsl::strings::HumanReadableNumBytes(bytes), bytes,
-        ncclGetErrorString(res), ncclGetLastError(nullptr)));
+        /*"Last NCCL warning(error) log entry (may be unrelated): %s"*/,
+        tsl::strings::HumanReadableNumBytes(bytes), bytes,/*
+        ncclGetErrorString(res), ncclGetLastError(nullptr)*/));
   }
   VLOG(2) << "Allocated collective memory " << ptr << " of " << bytes
           << " bytes";
+#endif
   return ptr;
 }
 
@@ -296,6 +311,9 @@ absl::Status NcclCollectives::Deallocate(void* location) {
     return nvshmem_collectives->Deallocate(location);
   }
 
+#if 1
+  printf("[ERROR] dealloc not impl\n");
+#else
   ncclResult_t res = ncclMemFree(location);
   if (res != ncclSuccess) {
     return absl::InternalError(absl::StrFormat(
@@ -303,7 +321,7 @@ absl::Status NcclCollectives::Deallocate(void* location) {
         "warning(error) log entry (may be unrelated): %s",
         location, ncclGetErrorString(res), ncclGetLastError(nullptr)));
   }
-
+#endif
   VLOG(2) << "Deallocated collective memory " << location;
   return absl::OkStatus();
 }
@@ -363,6 +381,7 @@ class NcclIdStore {
 
 absl::Status NcclCollectives::InitializeTopology(
     NcclCollectives::Topology topology) {
+  printf("[DEBUG] in NcclCollectives::InitializeTopology\n");
   if (xla::GetDebugOptionsFromFlags().xla_gpu_experimental_enable_nvshmem()) {
     TF_ASSIGN_OR_RETURN(auto* nvshmem_collectives, GetNvshmemCollectives());
     TF_RETURN_IF_ERROR(nvshmem_collectives->InitializeTopology(topology));
