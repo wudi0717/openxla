@@ -342,8 +342,6 @@ cc_library(
         "@com_google_absl//absl/types:span",
         "@tsl//tsl/platform:casts",
         "@tsl//tsl/platform:numbers",
-        "@local_config_musa//musa:musa_headers",
-        "@local_config_musa//musa:mccl",
     ] + if_cuda_is_configured([
         "//xla/tsl/cuda:nccl",
     ]) + if_musa_is_configured([
