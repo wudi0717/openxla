@@ -1442,17 +1442,6 @@ absl::StatusOr<DeviceTopologyPair> BuildDistributedDevices(
     std::optional<int> partition_index,
     absl::Duration get_local_topology_timeout,
     absl::Duration get_global_topology_timeout) {
-  std::cout << "platform_name:" << platform_name << std::endl;
-  std::cout << "node_ids:" << node_id << std::endl;
-  std::cout << "num_nodes:" << num_nodes << std::endl;
-  // std::cout << "options.mock_gpu_topology:" <<  options.mock_gpu_topology << std::endl;
-  // std::cout << "options.partition_index:" << options.partition_index << std::endl;
-  // std::cout << "" <<  << std::endl;
-  // std::cout << "" <<  << std::endl;
-  // std::cout << "" <<  << std::endl;
-  // std::cout << "" <<  << std::endl;
-  // std::cout << "" <<  << std::endl;
-  printf("[DEBUG] in BuildDistributedDevices\n");
   std::vector<std::unique_ptr<PjRtStreamExecutorDevice>> devices;
   LocalTopologyProto local_topology;
   local_topology.set_node_id(node_id);
@@ -1596,19 +1585,12 @@ absl::StatusOr<DeviceTopologyPair> BuildDistributedDevices(
     return absl::InternalError("Failed to get GPU collectives");
   }
 
-  printf("[DEBUG] before InitializeTopology\n");
-  std::cout << "platform_name:" << platform_name << std::endl;
-  std::cout << "node_id:" << node_id << std::endl;
-  std::cout << "global_topology.nodes().size():" << global_topology.nodes().size() << std::endl;
-  std::cout << "local_device_states.size():" << local_device_states.size() << std::endl;
   TF_RETURN_IF_ERROR(gpu_collectives->InitializeTopology(
       {node_id, global_topology.nodes().size(), local_device_states.size(),
        kv_store, device_to_node, gpu_executable_run_options}));
-  printf("[DEBUG] out InitializeTopology\n");
 
   TF_ASSIGN_OR_RETURN(GpuTopologyProto gpu_topology,
                       BuildGpuTopology(global_topology));
-  printf("[DEBUG] out BuildDistributedDevices\n");
   return std::make_pair(std::move(devices), gpu_topology);
 }
 
@@ -1727,7 +1709,6 @@ absl::StatusOr<std::unique_ptr<PjRtClient>> GetStreamExecutorGpuClient(
     kv_store = std::make_shared<InMemoryKeyValueStore>();
   }
   TF_RET_CHECK(options.num_nodes == 1 || kv_store != nullptr);
-  printf("[DEBUG] before BuildDistributedDevices\n");
   TF_ASSIGN_OR_RETURN(
       DeviceTopologyPair device_topology_pair,
       BuildDistributedDevices(
@@ -1735,12 +1716,10 @@ absl::StatusOr<std::unique_ptr<PjRtClient>> GetStreamExecutorGpuClient(
           options.num_nodes, gpu_run_options.get(), kv_store,
           options.enable_mock_nccl, options.mock_gpu_topology,
           options.partition_index));
-  printf("[DEBUG] after BuildDistributedDevices\n");
 
   auto gpu_topology = std::shared_ptr<const GpuTopology>(
       GpuTopology::FromProto(device_topology_pair.second));
 
-  printf("[DEBUG] end GetStreamExecutorGpuClient\n");
   return std::make_unique<StreamExecutorGpuClient>(
       pjrt_platform_name, xla_client, std::move(device_topology_pair.first),
       options.node_id, std::move(allocator), std::move(host_memory_allocator),

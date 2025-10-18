@@ -170,7 +170,7 @@ NcclCollectives::CreateCommunicators(const CliqueKey& clique_key,
     TF_ASSIGN_OR_RETURN(auto nccl_unique_id, AsNcclUniqueId(clique_ids->at(0)));
     ncclComm_t comm;
 #if 1
-    printf("[ERROR] ncclCommInitRankConfig not impl\n");
+    LOG(ERROR) << "[ERROR] ncclCommInitRankConfig not impl\n";
 #else
     XLA_NCCL_RETURN_IF_ERROR(
         ncclCommInitRankConfig(&comm, clique_key.num_devices(), nccl_unique_id,
@@ -232,7 +232,7 @@ NcclCollectives::SplitCommunicators(absl::Span<const Communicator* const> comms,
             << " and key " << keys[i];
     ncclComm_t split_comm;
 #if 1
-    printf("[ERROR] ncclCommSplit not impl\n");
+    LOG(ERROR) << "[ERROR] ncclCommSplit not impl\n";
 #else
     XLA_NCCL_RETURN_IF_ERROR(ncclCommSplit(
         Cast(comms[i]), color, keys[i].value(), &split_comm, &comm_config));
@@ -288,7 +288,7 @@ absl::StatusOr<void*> NcclCollectives::Allocate(uint64_t bytes) {
 
 #if 1
   void* ptr = nullptr;
-  printf("[ERROR] alloc %ld B not impl\n", bytes);
+  LOG(ERROR) << "[ERROR] alloc %ld B not impl\n", bytes;
 #else
   MUdeviceptr ptr = NULL;
   MUresult res = muMemAlloc(&ptr, bytes);
@@ -312,7 +312,7 @@ absl::Status NcclCollectives::Deallocate(void* location) {
   }
 
 #if 1
-  printf("[ERROR] dealloc not impl\n");
+  LOG(ERROR) << "[ERROR] dealloc not impl\n";
 #else
   ncclResult_t res = ncclMemFree(location);
   if (res != ncclSuccess) {
@@ -381,7 +381,6 @@ class NcclIdStore {
 
 absl::Status NcclCollectives::InitializeTopology(
     NcclCollectives::Topology topology) {
-  printf("[DEBUG] in NcclCollectives::InitializeTopology\n");
   if (xla::GetDebugOptionsFromFlags().xla_gpu_experimental_enable_nvshmem()) {
     TF_ASSIGN_OR_RETURN(auto* nvshmem_collectives, GetNvshmemCollectives());
     TF_RETURN_IF_ERROR(nvshmem_collectives->InitializeTopology(topology));

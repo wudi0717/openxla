@@ -32,7 +32,6 @@ limitations under the License.
 namespace xla::gpu {
 
 GpuCollectives* GpuCollectives::Default() {
-  printf("[GpuCollectives] in Default\n");
   absl::StatusOr<Collectives*> collectives =
       CollectivesRegistry::Default("gpu");
   CHECK_OK(collectives) << "Failed to get GPU collectives";  // Crash OK
@@ -48,7 +47,6 @@ GpuCollectives::Device::Device(se::StreamExecutor* stream_executor)
     : stream_executor_(stream_executor) {}
 
 se::StreamExecutor* GpuCollectives::Device::stream_executor() const {
-  printf("[GpuCollectives] in stream_executor\n");
   return stream_executor_;
 }
 
@@ -56,14 +54,12 @@ GpuCollectives::Executor::Executor(stream_executor::Stream* stream)
     : stream_(stream) {}
 
 stream_executor::Stream* GpuCollectives::Executor::stream() const {
-  printf("[GpuCollectives] in stream\n");
   return stream_;
 }
 
 se::DeviceMemoryBase GpuCollectives::Slice(se::DeviceMemoryBase buff,
                                            PrimitiveType dtype, size_t offset,
                                            size_t count) {
-  printf("[GpuCollectives] in Slice\n");
   size_t multiplier = ShapeUtil::ByteSizeOfPrimitiveType(dtype);
   return buff.GetByteSlice(offset * multiplier, count * multiplier);
 }
