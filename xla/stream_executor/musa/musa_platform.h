@@ -36,12 +36,12 @@ extern const Platform::Id kMUSaPlatformId;
 
 // MUSa-specific platform plugin, registered as a singleton value via module
 // initializer.
-class MUSaPlatform : public Platform {
+class MusaPlatform : public Platform {
  public:
-  MUSaPlatform();
+  MusaPlatform();
 
   // Platform interface implementation:
-  // Returns the same value as kMUSaPlatform above.
+  // Returns the same value as kMusaPlatform above.
   Platform::Id id() const override;
 
   // Returns -1 as a sentinel on internal failure (and logs the error).
@@ -56,7 +56,7 @@ class MUSaPlatform : public Platform {
   absl::StatusOr<StreamExecutor*> FindExisting(int ordinal) override;
 
  private:
-  // Returns a device constructed with ordinal without
+  // Returns a device constructed with the ordinal without
   // looking in or storing to the Platform's executor cache.
   // Ownership IS transferred to the caller.
   absl::StatusOr<std::unique_ptr<StreamExecutor>> GetUncachedExecutor(
@@ -65,17 +65,19 @@ class MUSaPlatform : public Platform {
   // This platform's name.
   std::string name_;
 
-  // mutex that guards internal state.
-  mutable absl::Mutex mu_;
-
   // Cache of created executors.
   ExecutorCache executor_cache_;
 
-  MUSaPlatform(const MUSaPlatform&) = delete;
-  void operator=(const MUSaPlatform&) = delete;
+  MusaPlatform(const MusaPlatform&) = delete;
+  void operator=(const MusaPlatform&) = delete;
 };
 
 }  // namespace gpu
+namespace musa {
+
+using MusaPlatform = gpu::MusaPlatform;
+
+}  // namespace musa
 }  // namespace stream_executor
 
 #endif  // XLA_STREAM_EXECUTOR_MUSA_MUSA_PLATFORM_H_

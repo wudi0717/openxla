@@ -23,17 +23,16 @@ namespace stream_executor {
 
 absl::StatusOr<SemanticVersion> ParseMusaVersion(int musa_version) {
   if (musa_version < 0) {
-    return absl::InvalidArgumentError("Version numbers cannot be negative.");
+    return absl::InvalidArgumentError("Version numbers cannot be negative!");
   }
-
-  // The exact structure of the version number is not defined in the ROCm/
-  // or HIP documentation, but `HIP_VERSION` is defined as the following:
-  // #define HIP_VERSION (HIP_VERSION_MAJOR * 10000000 + HIP_VERSION_MINOR \
-  // * 100000 + HIP_VERSION_PATCH)
-  int major = musa_version / 10'000'000;
-  int minor = (musa_version % 10'000'000) / 100'000;
-  int patch = musa_version % 100'000;
-  return SemanticVersion(major, minor, patch);
+  // The version is encoded as `1000 * major + 10 * minor`.
+  // References:
+  // https://docs.nvidia.com/musa/musa-runtime-api/group__CUDART____VERSION.html
+  // https://docs.nvidia.com/musa/musa-driver-api/group__CUDA__VERSION.html#group__CUDA__VERSION
+  // https://docs.nvidia.com/musa/musa-driver-api/group__CUDA__TYPES.html
+  int major = musa_version / 1000;
+  int minor = (musa_version % 1000) / 10;
+  return SemanticVersion(major, minor, 0);
 }
 
 }  // namespace stream_executor

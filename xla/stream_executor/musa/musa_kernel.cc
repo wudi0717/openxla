@@ -39,41 +39,42 @@ namespace gpu {
 
 namespace {
 
-absl::Status FuncGetAttribute(MUfunction_attribute attribute,
-                              MUfunction func, int* attribute_value) {
-  return ToStatus(
+absl::Status GetMusaAttribute(MUfunction_attribute attribute, MUfunction func,
+                              int* attribute_value) {
+  return musa::ToStatus(
       muFuncGetAttribute(attribute_value, attribute, func),
       absl::StrCat("Failed to query kernel attribute: ", attribute));
 }
 
 }  // namespace
+
 absl::StatusOr<int32_t> MusaKernel::GetMaxOccupiedBlocksPerCore(
     ThreadDim threads, size_t dynamic_shared_memory_bytes) const {
   int32_t threads_per_block = threads.x * threads.y * threads.z;
-  VLOG(0) << "Get kernel block occupancy: " << name()
+  VLOG(3) << "Get kernel block occupancy: " << name()
           << "; threads_per_block: " << threads_per_block
           << "; dynamic_shared_memory_bytes: " << dynamic_shared_memory_bytes;
-
   std::unique_ptr<ActivateContext> activation = executor_->Activate();
 
-  int max_blocks = 0;
-  TF_RETURN_IF_ERROR(
-      ToStatus(musaOccupancyMaxActiveBlocksPerMultiprocessor(
-                   &max_blocks, musa_function_, threads_per_block,
-                   dynamic_shared_memory_bytes),
-               "Failed to calculate maximal active blocks per SM"));
+  int max_blocks;
+  TF_RETURN_IF_ERROR(musa::ToStatus(
+      muOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(
+          &max_blocks, gpu_function_, threads_per_block,
+          dynamic_shared_memory_bytes, MU_OCCUPANCY_DISABLE_CACHING_OVERRIDE),
+      absl::StrFormat("Failed to calculate occupancy of kernel %p",
+                      gpu_function_)));
   return max_blocks;
 }
 
 absl::StatusOr<KernelMetadata> MusaKernel::GetKernelMetadata() {
   KernelMetadata kernel_metadata;
-  int value = 0;
+  int value;
   TF_RETURN_IF_ERROR(
-      FuncGetAttribute(MU_FUNC_ATTRIBUTE_NUM_REGS, musa_function_, &value));
+      GetMusaAttribute(MU_FUNC_ATTRIBUTE_NUM_REGS, gpu_function_, &value));
   kernel_metadata.set_registers_per_thread(value);
 
-  TF_RETURN_IF_ERROR(FuncGetAttribute(MU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES,
-                                      musa_function_, &value));
+  TF_RETURN_IF_ERROR(GetMusaAttribute(MU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES,
+                                      gpu_function_, &value));
   kernel_metadata.set_shared_memory_bytes(value);
   return kernel_metadata;
 }
@@ -85,8 +86,8 @@ absl::Status MusaKernel::Launch(const ThreadDim& thread_dims,
   MUfunction function = gpu_function();
 
   // Launch kernels with packed arguments.
-  auto launch = [this, &cluster_dims, &thread_dims, &block_dims, &function,
-                 stream](const KernelArgsPackedArrayBase& packed) {
+  auto launch = [this, stream, &cluster_dims, &thread_dims, &block_dims,
+                 function](const KernelArgsPackedArrayBase& packed) {
     int32_t expected_number_of_arguments =
         Arity() + (packed.number_of_shared_bytes() > 0);
 

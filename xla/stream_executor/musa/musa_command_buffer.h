@@ -28,8 +28,10 @@ limitations under the License.
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "musa_runtime.h"
+#include "musa.h"
 #include "xla/stream_executor/bit_pattern.h"
 #include "xla/stream_executor/command_buffer.h"
+#include "xla/stream_executor/musa/musa_context.h"
 #include "xla/stream_executor/device_memory.h"
 #include "xla/stream_executor/gpu/gpu_command_buffer.h"
 #include "xla/stream_executor/kernel.h"
@@ -39,21 +41,28 @@ limitations under the License.
 
 namespace stream_executor::gpu {
 
-// Implements GpuCommandBuffer for AMD GPUs.
-class MusaCommandBuffer : public GpuCommandBuffer {
+// Implements GpuCommandBuffer for MT GPUs.
+class MusaCommandBuffer final : public GpuCommandBuffer {
  public:
-  // Creates a new ROCm command buffer and the underlying HIP graph.
+  // Creates a new MUSA command buffer and the underlying MUSA graph.
   static absl::StatusOr<std::unique_ptr<MusaCommandBuffer>> Create(
-      Mode mode, StreamExecutor* executor);
+      Mode mode, StreamExecutor* executor, MusaContext* musa_context);
 
   ~MusaCommandBuffer() override;
 
  private:
-  MusaCommandBuffer(Mode mode, StreamExecutor* executor, musaGraph_t graph,
+  MusaCommandBuffer(Mode mode, StreamExecutor* executor,
+                    MusaContext* musa_context, MUgraph graph,
                     bool is_owned_graph)
       : GpuCommandBuffer(mode, executor),
+        stream_exec_(executor),
+        musa_context_(musa_context),
         graph_(graph),
-        is_owned_graph_(is_owned_graph) {}
+        is_owned_graph_(is_owned_graph) {
+    VLOG(5) << "Created command buffer for graph " << graph_
+            << "; mode=" << absl::StrCat(mode)
+            << "; is_owned_graph=" << is_owned_graph_;
+  }
 
   //===--------------------------------------------------------------------===//
   // APIs for launching kernels to update conditional handles.
@@ -81,6 +90,10 @@ class MusaCommandBuffer : public GpuCommandBuffer {
 
   //===--------------------------------------------------------------------===//
 
+  using NoOpKernel = TypedKernel<>;
+
+  absl::StatusOr<NoOpKernel*> GetNoOpKernel();
+
   absl::StatusOr<GraphConditionalNodeHandle> CreateConditionalNode(
       absl::Span<const GraphNodeHandle> dependencies,
       GraphConditionalHandle conditional, ConditionType type) override;
@@ -106,15 +119,11 @@ class MusaCommandBuffer : public GpuCommandBuffer {
                                    uint64_t size) override;
 
   absl::Status PopulateDnnGraphNode(
-      dnn::DnnGraph&, Stream&, absl::Span<DeviceMemoryBase> operands) override {
-    return absl::UnimplementedError("Not implemented.");
-  }
+      dnn::DnnGraph&, Stream&, absl::Span<DeviceMemoryBase> operands) override;
 
   absl::Status UpdateDnnGraphNode(dnn::DnnGraph&, Stream&,
                                   absl::Span<DeviceMemoryBase> operands,
-                                  GraphNodeHandle) override {
-    return absl::UnimplementedError("Not implemented.");
-  }
+                                  GraphNodeHandle) override;
 
   absl::StatusOr<GraphNodeHandle> CreateChildNode(
       ChildCommandType type, absl::Span<const GraphNodeHandle> dependencies,
@@ -144,9 +153,9 @@ class MusaCommandBuffer : public GpuCommandBuffer {
 
   absl::StatusOr<size_t> GetNodeCount() const override;
 
-  absl::Status SetPriority(StreamPriority priority) override {
-    return absl::UnimplementedError("Not implemented.");
-  }
+  // Set the nodes inside the command buffer to the target priority, musa
+  // currently only support kernel node's priority.
+  absl::Status SetPriority(StreamPriority priority) override;
 
   absl::Status PrepareFinalization() override;
 
@@ -156,19 +165,42 @@ class MusaCommandBuffer : public GpuCommandBuffer {
 
   absl::Status InstantiateGraph() override;
 
+  CommandBuffer* parent() const { return parent_; }
+
+  MUgraphExec graph_exec() const;
+
   absl::Status CheckCanBeUpdated() override;
 
-  static_assert(std::is_pointer_v<musaGraph_t>, "musaGraph_t must be a pointer");
-  static_assert(std::is_pointer_v<musaGraphExec_t>,
-                "musaGraphExec_t must be a pointer");
+  // A signature of a device kernels updating conditional handle(s).
+  using SetCaseConditionKernel =
+      TypedKernel<MUgraphConditionalHandle, MUgraphConditionalHandle,
+                  MUgraphConditionalHandle, MUgraphConditionalHandle,
+                  MUgraphConditionalHandle, MUgraphConditionalHandle,
+                  MUgraphConditionalHandle, MUgraphConditionalHandle,
+                  DeviceMemory<uint8_t>, bool, int32_t, int32_t, bool>;
 
+  using SetWhileConditionKernel =
+      TypedKernel<MUgraphConditionalHandle, DeviceMemory<bool>>;
+
+  // Lazy loaded auxiliary kernels required for building MUSA graphs (no-op
+  // barriers, updating conditional handles, etc.).
+  NoOpKernel noop_kernel_;
+  SetCaseConditionKernel set_case_condition_kernel_;
+  SetWhileConditionKernel set_while_condition_kernel_;
+
+  StreamExecutor* stream_exec_ = nullptr;
   MusaCommandBuffer* parent_ = nullptr;
 
-  musaGraph_t graph_ = nullptr;
-  bool is_owned_graph_ = true;
-  musaGraphExec_t exec_ = nullptr;
-};
+  MusaContext* musa_context_;
 
+  static_assert(std::is_pointer_v<MUgraph>, "MUgraph must be a pointer");
+  static_assert(std::is_pointer_v<MUgraphExec>,
+                "MUgraphExec must be a pointer");
+
+  MUgraph graph_ = nullptr;
+  bool is_owned_graph_ = true;
+  MUgraphExec graph_exec_ = nullptr;
+};
 }  // namespace stream_executor::gpu
 
 #endif  // XLA_STREAM_EXECUTOR_MUSA_MUSA_COMMAND_BUFFER_H_

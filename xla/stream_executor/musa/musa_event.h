@@ -21,12 +21,15 @@ limitations under the License.
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "musa_runtime.h"
+#include "musa.h"
 #include "xla/stream_executor/event.h"
 #include "xla/stream_executor/stream_executor.h"
 
 namespace stream_executor::gpu {
 
-// This class implements Event for ROCm devices.
+class GpuContext;
+
+// This class implements Event for MUSA devices.
 class MusaEvent : public Event {
  public:
   Event::Status PollForStatus() override;
@@ -37,7 +40,7 @@ class MusaEvent : public Event {
   static absl::StatusOr<MusaEvent> Create(StreamExecutor* executor,
                                           bool allow_timing);
 
-  musaEvent_t GetHandle() const { return handle_; }
+  MUevent GetHandle() const { return handle_; }
 
   ~MusaEvent() override;
   MusaEvent(const MusaEvent&) = delete;
@@ -46,15 +49,16 @@ class MusaEvent : public Event {
   MusaEvent& operator=(MusaEvent&& other);
 
  private:
-  explicit MusaEvent(StreamExecutor* executor, musaEvent_t handle)
+  explicit MusaEvent(StreamExecutor* executor, MUevent handle)
       : executor_(executor), handle_(handle) {}
 
-  // The Executor used to which this object and musaEvent_t are bound.
+  // The StreamExecutor to which this object and MUevent are bound.
   StreamExecutor* executor_;
 
-  // The underlying CUDA event handle.
-  musaEvent_t handle_;
+  // The underlying MUSA event handle.
+  MUevent handle_;
 };
+
 }  // namespace stream_executor::gpu
 
 #endif  // XLA_STREAM_EXECUTOR_MUSA_MUSA_EVENT_H_

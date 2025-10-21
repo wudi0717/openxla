@@ -33,38 +33,64 @@ limitations under the License.
 #include "xla/tsl/platform/statusor.h"
 
 namespace stream_executor::gpu {
+
 namespace {
-absl::StatusOr<float> GetEventElapsedTime(StreamExecutor* executor,
-                                          musaEvent_t start, musaEvent_t stop) {
+absl::StatusOr<float> GetEventElapsedTime(StreamExecutor *executor,
+                                          MUevent start, MUevent stop) {
   std::unique_ptr<ActivateContext> activation = executor->Activate();
-  // The stop event must have completed in order for hipEventElapsedTime to
+  // The stop event must have completed in order for muEventElapsedTime to
   // work.
-  musaError_t res = musaEventSynchronize(stop);
-  if (res != musaSuccess) {
-    LOG(ERROR) << "failed to synchronize the stop event: " << ToString(res);
-    return false;
-  }
+  TF_RETURN_IF_ERROR(musa::ToStatus(muEventSynchronize(stop)));
+
   float elapsed_milliseconds;
+
   TF_RETURN_IF_ERROR(
-      ToStatus(musaEventElapsedTime(&elapsed_milliseconds, start, stop),
-               "failed to get elapsed time between events"));
+      musa::ToStatus(muEventElapsedTime(&elapsed_milliseconds, start, stop)));
 
   return elapsed_milliseconds;
 }
+
 }  // namespace
 
-MusaTimer::MusaTimer(StreamExecutor* executor, MusaEvent start_event,
-                     MusaEvent stop_event, Stream* stream)
-    : executor_(executor),
+MusaTimer::MusaTimer(StreamExecutor *executor, MusaEvent start_event,
+                     MusaEvent stop_event, Stream *stream,
+                     GpuSemaphore semaphore)
+    : semaphore_(std::move(semaphore)),
+      executor_(executor),
       stream_(stream),
       start_event_(std::move(start_event)),
       stop_event_(std::move(stop_event)) {}
+
+MusaTimer::~MusaTimer() {
+  if (semaphore_ && !is_stopped_) {
+    // Signal the delay kernel that it can exit
+    *semaphore_ = GpuSemaphoreState::kRelease;
+    // Wait for the delay kernel to exit before destroying the value that it is
+    // watching.
+    absl::Status result = stream_->BlockHostUntilDone();
+    if (!result.ok()) {
+      LOG(ERROR) << result.message();
+    }
+  }
+}
 
 absl::StatusOr<absl::Duration> MusaTimer::GetElapsedDuration() {
   if (is_stopped_) {
     return absl::FailedPreconditionError("Measuring inactive timer");
   }
   TF_RETURN_IF_ERROR(stream_->RecordEvent(&stop_event_));
+  // If we launched the delay kernel then check if it already timed out.
+  if (semaphore_) {
+    if (*semaphore_ == GpuSemaphoreState::kTimedOut) {
+      // The delay kernel did not achieve the intended result.
+      LOG(ERROR) << "Delay kernel timed out: measured time has sub-optimal "
+                    "accuracy. There may be a missing warmup execution, please "
+                    "investigate in Nsight Systems.";
+    } else {
+      // Signal that the kernel can exit
+      *semaphore_ = GpuSemaphoreState::kRelease;
+    }
+  }
   TF_ASSIGN_OR_RETURN(float elapsed_milliseconds,
                       GetEventElapsedTime(executor_, start_event_.GetHandle(),
                                           stop_event_.GetHandle()));
@@ -72,14 +98,20 @@ absl::StatusOr<absl::Duration> MusaTimer::GetElapsedDuration() {
   return absl::Milliseconds(elapsed_milliseconds);
 }
 
-absl::StatusOr<MusaTimer> MusaTimer::Create(StreamExecutor* executor,
-                                            Stream* stream) {
+absl::StatusOr<MusaTimer> MusaTimer::Create(StreamExecutor *executor,
+                                            Stream *stream,
+                                            TimerType timer_type) {
+  GpuSemaphore semaphore{};
+
   TF_ASSIGN_OR_RETURN(MusaEvent start_event,
                       MusaEvent::Create(executor, /*allow_timing=*/true));
   TF_ASSIGN_OR_RETURN(MusaEvent stop_event,
                       MusaEvent::Create(executor, /*allow_timing=*/true));
+
   TF_RETURN_IF_ERROR(stream->RecordEvent(&start_event));
+
   return MusaTimer(executor, std::move(start_event), std::move(stop_event),
-                   stream);
+                   stream, std::move(semaphore));
 }
+
 }  // namespace stream_executor::gpu

@@ -30,16 +30,16 @@ limitations under the License.
 
 namespace stream_executor::gpu {
 
-// MusaContext implements the Context class for ROCm GPUs.
+// MusaContext implements the Context class for MT GPUs.
 class MusaContext : public Context {
  public:
-  MusaContext(MUcontext context, const int ordinal)
-      : context_(context), device_ordinal_(ordinal) {}
+  MusaContext(MUcontext context, int device_ordinal)
+      : context_(context), device_ordinal_(device_ordinal) {}
   ~MusaContext() override;
 
-  MUcontext context() const { return context_; }
   void SetActive() override;
   bool IsActive() const override;
+  MUcontext context() const { return context_; }
   int device_ordinal() const override { return device_ordinal_; }
   absl::Status Synchronize() override;
 
@@ -49,25 +49,17 @@ class MusaContext : public Context {
   MusaContext& operator=(MusaContext&&) = delete;
   MusaContext& operator=(const MusaContext&) = delete;
 
-  // Returns the free amount of memory and total amount of memory, as reported
-  // by hipDeviceTotalMem.
-  bool GetDeviceMemoryUsage(int64_t* free_out, int64_t* total_out);
-
-  // Returns the total amount of memory available on the device.
-  static bool GetDeviceTotalMemory(MUdevice device, uint64_t* result);
-
-  // Returns the context map for all XLA-known ROCm contexts.
-  static ContextMap<MUcontext, MusaContext>* GetContextMap();
-
-  // Creates a new context for the given device.
+  // Returns a new context for the given device.
   static absl::StatusOr<MusaContext*> Create(int device_ordinal,
                                              MUdevice device);
+
+  // Returns the context map for all XLA-known CUDA contexts.
+  static ContextMap<MUcontext, MusaContext>* GetContextMap();
 
  private:
   MUcontext const context_;
   const int device_ordinal_;
 };
-
 }  // namespace stream_executor::gpu
 
 #endif  // XLA_STREAM_EXECUTOR_MUSA_MUSA_CONTEXT_H_

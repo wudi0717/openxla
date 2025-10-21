@@ -57,36 +57,18 @@ limitations under the License.
 
 namespace stream_executor::gpu {
 
-// This class implements GpuExecutor for AMD GPUs that use ROCm libraries.
+// This class implements GpuExecutor for MT GPUs that use MUSA libraries.
 class MusaExecutor : public GpuExecutor {
  public:
   MusaExecutor(Platform* platform, int device_ordinal)
       : GpuExecutor(platform, device_ordinal) {}
   ~MusaExecutor() override;
   std::unique_ptr<ActivateContext> Activate() override;
-
   absl::Status Init() override;
-  blas::BlasSupport* AsBlas() override;
-  fft::FftSupport* AsFft() override;
-  dnn::DnnSupport* AsDnn() override;
-  absl::StatusOr<std::unique_ptr<Event>> CreateEvent() override;
-  absl::StatusOr<std::unique_ptr<Stream>> CreateStream(
-      std::optional<std::variant<StreamPriority, int>> priority) override;
-  absl::StatusOr<std::unique_ptr<CommandBuffer>> CreateCommandBuffer(
-      CommandBuffer::Mode mode) override;
-  absl::StatusOr<std::unique_ptr<Kernel>> LoadKernel(
-      const KernelLoaderSpec& spec) override;
-  void UnloadKernel(const Kernel* kernel) override;
-  absl::StatusOr<ModuleHandle> LoadModule(
-      const MultiModuleLoaderSpec& spec) override;
-  bool UnloadModule(ModuleHandle module_handle) override;
-  absl::StatusOr<std::shared_ptr<DeviceMemoryBase>> CreateOrShareConstant(
-      Stream* stream, absl::Span<const uint8_t> content) override;
-  DeviceMemoryBase Allocate(uint64_t size, int64_t memory_space) override;
+  bool SynchronizeAllActivity() override;
   absl::StatusOr<DeviceMemoryBase> GetMemoryRange(
       const DeviceMemoryBase& location) override;
-  void Deallocate(DeviceMemoryBase* mem) override;
-  bool SynchronizeAllActivity() override;
+
   absl::StatusOr<std::unique_ptr<EventBasedTimer>> CreateEventBasedTimer(
       Stream* stream, bool use_delay_kernel) override;
   absl::StatusOr<DeviceMemoryBase> GetSymbol(
@@ -101,7 +83,25 @@ class MusaExecutor : public GpuExecutor {
   void DeallocateStream(Stream* stream) override;
   absl::Status EnablePeerAccessTo(StreamExecutor* other) override;
   bool CanEnablePeerAccessTo(StreamExecutor* other) override;
-  bool DeviceMemoryUsage(int64_t* free, int64_t* total) const override;
+  bool DeviceMemoryUsage(int64_t* free_out, int64_t* total_out) const override;
+  absl::StatusOr<std::unique_ptr<Kernel>> LoadKernel(
+      const KernelLoaderSpec& spec) override;
+  void UnloadKernel(const Kernel* kernel) override;
+  absl::StatusOr<ModuleHandle> LoadModule(
+      const MultiModuleLoaderSpec& spec) override;
+  bool UnloadModule(ModuleHandle module_handle) override;
+  absl::StatusOr<std::shared_ptr<DeviceMemoryBase>> CreateOrShareConstant(
+      Stream* stream, absl::Span<const uint8_t> content) override;
+  DeviceMemoryBase Allocate(uint64_t size, int64_t memory_space) override;
+  void Deallocate(DeviceMemoryBase* mem) override;
+  blas::BlasSupport* AsBlas() override;
+  fft::FftSupport* AsFft() override;
+  dnn::DnnSupport* AsDnn() override;
+  absl::StatusOr<std::unique_ptr<Event>> CreateEvent() override;
+  absl::StatusOr<std::unique_ptr<Stream>> CreateStream(
+      std::optional<std::variant<StreamPriority, int>> priority) override;
+  absl::StatusOr<std::unique_ptr<CommandBuffer>> CreateCommandBuffer(
+      CommandBuffer::Mode mode) override;
 
   absl::StatusOr<std::unique_ptr<DeviceDescription>> CreateDeviceDescription()
       const override {
@@ -130,28 +130,32 @@ class MusaExecutor : public GpuExecutor {
   // Returns a MusaKernel pointer for a given Kernel, if the kernel is
   // associated with this executor. Otherwise a NotFound error is returned.
   absl::StatusOr<const MusaKernel*> GetMusaKernel(const Kernel* kernel);
+
+  // Creates, allocates, and copies a CUtensorMap object for the given TMA
+  // descriptor. Returns a TensorMap, which is 128 bytes of storage, to be
+  // passed by value to the kernel.
+  absl::StatusOr<TensorMap> CreateTensorMap(const TmaDescriptor& tma_desc,
+                                            void* global_address) override;
   absl::StatusOr<std::unique_ptr<MemoryAllocator>> CreateMemoryAllocator(
       MemoryType type) override;
 
  private:
-  // Initializes Blas interfaces
-  absl::Status InitBlas();
-
-  // Loads a module in HSACO format.
-  absl::StatusOr<ModuleHandle> LoadModuleFromHsaco(const char* hsaco)
+  // Loads a module in cubin format.
+  absl::StatusOr<ModuleHandle> LoadModuleFromMuBin(const char* mubin)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(in_memory_modules_mu_);
 
-  bool UnloadGpuBinary(ModuleHandle module_handle)
+  // Loads the PTX text `ptx` as a MUSA module. `ptx` must be null terminated.
+  absl::StatusOr<ModuleHandle> LoadModuleFromPtx(const char* ptx)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(in_memory_modules_mu_);
 
-  // Creates a GpuEvent for the given stream.
-  absl::StatusOr<std::unique_ptr<MusaEvent>> CreateGpuEvent(bool allow_timing);
+  bool UnloadGpuBinary(ModuleHandle gpu_binary)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(in_memory_modules_mu_);
+
+  // Returns true if a delay kernel is supported.
+  absl::StatusOr<bool> DelayKernelIsSupported();
 
   // Guards the in-memory-module mapping.
   absl::Mutex in_memory_modules_mu_;
-
-  absl::flat_hash_map<ModuleHandle, MUmodule> in_memory_modules_
-      ABSL_GUARDED_BY(in_memory_modules_mu_);
 
   absl::Mutex shared_constants_mu_;
   // On-device constants that can be shared between multiple executables. A
@@ -160,17 +164,28 @@ class MusaExecutor : public GpuExecutor {
   std::map<const absl::uint128, std::weak_ptr<DeviceMemoryBase>>
       shared_constants_ ABSL_GUARDED_BY(shared_constants_mu_);
 
-  // Kernel -> loaded GPU binary. Many kernels may load the same binary.
+  // Kernel -> loaded GPU module. Many kernels may load the same binary.
   absl::flat_hash_map<const Kernel*, ModuleHandle> kernel_to_gpu_binary_
       ABSL_GUARDED_BY(in_memory_modules_mu_);
 
-  // Loaded GPU binary handle -> {module, reference count}.
+  // Loaded GPU module handle -> {MUSA module, reference count}.
   absl::flat_hash_map<ModuleHandle, std::pair<MUmodule, uint64_t>>
       gpu_binary_to_module_ ABSL_GUARDED_BY(in_memory_modules_mu_);
 
-  // Handle for the ROCm device being operated on. Immutable
+  // Set of loaded kernels. This contains all kernels loaded by this executor,
+  // including in-process kernels.
+  absl::flat_hash_set<const Kernel*> loaded_kernels_
+      ABSL_GUARDED_BY(in_memory_modules_mu_);
+
+  // Handle for the MUSA device being operated on. Immutable
   // post-initialization.
   MUdevice device_;
+
+  // True if delay kernels are supported.
+  bool delay_kernels_supported_ = false;
+
+  // The NUMA node of the CPU closest to device_
+  int numa_node_;
 
   // Reader/writer lock for mutable data structures on this object.
   absl::Mutex mu_;
@@ -192,14 +207,6 @@ class MusaExecutor : public GpuExecutor {
   // Lookup map for alive streams, from raw stream pointers.
   absl::flat_hash_map<void*, Stream*> alive_gpu_streams_
       ABSL_GUARDED_BY(alive_gpu_streams_mu_);
-
-  // Set of loaded kernels. This contains all kernels loaded by this executor,
-  // including in-process kernels.
-  absl::flat_hash_set<const Kernel*> loaded_kernels_
-      ABSL_GUARDED_BY(in_memory_modules_mu_);
-
-  // GPU ISA version for device_.
-  int version_;
 
   // MusaContext for this device.
   MusaContext* musa_context_;

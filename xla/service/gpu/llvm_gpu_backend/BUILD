@@ -196,6 +196,7 @@ cc_library(
     ],
     hdrs = [
         "mtgpu_backend.h",
+	"musa_intrinsic.def",
     ],
     local_defines = if_oss(["HAS_SUPPORT_FOR_LLD_AS_A_LIBRARY=1"]),
     deps = [

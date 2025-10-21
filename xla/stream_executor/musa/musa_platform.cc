@@ -41,71 +41,72 @@ namespace {
 
 // Actually performs the work of MUSA initialization. Wrapped up in one-time
 // execution guard.
-static absl::Status InternalInitialize() {
-  MUresult res = muInit(0 /* = flags */);
-
-  if (res == MUSA_SUCCESS) {
-    return absl::OkStatus();
+static absl::Status InternalInit() {
+  absl::Status status =
+      musa::ToStatus(muInit(0 /* = flags */), "Failed call to muInit");
+  if (status.ok()) {
+    return status;
   }
 
-  LOG(ERROR) << "failed call to muInit: " << ToString(res);
+  LOG(ERROR) << "failed call to muInit: " << status;
+
   musa::Diagnostician::LogDiagnosticInformation();
-  return absl::AbortedError(
-      absl::StrCat("failed call to muInit: ", ToString(res)));
+  return status;
 }
 
 static absl::Status PlatformInitialize() {
-  // Cached return value from calling InternalInitialize(), as hipInit need only
-  // be called once, but PlatformInitialize may be called many times.
-  static absl::Status* init_retval = [] {
-    return new absl::Status(InternalInitialize());
+  // Cached return value from calling InternalInit(), as muInit need only be
+  // called once, but PlatformInitialize may be called many times.
+  static absl::Status* initialization_status = [] {
+    return new absl::Status(InternalInit());
   }();
-  return *init_retval;
+  return *initialization_status;
 }
+
 }  // namespace
 
-MUSaPlatform::MUSaPlatform() : name_("MUSA") {}
+MusaPlatform::MusaPlatform() : name_("MUSA") {}
 
-Platform::Id MUSaPlatform::id() const { return musa::kMUSaPlatformId; }
+Platform::Id MusaPlatform::id() const { return musa::kMUSaPlatformId; }
 
-int MUSaPlatform::VisibleDeviceCount() const {
-  // Throw away the result - it logs internally, and this [containing] function
-  // isn't in the path of user control. It's safe to call this > 1x.
+int MusaPlatform::VisibleDeviceCount() const {
+  // Initialized in a thread-safe manner the first time this is run.
+  static const int num_devices = [] {
+    if (!PlatformInitialize().ok()) {
+      return -1;
+    }
+    int device_count = 0;
+    auto status = musa::ToStatus(muDeviceGetCount(&device_count));
+    if (!status.ok()) {
+      LOG(ERROR) << "could not retrieve MUSA device count: " << status;
+      return 0;
+    }
 
-  if (!PlatformInitialize().ok()) {
-    return -1;
-  }
-
-  int device_count = 0;
-  musaError_t res = musaGetDeviceCount(&device_count);
-  if (res != musaSuccess) {
-    LOG(ERROR) << "could not retrieve MUSA device count: " << ToString(res);
-    return 0;
-  }
-
-  return device_count;
+    return device_count;
+  }();
+  return num_devices;
 }
 
-const std::string& MUSaPlatform::Name() const { return name_; }
+const std::string& MusaPlatform::Name() const { return name_; }
 
 absl::StatusOr<std::unique_ptr<DeviceDescription>>
-MUSaPlatform::DescriptionForDevice(int ordinal) const {
+MusaPlatform::DescriptionForDevice(int ordinal) const {
   TF_RETURN_IF_ERROR(PlatformInitialize());
   return MusaExecutor::CreateDeviceDescription(ordinal);
 }
 
-absl::StatusOr<StreamExecutor*> MUSaPlatform::ExecutorForDevice(int ordinal) {
+absl::StatusOr<StreamExecutor*> MusaPlatform::ExecutorForDevice(int ordinal) {
   TF_RETURN_IF_ERROR(PlatformInitialize());
   return executor_cache_.GetOrCreate(
       ordinal, [this, ordinal]() { return GetUncachedExecutor(ordinal); });
 }
 
-absl::StatusOr<StreamExecutor*> MUSaPlatform::FindExisting(int ordinal) {
+absl::StatusOr<StreamExecutor*> MusaPlatform::FindExisting(int ordinal) {
   return executor_cache_.Get(ordinal);
 }
 
 absl::StatusOr<std::unique_ptr<StreamExecutor>>
-MUSaPlatform::GetUncachedExecutor(int ordinal) {
+MusaPlatform::GetUncachedExecutor(int ordinal) {
   auto executor = std::make_unique<MusaExecutor>(this, ordinal);
   TF_RETURN_IF_ERROR(executor->Init());
   return std::move(executor);
@@ -113,15 +114,11 @@ MUSaPlatform::GetUncachedExecutor(int ordinal) {
 
 }  // namespace gpu
 
-static void InitializeMUSaPlatform() {
-  auto status = PlatformManager::PlatformWithName("MUSA");
-  if (!status.ok()) {
-    TF_CHECK_OK(PlatformManager::RegisterPlatform(
-        std::make_unique<gpu::MUSaPlatform>()));
-  }
+static void InitializeMusaPlatform() {
+  TF_CHECK_OK(
+      PlatformManager::RegisterPlatform(std::make_unique<gpu::MusaPlatform>()));
 }
 
 }  // namespace stream_executor
-
 STREAM_EXECUTOR_REGISTER_MODULE_INITIALIZER(
-    musa_platform, stream_executor::InitializeMUSaPlatform());
+    musa_platform, stream_executor::InitializeMusaPlatform());

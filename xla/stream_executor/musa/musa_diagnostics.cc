@@ -28,13 +28,17 @@ limitations under the License.
 #include <string>
 #include <vector>
 
+#include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "xla/tsl/platform/logging.h"
+#include "xla/tsl/platform/env.h"
 #include "tsl/platform/host_info.h"
 
 namespace stream_executor {
@@ -93,6 +97,30 @@ absl::StatusOr<DriverVersion> StringToDriverVersion(const std::string& value) {
   return result;
 }
 
+void PrintLdLibraryPathIntoVlog() {
+  const char *value = std::getenv("LD_LIBRARY_PATH");
+  std::string library_path = value == nullptr ? "" : value;
+  VLOG(1) << "LD_LIBRARY_PATH is: \"" << library_path << "\"";
+
+  std::vector<std::string> pieces = absl::StrSplit(library_path, ':');
+  for (const auto &piece : pieces) {
+    if (piece.empty()) {
+      continue;
+    }
+    std::vector<std::string> dir_children;
+    absl::Status status =
+        tsl::Env::Default()->GetChildren(piece, &dir_children);
+    if (!status.ok()) {
+      VLOG(1) << "could not open \"" << piece << "\": " << status;
+      continue;
+    }
+    for (const std::string &filename : dir_children) {
+      VLOG(1) << piece << " :: " << filename;
+    }
+  }
+}
+
+static const char *kDriverVersionPath = "/proc/driver/musa/version";
 // -- class Diagnostician
 
 std::string Diagnostician::GetDevNodePath(int dev_node_ordinal) {
@@ -100,6 +128,37 @@ std::string Diagnostician::GetDevNodePath(int dev_node_ordinal) {
 }
 
 void Diagnostician::LogDiagnosticInformation() {
+  if (access(kDriverVersionPath, F_OK) != 0) {
+    VLOG(1) << "kernel driver does not appear to be running on this host "
+            << "(" << tsl::port::Hostname() << "): "
+            << "/proc/driver/musa/version does not exist";
+    return;
+  }
+  auto dev0_path = GetDevNodePath(0);
+  if (access(dev0_path.c_str(), F_OK) != 0) {
+    VLOG(1) << "no MT GPU device is present: " << dev0_path
+            << " does not exist";
+    return;
+  }
+
+  const char *visible_devices_env = std::getenv("MUSA_VISIBLE_DEVICES");
+  if (visible_devices_env != nullptr) {
+    LOG(INFO) << "env: MUSA_VISIBLE_DEVICES=\"" << visible_devices_env << "\"";
+    std::set<std::string> common_disable_gpu_values = {"", "-1", "none"};
+    if (common_disable_gpu_values.count(visible_devices_env)) {
+      LOG(INFO) << "MUSA_VISIBLE_DEVICES is set to "
+                << (std::string{} == visible_devices_env ? "an empty string"
+                                                         : visible_devices_env)
+                << " - this hides all GPUs from MUSA";
+    }
+  }
+
+  if (!VLOG_IS_ON(1)) {
+    LOG(INFO) << "verbose logging is disabled. Rerun with verbose logging "
+                 "(usually --v=1 or --vmodule=musa_diagnostics=1) to get more "
+                 "diagnostic output from this module";
+  }
+
   LOG(INFO) << "retrieving MUSA diagnostic information for host: "
             << tsl::port::Hostname();
 
@@ -109,26 +168,9 @@ void Diagnostician::LogDiagnosticInformation() {
 /* static */ void Diagnostician::LogDriverVersionInformation() {
   LOG(INFO) << "hostname: " << tsl::port::Hostname();
   if (VLOG_IS_ON(1)) {
-    const char* value = getenv("LD_LIBRARY_PATH");
-    std::string library_path = value == nullptr ? "" : value;
-    VLOG(1) << "LD_LIBRARY_PATH is: \"" << library_path << "\"";
-
-    std::vector<std::string> pieces = absl::StrSplit(library_path, ':');
-    for (const auto& piece : pieces) {
-      if (piece.empty()) {
-        continue;
-      }
-      DIR* dir = opendir(piece.c_str());
-      if (dir == nullptr) {
-        VLOG(1) << "could not open \"" << piece << "\"";
-        continue;
-      }
-      while (dirent* entity = readdir(dir)) {
-        VLOG(1) << piece << " :: " << entity->d_name;
-      }
-      closedir(dir);
-    }
+    musa::PrintLdLibraryPathIntoVlog();
   }
+
   absl::StatusOr<DriverVersion> dso_version = FindDsoVersion();
   LOG(INFO) << "libmusa reported version is: "
             << musa::DriverVersionStatusToString(dso_version);
@@ -145,38 +187,42 @@ void Diagnostician::LogDiagnosticInformation() {
 // Iterates through loaded DSOs with DlIteratePhdrCallback to find the
 // driver-interfacing DSO version number. Returns it as a string.
 absl::StatusOr<DriverVersion> Diagnostician::FindDsoVersion() {
-  absl::StatusOr<DriverVersion> result{absl::Status{
-      absl::StatusCode::kNotFound,
-      "was unable to find libmusa.so DSO loaded into this program"}};
+  absl::StatusOr<DriverVersion> result(absl::NotFoundError(
+      "was unable to find libmusa.so DSO loaded into this program. The library "
+      "may be missing or provided via another object."));
 
   // Callback used when iterating through DSOs. Looks for the driver-interfacing
   // DSO and yields its version number into the callback data, when found.
-  auto iterate_phdr = [](struct dl_phdr_info* info, size_t size,
-                         void* data) -> int {
-    if (strstr(info->dlpi_name, "libmusa.so.4")) {
-      VLOG(1) << "found DLL info with name: " << info->dlpi_name;
-      char resolved_path[PATH_MAX] = {0};
-      if (realpath(info->dlpi_name, resolved_path) == nullptr) {
-        return 0;
-      }
-      VLOG(1) << "found DLL info with resolved path: " << resolved_path;
-      const char* slash = rindex(resolved_path, '/');
-      if (slash == nullptr) {
-        return 0;
-      }
-      const char* so_suffix = ".so.";
-      const char* dot = strstr(slash, so_suffix);
-      if (dot == nullptr) {
-        return 0;
-      }
-      std::string dso_version = dot + strlen(so_suffix);
-      // TODO(b/22689637): Eliminate the explicit namespace if possible.
-      auto stripped_dso_version = absl::StripSuffix(dso_version, ".ld64");
-      auto result = static_cast<absl::StatusOr<DriverVersion>*>(data);
-      *result = musa::StringToDriverVersion(std::string(stripped_dso_version));
-      return 1;
+  auto iterate_phdr = [](struct dl_phdr_info *info, size_t size,
+                         void *data) -> int {
+    if (!strstr(info->dlpi_name, "libmusa.so.4")) {
+      return 0;
     }
-    return 0;
+
+    VLOG(1) << "found MUSA DLL info with name: " << info->dlpi_name;
+    char resolved_path_buf[PATH_MAX] = {0};
+    if (realpath(info->dlpi_name, resolved_path_buf) == nullptr) {
+      return 0;
+    }
+    absl::string_view resolved_path(resolved_path_buf);
+    VLOG(1) << "found DLL info with resolved path: " << resolved_path;
+    size_t slash = resolved_path.rfind('/');
+    if (slash == absl::string_view::npos) {
+      return 0;
+    }
+    absl::string_view so_suffix = ".so.";
+    size_t dot = resolved_path.find(so_suffix, slash);
+    if (dot == absl::string_view::npos) {
+      return 0;
+    }
+
+    absl::string_view dso_version =
+        resolved_path.substr(dot + so_suffix.size());
+    absl::string_view stripped_dso_version =
+        absl::StripSuffix(dso_version, ".ld64");
+    auto result = static_cast<absl::StatusOr<DriverVersion> *>(data);
+    *result = musa::StringToDriverVersion(std::string(stripped_dso_version));
+    return 1;
   };
 
   dl_iterate_phdr(iterate_phdr, &result);
@@ -185,19 +231,26 @@ absl::StatusOr<DriverVersion> Diagnostician::FindDsoVersion() {
 }
 
 absl::StatusOr<DriverVersion> Diagnostician::FindKernelModuleVersion(
-    const std::string& driver_version_file_contents) {
-  static const char* kDriverFilePrelude = "Kernel Module  ";
+    const std::string &driver_version_file_contents) {
+  static const char *kDriverFilePrelude = "Kernel Module";
   size_t offset = driver_version_file_contents.find(kDriverFilePrelude);
   if (offset == std::string::npos) {
-    return absl::Status{
-        absl::StatusCode::kNotFound,
+    return absl::NotFoundError(
         absl::StrCat("could not find kernel module information in "
                      "driver version file contents: \"",
-                     driver_version_file_contents, "\"")};
+                     driver_version_file_contents, "\""));
+  }
+  static const char *kDriverVersionPrelude = "  ";
+  offset = driver_version_file_contents.find(kDriverVersionPrelude, offset);
+  if (offset == std::string::npos) {
+    return absl::NotFoundError(
+        absl::StrCat("driver version not preceded by two spaces in "
+                     "driver version file contents: \"",
+                     driver_version_file_contents, "\""));
   }
 
   std::string version_and_rest = driver_version_file_contents.substr(
-      offset + strlen(kDriverFilePrelude), std::string::npos);
+      offset + strlen(kDriverVersionPrelude), std::string::npos);
   size_t space_index = version_and_rest.find(' ');
   auto kernel_version = version_and_rest.substr(0, space_index);
   // TODO(b/22689637): Eliminate the explicit namespace if possible.
@@ -222,8 +275,33 @@ void Diagnostician::WarnOnDsoKernelMismatch(
 }
 
 absl::StatusOr<DriverVersion> Diagnostician::FindKernelDriverVersion() {
-  auto status = absl::Status{absl::StatusCode::kUnimplemented,
-                             "kernel reported driver version not implemented"};
+  FILE *driver_version_file = fopen(kDriverVersionPath, "r");
+  if (driver_version_file == nullptr) {
+    return absl::PermissionDeniedError(
+        absl::StrCat("could not open driver version path for reading: ",
+                     kDriverVersionPath));
+  }
+
+  static const int kContentsSize = 1024;
+  absl::InlinedVector<char, 4> contents(kContentsSize);
+  size_t retcode =
+      fread(contents.begin(), 1, kContentsSize - 2, driver_version_file);
+  if (retcode < kContentsSize - 1) {
+    contents[retcode] = '\0';
+  }
+  contents[kContentsSize - 1] = '\0';
+
+  if (retcode != 0) {
+    VLOG(1) << "driver version file contents: \"\"\"" << contents.begin()
+            << "\"\"\"";
+    fclose(driver_version_file);
+    return FindKernelModuleVersion(contents.begin());
+  }
+
+  auto status = absl::InternalError(absl::StrCat(
+      "failed to read driver version file contents: ", kDriverVersionPath,
+      "; ferror: ", ferror(driver_version_file)));
+  fclose(driver_version_file);
   return status;
 }
 

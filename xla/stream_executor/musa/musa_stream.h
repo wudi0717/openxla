@@ -71,12 +71,12 @@ class MusaStream : public StreamCommon {
 
   ~MusaStream() override;
 
-  musaStream_t stream_handle() const { return stream_handle_; }
+  MUstream stream_handle() const { return stream_handle_; }
 
  private:
   MusaStream(StreamExecutor* executor, MusaEvent completed_event,
              std::optional<std::variant<StreamPriority, int>> priority,
-             musaStream_t stream_handle)
+             MUstream stream_handle)
       : StreamCommon(executor, priority),
         executor_(executor),
         completed_event_(std::move(completed_event)),
@@ -92,7 +92,10 @@ class MusaStream : public StreamCommon {
 
   StreamExecutor* executor_;
   MusaEvent completed_event_;
-  musaStream_t stream_handle_;
+  MUstream stream_handle_;
+  absl::Mutex mutex_;
+  bool no_pending_host_callbacks_ ABSL_GUARDED_BY(mutex_) = true;
+  std::atomic<int> num_pending_host_callbacks_ = 0;
 };
 
 }  // namespace gpu

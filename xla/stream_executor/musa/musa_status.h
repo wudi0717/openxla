@@ -24,23 +24,16 @@ limitations under the License.
 #include "musa.h"
 #include "musa_runtime.h"
 
-namespace stream_executor::gpu {
+namespace stream_executor::musa {
 
 namespace internal {
 // Helper method to handle the slow path of ToStatus.  Assumes a non-successful
 // result code.
-absl::Status ToStatusSlow(musaError_t result, absl::string_view detail);
 absl::Status ToStatusSlow(MUresult result, absl::string_view detail);
+absl::Status ToStatusSlow(musaError_t result, absl::string_view detail);
 }  // namespace internal
 
-// Returns an absl::Status corresponding to the musaError_t.
-inline absl::Status ToStatus(musaError_t result, absl::string_view detail = "") {
-  if (ABSL_PREDICT_TRUE(result == musaSuccess)) {
-    return absl::OkStatus();
-  }
-  return internal::ToStatusSlow(result, detail);
-}
-
+// Returns an absl::Status corresponding to the MUresult.
 inline absl::Status ToStatus(MUresult result, absl::string_view detail = "") {
   if (ABSL_PREDICT_TRUE(result == MUSA_SUCCESS)) {
     return absl::OkStatus();
@@ -48,10 +41,16 @@ inline absl::Status ToStatus(MUresult result, absl::string_view detail = "") {
   return internal::ToStatusSlow(result, detail);
 }
 
-// Returns a textual description of the given musaError_t.
-std::string ToString(musaError_t result);
-std::string ToString(MUresult result);
+// Returns an absl::Status corresponding to the musaError_t (MUSA runtime API
+// error type). The string `detail` will be included in the error message.
+inline absl::Status ToStatus(musaError_t result,
+                             absl::string_view detail = "") {
+  if (ABSL_PREDICT_TRUE(result == musaSuccess)) {
+    return absl::OkStatus();
+  }
+  return internal::ToStatusSlow(result, detail);
+}
 
-}  // namespace stream_executor::gpu
+}  // namespace stream_executor::musa
 
 #endif  // XLA_STREAM_EXECUTOR_MUSA_MUSA_STATUS_H_

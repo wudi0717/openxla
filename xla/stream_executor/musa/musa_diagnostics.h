@@ -38,11 +38,11 @@ absl::StatusOr<DriverVersion> StringToDriverVersion(const std::string& value);
 
 class Diagnostician {
  public:
-  // Logs diagnostic information when CUDA appears to be misconfigured (e.g. is
+  // Logs diagnostic information when MUSA appears to be misconfigured (e.g. is
   // not initializing).
   //
   // Note: if we're running on a machine that has no GPUs, we don't want to
-  // produce very much log spew beyond saying, "looks like there's no CUDA
+  // produce very much log spew beyond saying, "looks like there's no MUSA
   // kernel
   // module running".
   //
@@ -54,7 +54,7 @@ class Diagnostician {
   // returns it as a string.
   //
   // This is solely used for more informative log messages when the user is
-  // running on a machine that happens to have a libcuda/kernel driver mismatch.
+  // running on a machine that happens to have a libmusa/kernel driver mismatch.
   static absl::StatusOr<DriverVersion> FindKernelModuleVersion(
       const std::string& driver_version_file_contents);
 
@@ -75,7 +75,7 @@ class Diagnostician {
   // incompatibility.
   //
   // This is solely used for more informative log messages when the user is
-  // running on a machine that happens to have a libcuda/kernel driver mismatch.
+  // running on a machine that happens to have a libmusa/kernel driver mismatch.
   static void WarnOnDsoKernelMismatch(
       absl::StatusOr<DriverVersion> dso_version,
       absl::StatusOr<DriverVersion> kernel_version);

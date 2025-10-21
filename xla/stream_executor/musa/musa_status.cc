@@ -23,101 +23,49 @@ limitations under the License.
 #include "driver_types.h"
 #include "musa_runtime.h"
 
-namespace stream_executor::gpu {
+namespace stream_executor::musa::internal {
 
-// Formats musaError_t to output prettified values into a log stream.
-// Error summaries taken from:
-std::string ToString(musaError_t result) {
-#define OSTREAM_MUSA_ERROR(__name) \
-  case musaError##__name:           \
-    return "MUSA_ERROR_" #__name;
-
-  switch (result) {
-    OSTREAM_MUSA_ERROR(InvalidValue)
-    OSTREAM_MUSA_ERROR(OutOfMemory)
-    OSTREAM_MUSA_ERROR(NotInitialized)
-    OSTREAM_MUSA_ERROR(Deinitialized)
-    OSTREAM_MUSA_ERROR(NoDevice)
-    OSTREAM_MUSA_ERROR(InvalidDevice)
-    OSTREAM_MUSA_ERROR(InvalidImage)
-    OSTREAM_MUSA_ERROR(InvalidContext)
-    OSTREAM_MUSA_ERROR(InvalidHandle)
-    OSTREAM_MUSA_ERROR(NotFound)
-    OSTREAM_MUSA_ERROR(NotReady)
-    OSTREAM_MUSA_ERROR(NoBinaryForGpu)
-
-    // Encountered an uncorrectable ECC error during execution.
-    OSTREAM_MUSA_ERROR(ECCNotCorrectable)
-
-    // Load/store on an invalid address. Must reboot all context.
-    case 700:
-      return "MUSA_ERROR_ILLEGAL_ADDRESS";
-    // Passed too many / wrong arguments, too many threads for register count.
-    case 701:
-      return "MUSA_ERROR_LAUNCH_OUT_OF_RESOURCES";
-      OSTREAM_MUSA_ERROR(ContextAlreadyInUse)
-      OSTREAM_MUSA_ERROR(PeerAccessUnsupported)
-      OSTREAM_MUSA_ERROR(Unknown)  // Unknown internal error to MUSA.
-
-    default:
-      return absl::StrCat("musaError_t(", static_cast<int>(result), ")");
-  }
-#undef OSTREAM_MUSA_ERROR
-}
-
-std::string ToString(MUresult result) {
-#define OSTREAM_MUSA_ERROR(__name) \
-  case MUSA_ERROR_##__name:           \
-    return "MUSA_ERROR_" #__name;
-
-  switch (result) {
-    OSTREAM_MUSA_ERROR(INVALID_VALUE)
-    OSTREAM_MUSA_ERROR(OUT_OF_MEMORY)
-    OSTREAM_MUSA_ERROR(NOT_INITIALIZED)
-    OSTREAM_MUSA_ERROR(DEINITIALIZED)
-    OSTREAM_MUSA_ERROR(NO_DEVICE)
-    OSTREAM_MUSA_ERROR(INVALID_DEVICE)
-    OSTREAM_MUSA_ERROR(INVALID_IMAGE)
-    OSTREAM_MUSA_ERROR(INVALID_CONTEXT)
-    OSTREAM_MUSA_ERROR(INVALID_HANDLE)
-    OSTREAM_MUSA_ERROR(NOT_FOUND)
-    OSTREAM_MUSA_ERROR(NOT_READY)
-    OSTREAM_MUSA_ERROR(NO_BINARY_FOR_GPU)
-
-    // Encountered an uncorrectable ECC error during execution.
-    OSTREAM_MUSA_ERROR(ECC_UNCORRECTABLE)
-
-    // Load/store on an invalid address. Must reboot all context.
-    case 700:
-      return "MUSA_ERROR_ILLEGAL_ADDRESS";
-    // Passed too many / wrong arguments, too many threads for register count.
-    case 701:
-      return "MUSA_ERROR_LAUNCH_OUT_OF_RESOURCES";
-      OSTREAM_MUSA_ERROR(CONTEXT_ALREADY_IN_USE)
-      OSTREAM_MUSA_ERROR(PEER_ACCESS_UNSUPPORTED)
-      OSTREAM_MUSA_ERROR(UNKNOWN)  // Unknown internal error to MUSA.
-
-    default:
-      return absl::StrCat("musaError_t(", static_cast<int>(result), ")");
-  }
-#undef OSTREAM_MUSA_ERROR
-}
-
-namespace internal {
-absl::Status ToStatusSlow(musaError_t result, absl::string_view detail) {
-  std::string error_message = absl::StrCat(detail, ": ", ToString(result));
-  if (result == musaErrorOutOfMemory) {
-    return absl::ResourceExhaustedError(error_message);
-  }
-  return absl::InternalError(error_message);
-}
 absl::Status ToStatusSlow(MUresult result, absl::string_view detail) {
-  std::string error_message = absl::StrCat(detail, ": ", ToString(result));
-  if (result == MUSA_ERROR_OUT_OF_MEMORY) {
-    return absl::ResourceExhaustedError(error_message);
+  const char* error_name;
+  std::string error_detail;
+  if (muGetErrorName(result, &error_name)) {
+    error_detail = absl::StrCat(detail, ": UNKNOWN ERROR (",
+                                static_cast<int>(result), ")");
+  } else {
+    const char* error_string;
+    if (muGetErrorString(result, &error_string)) {
+      error_detail = absl::StrCat(detail, ": ", error_name);
+    } else {
+      error_detail = absl::StrCat(detail, ": ", error_name, ": ", error_string);
+    }
   }
-  return absl::InternalError(error_message);
-}
-}  // namespace internal
 
-}  // namespace stream_executor::gpu
+  if (result == MUSA_ERROR_OUT_OF_MEMORY) {
+    return absl::ResourceExhaustedError(error_detail);
+  } else if (result == MUSA_ERROR_NOT_FOUND) {
+    return absl::NotFoundError(error_detail);
+  } else {
+    return absl::InternalError(absl::StrCat("MUSA error: ", error_detail));
+  }
+}
+
+absl::Status ToStatusSlow(musaError_t result, absl::string_view detail) {
+  std::string error_detail(detail);
+  const char* error_name = musaGetErrorName(result);
+  const char* error_string = musaGetErrorString(result);
+  if (error_name == nullptr) {
+    absl::StrAppend(&error_detail, ": UNKNOWN ERROR (",
+                    static_cast<int>(result), ")");
+  } else {
+    absl::StrAppend(&error_detail, ": ", error_name);
+  }
+
+  if (error_string != nullptr) {
+    absl::StrAppend(&error_detail, ": ", error_string);
+  }
+
+  return absl::InternalError(
+      absl::StrCat("MUSA Runtime error: ", error_detail));
+}
+
+}  // namespace stream_executor::musa::internal

@@ -53,6 +53,9 @@ limitations under the License.
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/InitializePasses.h"
@@ -63,6 +66,7 @@ limitations under the License.
 #include "llvm/Passes/StandardInstrumentations.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
@@ -469,49 +473,100 @@ static std::string randomTmpPath(const char *ext) {
     return random_name+ext;
 }
 
+#include "musa_intrinsic.def"
+using llvm::CallInst;
+
 static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
-    // 先收集所有调用
-    std::vector<llvm::CallInst *> CallsToReplace;
+    // 1. 收集所有匹配规则的调用
+    struct Rec { llvm::CallInst *CI; const Rule *R; };
+    std::vector<Rec> worklist;
+
     for (llvm::Function &F : M) {
         for (llvm::BasicBlock &BB : F) {
             for (llvm::Instruction &I : BB) {
                 if (auto *CI = llvm::dyn_cast<llvm::CallInst>(&I)) {
                     llvm::Function *Callee = CI->getCalledFunction();
-                    if (Callee && Callee->getName().starts_with("llvm.nvvm."))
-                        CallsToReplace.push_back(CI);
+                    if (!Callee) continue;
+                    llvm::StringRef old = Callee->getName();
+                    for (const Rule &R : rules) {
+                        if (old != R.oldName) continue;
+                        if (R.type == 1) {
+                            if (CI->arg_size() != 1) continue;
+                            //auto *C = dyn_cast<ConstantInt>(CI->getArgOperand(0));
+                            //if (!C || C->getZExtValue() != 0) continue;
+                        }
+                        worklist.push_back({CI, &R});
+                        break; // 一条规则已命中，无需再试
+                    }
                 }
             }
         }
     }
 
-    // 逐个替换
-    for (llvm::CallInst *CI : CallsToReplace) {
-        llvm::Function *OldDecl = CI->getCalledFunction();
-        std::string NewName = OldDecl->getName().str();
-        llvm::StringRef prefix = "llvm.nvvm.";
-        NewName.replace(0, prefix.size(), "llvm.musa.");
+    // 2. 统一处理：创建新声明 + 替换调用
+    for (const Rec &rec : worklist) {
+        llvm::CallInst *CI   = rec.CI;
+        const Rule *R  = rec.R;
+        llvm::Function *oldF = CI->getCalledFunction();
+        llvm::Function *newF = M.getFunction(R->newName);
+        if (!newF) {
+            // 复制原类型
+	  switch (R->type) {
+	    case 1:
+	    {
+	      llvm::Type *voidTy = llvm::Type::getVoidTy(M.getContext());
+  	      llvm::FunctionType *noArgTy = llvm::FunctionType::get(voidTy, /*isVarArg=*/false);
 
-        llvm::Function *NewDecl = M.getFunction(NewName);
-        if (!NewDecl) {
-            // 创建新声明，属性与旧声明保持一致
-            NewDecl = llvm::Function::Create(
-                llvm::cast<llvm::FunctionType>(OldDecl->getValueType()),
-                llvm::GlobalValue::ExternalLinkage,
-                NewName, &M);
-            NewDecl->setAttributes(OldDecl->getAttributes());
-            NewDecl->setCallingConv(OldDecl->getCallingConv());
+  	      newF = llvm::Function::Create(noArgTy,
+                                llvm::GlobalValue::ExternalLinkage,
+                                R->newName, &M);
+              newF->setAttributes(oldF->getAttributes());
+              newF->setCallingConv(oldF->getCallingConv());
+	      break;
+	    }
+	    default:
+	    {
+              newF = llvm::Function::Create(oldF->getFunctionType(),
+                                    llvm::GlobalValue::ExternalLinkage,
+                                    R->newName, &M);
+              newF->setAttributes(oldF->getAttributes());
+              newF->setCallingConv(oldF->getCallingConv());
+	      break;
+	    }
+	  }
         }
-        CI->setCalledFunction(NewDecl);
+	switch (R->type) {
+	  case 1:
+	  {
+	    llvm::Type *voidTy = llvm::Type::getVoidTy(M.getContext());
+  	    llvm::FunctionType *noArgTy = llvm::FunctionType::get(voidTy, /*isVarArg=*/false);
+	    llvm::IRBuilder<> Builder(CI);
+	    llvm::CallInst *NewCall = Builder.CreateCall(noArgTy, newF, {});
+	    NewCall->takeName(CI);                      // 保留原名字
+	    NewCall->setCallingConv(CI->getCallingConv());
+	    NewCall->setAttributes(CI->getAttributes());
+	    if (auto DL = CI->getDebugLoc())
+    	      NewCall->setDebugLoc(DL);
+	    CI->replaceAllUsesWith(NewCall);
+	    CI->eraseFromParent();
+	    //CI->mutateFunctionType(noArgTy); // 确保类型一致
+	    break;
+	  }
+	  default:
+	  {
+            CI->setCalledFunction(newF);
+	    break;
+	  }
+        }
     }
 
-    // 删掉旧声明（如果已无人使用）
-    for (auto It = M.getFunctionList().begin(); It != M.getFunctionList().end();) {
-        llvm::Function &F = *It++;
-        if (F.getName().starts_with("llvm.nvvm.") && F.use_empty())
-            F.eraseFromParent();
+    // 3. 清理无人使用的旧声明
+    for (const Rule &R : rules) {
+        if (llvm::Function *F = M.getFunction(R.oldName))
+            if (F->use_empty()) F->eraseFromParent();
     }
+    assert(!llvm::verifyModule(M, &llvm::errs()));
 }
-
 
 absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     llvm::Module* module, se::GpuComputeCapability gpu_version,
@@ -597,6 +652,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
 
   //Cache hsaco
   HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
+  //module->dropAllReferences();  // 清空 use-list
 
   return hsaco;
 }

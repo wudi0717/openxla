@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-// The CUDA implementation of the StreamExecutor functionality.
-// CUDA inclusions are ideally confined to this implementation file.
+// The MUSA implementation of the StreamExecutor functionality.
+// MUSA inclusions are ideally confined to this implementation file.
 //
-// The notions from the StreamExecutor basically correspond to the CUDA streams
-// programming model provided by the libcuda.so driver APIs, so we don't have
+// The notions from the StreamExecutor basically correspond to the MUSA streams
+// programming model provided by the libmusa.so driver APIs, so we don't have
 // to do much more than wrap the calls to the libraries appropriately.
 #ifndef XLA_STREAM_EXECUTOR_MUSA_MUSA_KERNEL_H_
 #define XLA_STREAM_EXECUTOR_MUSA_MUSA_KERNEL_H_
@@ -43,8 +43,8 @@ class MusaKernel : public Kernel {
   // module that the function is contained in is owned by the StreamExecutor.
   ~MusaKernel() override { executor_->UnloadKernel(this); }
 
-  // As arity cannot be reflected upon using the HIP API, the arity is
-  // explicitly set during the MusaExecutor::GetKernel initialization process.
+  // As arity cannot be reflected upon using the MUSA API, the arity is
+  // explicitly set during the StreamExecutor::GetKernel initialization process.
   void set_arity(unsigned arity) { arity_ = arity; }
   unsigned Arity() const override { return arity_; }
 
@@ -52,9 +52,9 @@ class MusaKernel : public Kernel {
       ThreadDim threads, size_t dynamic_shared_memory_bytes) const override;
 
   // Simple accessor methods.
-  MUfunction gpu_function() const { return musa_function_; }
-  void set_gpu_function(MUfunction musa_function) {
-    musa_function_ = musa_function;
+  MUfunction gpu_function() const { return gpu_function_; }
+  void set_gpu_function(MUfunction gpu_function) {
+    gpu_function_ = gpu_function;
   }
 
   // Collects metadata for the specified kernel.
@@ -67,7 +67,7 @@ class MusaKernel : public Kernel {
 
   StreamExecutor* executor_ = nullptr;
 
-  MUfunction musa_function_ = nullptr;  // wrapped HIP kernel handle
+  MUfunction gpu_function_ = nullptr;  // wrapped MUSA kernel handle
   unsigned arity_ = 0;  // number of formal parameters the kernel takes
 };
 

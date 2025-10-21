@@ -1,0 +1,12 @@
+struct Rule {
+    const char *oldName;   // 必须全匹配
+    const char *newName;   // 替换后名字
+    int     type; // 0 means 参数不变，1表示args 1 -> args 0;
+};
+static const Rule rules[] = {
+    {"llvm.nvvm.read.ptx.sreg.ctaid.x", "llvm.musa.read.ptx.sreg.ctaid.x", 0},
+    {"llvm.nvvm.read.ptx.sreg.tid.x",   "llvm.musa.read.ptx.sreg.tid.x",   0},
+    {"llvm.nvvm.read.ptx.sreg.ntid.x",  "llvm.musa.read.ptx.sreg.ntid.x",  0},
+    // ----- barrier -----
+    {"llvm.nvvm.barrier.cta.sync.aligned.all", "llvm.musa.barrier0", 1},
+};
