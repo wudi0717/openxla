@@ -31,4 +31,8 @@ cc_library(
         annotations = numpy_annotations,
         python_interpreter_target = interpreter,
         requirements_lock = REQUIREMENTS_WITH_LOCAL_WHEELS,
+        extra_pip_args = ["--timeout", "20",
+            "--index-url=https://pypi.tuna.tsinghua.edu.cn/simple",
+            "--trusted-host=pypi.tuna.tsinghua.edu.cn",
+        ],
     )
