@@ -1160,7 +1160,23 @@ void MusaExecutor::DeallocateStream(Stream* stream) {
 }
 
 blas::BlasSupport* MusaExecutor::AsBlas() {
-  return nullptr;
+  absl::MutexLock lock(&mu_);
+  if (blas_ != nullptr) {
+    return blas_.get();
+  }
+
+  PluginRegistry* registry = PluginRegistry::Instance();
+  absl::StatusOr<PluginRegistry::BlasFactory> status =
+      registry->GetFactory<PluginRegistry::BlasFactory>(musa::kMUSaPlatformId);
+  if (!status.ok()) {
+    LOG(ERROR) << "Unable to retrieve BLAS factory: "
+               << status.status().message();
+    return nullptr;
+  }
+
+  auto blas = status.value()(this);
+  blas_.reset(blas);
+  return blas_.get();
 }
 
 dnn::DnnSupport* MusaExecutor::AsDnn() {
