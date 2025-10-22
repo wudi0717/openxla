@@ -53,14 +53,14 @@ __device__ __forceinline__ NT GpuShuffle(NT val, uint32_t idx,
 #pragma unroll
   for (uint32_t i = 0; i < SZ; i++) {
     if constexpr (Type == ShflType::kSync)
-      res.d[i] = __shfl(in.d[i], idx);
+      res.d[i] = __shfl_sync(0xffffffff, in.d[i], idx);
     else if constexpr (Type == ShflType::kUp)
-      res.d[i] = __shfl_up(in.d[i], idx);
+      res.d[i] = __shfl_up_sync(0xffffffff, in.d[i], idx);
     // TODO(perfxlab): __shfl_down undeclared
-    // else if constexpr (Type == ShflType::kDown)
-    //   res.d[i] = __shfl_down(in.d[i], idx);
+    else if constexpr (Type == ShflType::kDown)
+      res.d[i] = __shfl_down_sync(0xffffffff, in.d[i], idx);
     else if constexpr (Type == ShflType::kXor)
-      res.d[i] = __shfl_xor(in.d[i], idx);
+      res.d[i] = __shfl_xor_sync(0xffffffff, in.d[i], idx);
   }
   return res.v;
 }
