@@ -537,7 +537,7 @@ cc_library(
         ":musa_helpers",
         ":musa_platform",
         ":mudnn_plugin",
-        # ":topk_kernel_musa",
+        ":topk_kernel_musa",
     ],
     alwayslink = 1,
 )
@@ -731,27 +731,27 @@ cc_library(
 #     alwayslink = 1,
 # )
 
-# musa_library(
-#     name = "topk_kernel_musa",
-#     srcs = [
-#         "topk_kernel_musa_bfloat16.cu.cc",
-#         "topk_kernel_musa_common.cu.h",
-#         "topk_kernel_musa_float.cu.cc",
-#     ],
-#     # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
-#     tags = [
-#         "gpu",
-#         "musa-only",
-#     ],
-#     deps = [
-#         ":musa_platform_id",
-#         "//xla:types",
-#         "//xla/stream_executor/gpu:gpu_kernel_registry",
-#         "//xla/stream_executor/gpu:topk_kernel",
-#         "//xla/tsl/lib/math:math_util",
-#     ],
-#     alwayslink = 1,
-# )
+musa_library(
+    name = "topk_kernel_musa",
+    srcs = [
+        # "topk_kernel_musa_bfloat16.cu.cc",
+        "topk_kernel_musa_common.cu.h",
+        "topk_kernel_musa_float.cu.cc",
+    ],
+    # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = [
+        ":musa_platform_id",
+        "//xla:types",
+        "//xla/stream_executor/gpu:gpu_kernel_registry",
+        "//xla/stream_executor/gpu:topk_kernel",
+        "//xla/tsl/lib/math:math_util",
+    ],
+    alwayslink = 1,
+)
 
 # musa_library(
 #     name = "repeat_buffer_kernel_musa",
