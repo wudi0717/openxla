@@ -601,38 +601,55 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   }
   VLOG(1) << "HSACO cache miss";
   
-  //Change func call convension.
-
-  convertNvvmToMusaIntrinsics(*module);
-  module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
-  const char* newDataLayout = 
-        "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
-  module->setDataLayout(newDataLayout);
-
-  std::string llFile = randomTmpPath(".ll");
   std::string objFile = randomTmpPath(".o");
   std::string mubinFile = randomTmpPath(".mubin");
+  std::string linkFile;
+  std::string llFile;
+  //Just for debug
+  const std::filesystem::path file = "xla_test_debug.ll";
+  if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file)) {
+    linkFile = "xla_test_debug.ll";
+    llFile = "xla_test_debug.ll";
+  }
+  else
+  {
+    //Change func call convension.
 
-  std::string ir_content;
-  llvm::raw_string_ostream ir_stream(ir_content);
-  module->print(ir_stream, nullptr);
-  ir_stream.flush();
+    convertNvvmToMusaIntrinsics(*module);
+    module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
+    const char* newDataLayout = 
+        "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
+    module->setDataLayout(newDataLayout);
 
-  //Replace ptx_kernel to mtgpu_kernel
-  std::regex ptx_kernel_regex("ptx_kernel");
-  ir_content = std::regex_replace(ir_content, ptx_kernel_regex, "mtgpu_kernel");
+    llFile = randomTmpPath(".ll");
+    linkFile = randomTmpPath("_link.ll");
+    std::string bcFile = "/data/moon/github/openxla/third_party/gpus/musa/libdevice.31.ll";
 
-  std::error_code EC;
-  llvm::raw_fd_ostream os(llFile, EC, llvm::sys::fs::OF_Text);
-  if (EC) throw std::runtime_error("cannot open " + llFile);
-  os << ir_content;
-  os.close();
+    std::string ir_content;
+    llvm::raw_string_ostream ir_stream(ir_content);
+    module->print(ir_stream, nullptr);
+    ir_stream.flush();
 
-  std::string llcCmd = "llc \"" + llFile + "\" -march=mtgpu -mcpu=mp_31 "
+    //Replace ptx_kernel to mtgpu_kernel
+    std::regex ptx_kernel_regex("ptx_kernel");
+    ir_content = std::regex_replace(ir_content, ptx_kernel_regex, "mtgpu_kernel");
+
+    std::error_code EC;
+    llvm::raw_fd_ostream os(llFile, EC, llvm::sys::fs::OF_Text);
+    if (EC) throw std::runtime_error("cannot open " + llFile);
+    os << ir_content;
+    os.close();
+
+    std::string llvmlinkCmd =
+    "llvm-link \"" + llFile + "\" \"" + bcFile + "\" -S -o \"" + linkFile + "\"";
+    if (std::system(llvmlinkCmd.c_str()) != 0)
+      throw std::runtime_error("llvm-link failed");
+  }
+
+    std::string llcCmd = "llc \"" + linkFile + "\" -march=mtgpu -mcpu=mp_31 "
                          "-filetype=obj -o \"" + objFile + "\"";
-  if (std::system(llcCmd.c_str()) != 0)
-    throw std::runtime_error("llc failed");
-
+    if (std::system(llcCmd.c_str()) != 0)
+      throw std::runtime_error("llc failed");
     // 5. lld
   std::string lldCmd = "lld -flavor gnu -shared \"" + objFile + "\" -o \"" + mubinFile + "\"";
   if (std::system(lldCmd.c_str()) != 0)
@@ -651,7 +668,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   //std::remove(llFile.c_str());
   //std::remove(objFile.c_str());
   //std::remove(mubinFile.c_str());
-  std::cout << llFile;
+  //std::cout << llFile;
 
 
   //Cache hsaco

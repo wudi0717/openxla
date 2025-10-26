@@ -9,4 +9,5 @@ static const Rule rules[] = {
     {"llvm.nvvm.read.ptx.sreg.ntid.x",  "llvm.musa.read.ptx.sreg.ntid.x",  0},
     // ----- barrier -----
     {"llvm.nvvm.barrier.cta.sync.aligned.all", "llvm.musa.barrier0", 1},
+    {"llvm.nvvm.shfl.sync.down.i32",  "llvm_nvvm_shfl_sync_down_i32",  0},
 };

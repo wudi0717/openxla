@@ -290,53 +290,6 @@ cc_library(
     alwayslink = True,
 )
 
-cc_library(
-    name = "mublas_plugin",
-    srcs = ["musa_blas.cc"],
-    hdrs = ["musa_blas.h"],
-    tags = [
-        "gpu",
-        "musa-only",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":mublas_if_static",
-        ":mublas_wrapper",
-        ":musa_complex_converters",
-        ":musa_executor",
-        ":musa_helpers",
-        ":musa_platform_id",
-        "//xla/stream_executor:activate_context",
-        "//xla/stream_executor:blas",
-        "//xla/stream_executor:device_description",
-        "//xla/stream_executor:device_memory",
-        "//xla/stream_executor:event_based_timer",
-        "//xla/stream_executor:host_or_device_scalar",
-        "//xla/stream_executor:numeric_options",
-        "//xla/stream_executor:plugin_registry",
-        "//xla/stream_executor:scratch_allocator",
-        "//xla/stream_executor:stream_executor_h",
-        "//xla/stream_executor/gpu:gpu_blas_lt",
-        "//xla/stream_executor/gpu:gpu_helpers_header",
-        "//xla/stream_executor/platform:initialize",
-        "//xla/tsl/platform:errors",
-        "//xla/tsl/platform:logging",
-        "//xla/tsl/platform:macros",
-        "//xla/tsl/platform:statusor",
-        "//xla/tsl/util:determinism_hdr_lib",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
-        "@com_google_absl//absl/types:span",
-        "@eigen_archive//:eigen3",
-        "@local_config_musa//musa:musa_headers",
-    ],
-    alwayslink = True,
-)
-
 # cc_library(
 #     name = "mufft_if_static",
 #     tags = [
@@ -490,19 +443,19 @@ cc_library(
 #     ],
 # )
 
-musa_library(
-    name = "musa_helpers",
-    srcs = ["musa_helpers.cu.cc"],
+#musa_library(
+#    name = "musa_helpers",
+#    srcs = ["musa_helpers.cu.cc"],
     # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
-    tags = [
-        "gpu",
-        "musa-only",
-    ],
-    deps = [
-        "@local_config_musa//musa:musa_headers",
-    ],
-    alwayslink = True,
-)
+#    tags = [
+#        "gpu",
+#        "musa-only",
+#    ],
+#    deps = [
+#        "@local_config_musa//musa:musa_headers",
+#    ],
+#    alwayslink = True,
+#)
 
 cc_library(
     name = "musa_complex_converters",
@@ -533,8 +486,8 @@ cc_library(
         # ":ragged_all_to_all_kernel_musa",
         # ":redzone_allocator_kernel_musa",
         # ":repeat_buffer_kernel_musa",
-        ":mublas_plugin",
-        ":musa_helpers",
+        # ":mublas_plugin",
+        # ":musa_helpers",
         ":musa_platform",
         ":mudnn_plugin",
         ":topk_kernel_musa",
