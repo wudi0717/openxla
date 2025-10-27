@@ -66,6 +66,7 @@ cc_library(
 	":musa_runtime",
 	":musart",
 	":mccl",
+    ":musparse",
     ]
 )
 

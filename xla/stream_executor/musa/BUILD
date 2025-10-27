@@ -491,6 +491,7 @@ cc_library(
         ":musa_platform",
         ":mudnn_plugin",
         ":topk_kernel_musa",
+        "@local_config_musa//musa:musparse",
     ],
     alwayslink = 1,
 )
@@ -797,6 +798,37 @@ cc_library(
         "@local_config_musa//musa:musa_headers",
         "@tsl//tsl/platform:dso_loader",
         "@tsl//tsl/platform:hash",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "musparse_if_static",
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = if_static([
+        "@local_config_musa//musa:musparse",
+    ]),
+)
+
+cc_library(
+    name = "musparse_wrapper",
+    srcs = ["musparse_wrapper.h"],
+    hdrs = ["musparse_wrapper.h"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = [
+        ":musparse_if_static",
+        ":musa_executor",
+        ":musa_platform_id",
+        "//xla/tsl/platform:env",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform",
+        "@tsl//tsl/platform:dso_loader",
     ],
     alwayslink = True,
 )
