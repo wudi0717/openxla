@@ -45766,6 +45766,16 @@ define protected float @__nv_log2f(float noundef %0) #0 {
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__nv_log1pf(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = fadd float %3, 1.000000e+00
+  %5 = call float @__mt_log_f32(float noundef %4) #12
+  ret float %5
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__nv_logf(float noundef %0) #0 {
   %2 = alloca float, align 4
   store float %0, ptr %2, align 4

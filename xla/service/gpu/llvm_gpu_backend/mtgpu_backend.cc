@@ -512,6 +512,25 @@ static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
         if (!newF) {
             // 复制原类型
 	  switch (R->type) {
+	    case 2:
+	    {
+	      llvm::LLVMContext &Ctx = M.getContext();
+	      llvm::Type *Int32Ty = llvm::Type::getInt32Ty(Ctx);
+      	      llvm::PointerType *PtrAS5Ty = llvm::PointerType::get(Ctx, 5);
+      	      llvm::FunctionType *NewFTy = llvm::FunctionType::get(Int32Ty, {Int32Ty, Int32Ty, Int32Ty, PtrAS5Ty}, false);
+	      newF = llvm::Function::Create(NewFTy, llvm::GlobalValue::ExternalLinkage, R->newName, &M);
+
+	      llvm::AttributeList NewAttrs;
+	      llvm::AttrBuilder FnAttr(Ctx);
+	      FnAttr.addAttribute(llvm::Attribute::Convergent);
+	      FnAttr.addAttribute(llvm::Attribute::NoUnwind);
+	      FnAttr.addMemoryAttr(llvm::MemoryEffects::writeOnly());   // LLVM 15+ 写法
+	      NewAttrs = NewAttrs.addFnAttributes(Ctx, FnAttr);
+
+	      newF->setAttributes(NewAttrs);
+              newF->setCallingConv(oldF->getCallingConv());
+	      break;
+	    }
 	    case 1:
 	    {
 	      llvm::Type *voidTy = llvm::Type::getVoidTy(M.getContext());
@@ -536,6 +555,29 @@ static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
 	  }
         }
 	switch (R->type) {
+	  case 2:
+	  {
+	    llvm::LLVMContext &Ctx = M.getContext();
+	    llvm::Type *Int32Ty = llvm::Type::getInt32Ty(Ctx);
+      	    llvm::PointerType *PtrAS5Ty = llvm::PointerType::get(Ctx, 5);
+      	    llvm::FunctionType *NewFTy = llvm::FunctionType::get(Int32Ty, {Int32Ty, Int32Ty, Int32Ty, PtrAS5Ty}, false);
+	    llvm::IRBuilder<> Builder(CI);
+            llvm::Value *Val = CI->getArgOperand(1);
+            llvm::Value *Offset = CI->getArgOperand(2);
+            llvm::Value *Mask = CI->getArgOperand(3);
+	    llvm::Value *NullPtr = llvm::ConstantPointerNull::get(PtrAS5Ty);
+	    llvm::CallInst *NewCall = Builder.CreateCall(NewFTy, newF, {Val, Offset, Mask, NullPtr});
+
+	    NewCall->takeName(CI);                      // 保留原名字
+	    NewCall->setCallingConv(CI->getCallingConv());
+	    NewCall->setAttributes(CI->getAttributes());
+	    if (auto DL = CI->getDebugLoc())
+    	      NewCall->setDebugLoc(DL);
+
+            CI->replaceAllUsesWith(NewCall);
+            CI->eraseFromParent();
+	    break;
+	  }
 	  case 1:
 	  {
 	    llvm::Type *voidTy = llvm::Type::getVoidTy(M.getContext());
@@ -641,7 +683,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     os.close();
 
     std::string llvmlinkCmd =
-    "llvm-link \"" + llFile + "\" \"" + bcFile + "\" -S -o \"" + linkFile + "\"";
+    "llvm-link \"" + llFile + "\" \"" + bcFile + "\" --only-needed -S -o \"" + linkFile + "\"";
     if (std::system(llvmlinkCmd.c_str()) != 0)
       throw std::runtime_error("llvm-link failed");
   }
