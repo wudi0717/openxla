@@ -510,8 +510,8 @@ static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
         llvm::Function *oldF = CI->getCalledFunction();
         llvm::Function *newF = M.getFunction(R->newName);
         if (!newF) {
-            // 复制原类型
 	  switch (R->type) {
+	    case 3:
 	    case 2:
 	    {
 	      llvm::LLVMContext &Ctx = M.getContext();
@@ -555,6 +555,29 @@ static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
 	  }
         }
 	switch (R->type) {
+	  case 3:
+	  {
+	    llvm::LLVMContext &Ctx = M.getContext();
+	    llvm::Type *Int32Ty = llvm::Type::getInt32Ty(Ctx);
+	    llvm::Type *F32Ty = llvm::Type::getFloatTy(Ctx);
+      	    llvm::PointerType *PtrAS5Ty = llvm::PointerType::get(Ctx, 5);
+      	    llvm::FunctionType *NewFTy = llvm::FunctionType::get(Int32Ty, {Int32Ty, Int32Ty, Int32Ty, PtrAS5Ty}, false);
+	    llvm::IRBuilder<> Builder(CI);
+            llvm::Value *Val = CI->getArgOperand(1);
+            llvm::Value *Offset = CI->getArgOperand(2);
+            llvm::Value *Mask = CI->getArgOperand(3);
+	    llvm::Value *NullPtr = llvm::ConstantPointerNull::get(PtrAS5Ty);
+
+	    llvm::Value *TempX = Builder.CreateBitCast(Val, Int32Ty);   // 不指定名字
+	    llvm::CallInst *NewCall = llvm::CallInst::Create(NewFTy, newF, {TempX, Offset, Mask, NullPtr}, "", CI);
+	    NewCall->setCallingConv(CI->getCallingConv());
+	    NewCall->setAttributes(CI->getAttributes());
+	    llvm::Value *Result = Builder.CreateBitCast(NewCall, F32Ty, CI->getName()); // 继承原调用名
+
+            CI->replaceAllUsesWith(Result);
+            CI->eraseFromParent();
+	    break;
+	  }
 	  case 2:
 	  {
 	    llvm::LLVMContext &Ctx = M.getContext();
