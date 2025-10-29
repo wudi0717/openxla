@@ -302,7 +302,7 @@ CodegenDecision CanTritonHandleGEMM(
   auto musa_compute_capability =
       std::get_if<se::MusaComputeCapability>(&gpu_version);
 
-  CHECK(cuda_compute_capability || rocm_compute_capability);
+  CHECK(cuda_compute_capability || rocm_compute_capability || musa_compute_capability);
 
   if (dot.precision_config().algorithm() == PrecisionConfig::ALG_UNSET) {
     if (!tsl::tensor_float_32_execution_enabled() ||
