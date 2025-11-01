@@ -476,6 +476,90 @@ static std::string randomTmpPath(const char *ext) {
 #include "musa_intrinsic.def"
 using llvm::CallInst;
 
+static void convertIRToMusaIntrinsics1(llvm::Module &M) {
+// 0. 提前准备好的变量
+  llvm::LLVMContext &Ctx = M.getContext();
+  llvm::Type *F32Ty    = llvm::Type::getFloatTy(Ctx);
+  llvm::Type *BFloatTy = llvm::Type::getBFloatTy(Ctx);
+
+// 1. 声明 musa 库函数（只一次）
+  llvm::Function *Callee = M.getFunction("llvm.musa.float2bfloat16");
+  if (!Callee) {
+    llvm::FunctionType *FTy = llvm::FunctionType::get(BFloatTy, {F32Ty}, false);
+    Callee = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                            "llvm.musa.float2bfloat16", &M);
+    Callee->setOnlyReadsMemory();   // readnone
+    Callee->setDoesNotThrow();      // nounwind
+    Callee->setWillReturn();        // willreturn
+  }
+
+// 2. 收集所有 fptrunc float→bfloat
+  llvm::SmallVector<llvm::FPTruncInst*, 8> WorkList;
+  for (llvm::Function &F : M)
+    for (llvm::BasicBlock &BB : F)
+      for (llvm::Instruction &I : BB)
+        if (auto *Trunc = llvm::dyn_cast<llvm::FPTruncInst>(&I))
+          if (Trunc->getSrcTy()->isFloatTy() &&
+              Trunc->getDestTy()->isBFloatTy())
+            WorkList.push_back(Trunc);
+
+// 3. 逐个替换
+  llvm::IRBuilder<> B(Ctx);
+  for (llvm::FPTruncInst *Trunc : WorkList) {
+    B.SetInsertPoint(Trunc);
+    llvm::CallInst *Call = B.CreateCall(Callee->getFunctionType(),
+                                Callee,
+                                {Trunc->getOperand(0)});
+    Call->setTailCall();                                    // tail
+    Call->setAttributes(Callee->getAttributes());
+
+    Trunc->replaceAllUsesWith(Call);
+    Trunc->eraseFromParent();
+  }
+}
+static void convertIRToMusaIntrinsics(llvm::Module &M) {
+// 1. 先声明 musa 库函数（只声明一次）
+  llvm::Function *F32FromBF16 = M.getFunction("llvm.musa.bfloat162float");
+  if (!F32FromBF16) {
+    llvm::Type *BFloatTy = llvm::Type::getBFloatTy(M.getContext());
+    llvm::Type *F32Ty    = llvm::Type::getFloatTy(M.getContext());
+    llvm::FunctionType *FTy =
+      llvm::FunctionType::get(F32Ty, {BFloatTy}, /*isVarArg=*/false);
+
+    F32FromBF16 = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                                 "llvm.musa.bfloat162float", &M);
+  // 加属性
+    F32FromBF16->setOnlyReadsMemory();          // readnone
+    F32FromBF16->setDoesNotThrow();             // nounwind
+    F32FromBF16->setWillReturn();               // willreturn
+  }
+
+  // 2. 收集所有 fpext bfloat → float
+  llvm::SmallVector<llvm::FPExtInst*, 8> WorkList;
+  for (llvm::Function &F : M)
+    for (llvm::BasicBlock &BB : F)
+      for (llvm::Instruction &I : BB)
+        if (auto *Ext = llvm::dyn_cast<llvm::FPExtInst>(&I))
+          if (Ext->getSrcTy()->isBFloatTy() &&
+            Ext->getDestTy()->isFloatTy())
+            WorkList.push_back(Ext);
+
+// 3. 逐个替换
+  llvm::IRBuilder<> B(M.getContext());
+  for (llvm::FPExtInst *Ext : WorkList) {
+    B.SetInsertPoint(Ext);
+
+    llvm::CallInst *Call = B.CreateCall(F32FromBF16->getFunctionType(),
+                                F32FromBF16,
+                                {Ext->getOperand(0)});
+    Call->setTailCall();                // tail
+    Call->getFastMathFlags().setAllowContract(true);
+    Call->setAttributes(F32FromBF16->getAttributes());
+
+    Ext->replaceAllUsesWith(Call);
+    Ext->eraseFromParent();
+  }
+}
 static void convertNvvmToMusaIntrinsics(llvm::Module &M) {
     // 1. 收集所有匹配规则的调用
     struct Rec { llvm::CallInst *CI; const Rule *R; };
@@ -681,6 +765,8 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     //Change func call convension.
 
     convertNvvmToMusaIntrinsics(*module);
+    convertIRToMusaIntrinsics(*module);
+    convertIRToMusaIntrinsics1(*module);
     module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
     const char* newDataLayout = 
         "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
