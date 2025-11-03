@@ -475,6 +475,53 @@ static std::string randomTmpPath(const char *ext) {
 
 #include "musa_intrinsic.def"
 using llvm::CallInst;
+static void convertIRToMusaIntrinsics2(llvm::Module &M) {
+    llvm::LLVMContext &Ctx = M.getContext();
+    llvm::Type *BFloatTy = llvm::Type::getBFloatTy(Ctx);
+    llvm::Type *F32Ty    = llvm::Type::getFloatTy(Ctx);
+
+    // 1. 声明 musa 库函数（只一次）
+    llvm::Function *Callee = M.getFunction("llvm.musa.bfloat162float");
+    if (!Callee) {
+      llvm::FunctionType *FTy = llvm::FunctionType::get(F32Ty, {BFloatTy}, false);
+      Callee = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                                "llvm.musa.bfloat162float", &M);
+      Callee->setOnlyReadsMemory();
+      Callee->setDoesNotThrow();
+      Callee->setWillReturn();
+    }
+
+    // 2. 扫描所有 fcmp une (bfloat, bfloat)
+    llvm::SmallVector<llvm::FCmpInst *, 8> WorkList;
+    for (llvm::Function &F : M)
+      for (llvm::BasicBlock &BB : F)
+        for (llvm::Instruction &I : BB)
+          if (auto *CI = llvm::dyn_cast<llvm::FCmpInst>(&I))
+            if (CI->getOperand(0)->getType()->isBFloatTy() || 
+		CI->getOperand(1)->getType()->isBFloatTy() )
+              WorkList.push_back(CI);
+
+    // 3. 逐个替换
+    llvm::IRBuilder<> B(Ctx);
+    for (llvm::FCmpInst *CI : WorkList) {
+      llvm::Value *Op0 = CI->getOperand(0);
+      llvm::Value *Op1 = CI->getOperand(1);
+
+      B.SetInsertPoint(CI);
+
+      // 3.1 转 float
+      llvm::CallInst *TempX = B.CreateCall(Callee->getFunctionType(), Callee, {Op0});
+      TempX->setTailCall();
+      llvm::CallInst *TempImm = B.CreateCall(Callee->getFunctionType(), Callee, {Op1});
+      TempImm->setTailCall();
+
+      // 3.2 新的 fcmp
+      llvm::Value *NewCmp = B.CreateFCmp(CI->getPredicate(), TempX, TempImm, CI->getName());
+
+      CI->replaceAllUsesWith(NewCmp);
+      CI->eraseFromParent();
+    }
+}
 
 static void convertIRToMusaIntrinsics1(llvm::Module &M) {
 // 0. 提前准备好的变量
@@ -767,6 +814,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     convertNvvmToMusaIntrinsics(*module);
     convertIRToMusaIntrinsics(*module);
     convertIRToMusaIntrinsics1(*module);
+    convertIRToMusaIntrinsics2(*module);
     module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
     const char* newDataLayout = 
         "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";

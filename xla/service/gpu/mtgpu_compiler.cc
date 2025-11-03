@@ -78,12 +78,10 @@ namespace xla {
 namespace gpu {
 
 namespace {
-
 class ConvBfloat16Support : public FloatSupport {
  public:
   explicit ConvBfloat16Support()
       : FloatSupport(BF16),
-        // TODO: MIOpen does not support bf16 convolutions yet
         is_conv_bf16_supported_(false) {}
 
   bool SupportsLowPrecisionOperand(const HloInstruction& hlo,
@@ -104,6 +102,29 @@ class ConvBfloat16Support : public FloatSupport {
   bool is_conv_bf16_supported_;
 };
 
+class MatmulBfloat16Support : public FloatSupport {
+ public:
+  explicit MatmulBfloat16Support()
+      : FloatSupport(BF16),
+        is_matmul_bf16_supported_(false) {}
+
+  bool SupportsLowPrecisionOperand(const HloInstruction& hlo,
+                                   int64_t operand_index) const override {
+    return (hlo.opcode() != HloOpcode::kDot) || is_matmul_bf16_supported_;
+  }
+
+  bool SupportsLowPrecisionOutput(const HloInstruction& hlo) const override {
+    return (hlo.opcode() != HloOpcode::kDot) || is_matmul_bf16_supported_;
+  }
+
+  bool SupportsMixedPrecisions(const HloInstruction& hlo) const override {
+    return true;
+  }
+
+ private:
+  bool is_matmul_bf16_supported_;
+};
+
 }  // namespace
 
 absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
@@ -118,8 +139,11 @@ absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
       /*allow_mixed_precision=*/false);
 
   // Convert unsupported bf16 convolutions to f32.
-  //ConvBfloat16Support conv_bf16_support();
-  //pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
+  ConvBfloat16Support conv_bf16_support;
+  pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
+
+  MatmulBfloat16Support matmul_bf16_support;
+  pipeline.AddPass<FloatNormalization>(&matmul_bf16_support);
 
   //pipeline.AddPass<GpusolverRewriter>(
   //    stream_executor::RocmSolverContext::Create);
