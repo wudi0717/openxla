@@ -26,6 +26,9 @@ limitations under the License.
 #include <utility>
 #include <variant>
 #include <vector>
+#include <unordered_map>
+#include <mutex>
+#include <cstdlib>
 
 #include "absl/base/casts.h"
 #include "absl/container/inlined_vector.h"
@@ -94,6 +97,72 @@ limitations under the License.
 
 namespace stream_executor {
 namespace gpu {
+
+class AlignedGPUAllocator {
+public:
+    static void* alloc(size_t size) {
+        // 分配额外空间用于对齐
+	if (size == 0) return nullptr;
+
+        MUdeviceptr raw;
+        auto status = musa::ToStatus(muMemAlloc(&raw, size + 256));
+        if (!status.ok()) {
+          LOG(INFO) << "failed to allocate "
+              << tsl::strings::HumanReadableNumBytes(size) << " (" <<size 
+              << " bytes) from device: " << status;
+          return nullptr;
+        }
+
+        // 计算对齐地址
+        long long unsigned int addr = reinterpret_cast<long long unsigned int>(raw);
+        VLOG(2) << " muMemAlloc alloc " << size << " bytes, return " << addr;
+	if ((addr & 0xff) == 0) return reinterpret_cast<void*>(addr);
+
+	//Handle non-aligned
+        long long unsigned int aligned_addr = (addr + 255) & ~255;
+        void* aligned_ptr = reinterpret_cast<void*>(aligned_addr);
+
+        // 加锁保护映射表
+        std::lock_guard<std::mutex> lock(mutex_);
+        g_addr_map[aligned_ptr] = reinterpret_cast<void*>(raw);
+        return aligned_ptr;
+    }
+
+    static void free(void* aligned_ptr) {
+        if (!aligned_ptr) return;
+
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = g_addr_map.find(aligned_ptr);
+        if (it != g_addr_map.end()) {
+            void* raw = it->second;
+            g_addr_map.erase(it);
+            MUdeviceptr pointer = absl::bit_cast<MUdeviceptr>(raw);
+            auto status = musa::ToStatus(muMemFree(pointer));
+            if (!status.ok()) {
+              LOG(ERROR) << " failed to free device memory at " << raw 
+                << "; result: " << status;
+            } else {
+              VLOG(2) << " deallocated " << raw;
+          }
+        } else {
+            MUdeviceptr pointer = absl::bit_cast<MUdeviceptr>(aligned_ptr);
+            auto status = musa::ToStatus(muMemFree(pointer));
+            if (!status.ok()) {
+              LOG(ERROR) << " failed to free device memory at " << aligned_ptr
+                << "; result: " << status;
+            } else {
+              VLOG(2) << " deallocated " << aligned_ptr;
+          }
+        }
+    }
+
+private:
+    static std::unordered_map<void*, void*> g_addr_map;
+    static std::mutex mutex_;
+};
+
+std::unordered_map<void*, void*> AlignedGPUAllocator::g_addr_map;
+std::mutex AlignedGPUAllocator::mutex_;
 
 namespace {
 bool ShouldLaunchDelayKernel() {
@@ -504,17 +573,7 @@ void* DeviceAllocate(Context* context, uint64_t bytes) {
   }
 
   ScopedActivateContext activated{context};
-  MUdeviceptr result = 0;
-  auto status = musa::ToStatus(muMemAlloc(&result, bytes));
-  if (!status.ok()) {
-    // LOG(INFO) because this isn't always important to users (e.g. BFCAllocator
-    // implements a retry if the first allocation fails).
-    LOG(INFO) << "failed to allocate "
-              << tsl::strings::HumanReadableNumBytes(bytes) << " (" << bytes
-              << " bytes) from device: " << status;
-    return nullptr;
-  }
-  void* ptr = reinterpret_cast<void*>(result);
+  void* ptr = AlignedGPUAllocator::alloc(bytes);;
   VLOG(2) << "[" << context->device_ordinal() << "] allocated " << ptr
           << " for context " << context << " of " << bytes << " bytes";
   return ptr;
@@ -524,16 +583,7 @@ void* DeviceAllocate(Context* context, uint64_t bytes) {
 // DeviceAllocate.
 void DeviceDeallocate(Context* context, void* location) {
   ScopedActivateContext activation(context);
-  MUdeviceptr pointer = absl::bit_cast<MUdeviceptr>(location);
-  auto status = musa::ToStatus(muMemFree(pointer));
-  if (!status.ok()) {
-    LOG(ERROR) << "[" << context->device_ordinal()
-               << "] failed to free device memory at " << location
-               << "; result: " << status;
-  } else {
-    VLOG(2) << "[" << context->device_ordinal() << "] deallocated " << location
-            << " for context " << context;
-  }
+  AlignedGPUAllocator::free(location);
 }
 
 // Allocates memory on the host.
@@ -611,6 +661,7 @@ absl::StatusOr<std::unique_ptr<MemoryAllocation>> AllocateHostMemory(
 }
 
 }  // namespace
+
 
 // Given const GPU memory, returns a libmusa device pointer datatype, suitable
 // for passing directly to libmusa APIs.
@@ -691,17 +742,7 @@ MusaExecutor::CreateMemoryAllocator(MemoryType type) {
           return std::make_unique<GenericMemoryAllocation>(
               ptr, size, [this](void* location, uint64_t size) {
                 std::unique_ptr<ActivateContext> activation = Activate();
-                MUdeviceptr pointer = absl::bit_cast<MUdeviceptr>(location);
-                auto status = musa::ToStatus(muMemFree(pointer));
-                if (!status.ok()) {
-                  LOG(ERROR) << "[" << device_ordinal()
-                             << "] failed to free unified memory at "
-                             << location << "; result: " << status;
-                } else {
-                  VLOG(2) << "[" << device_ordinal()
-                          << "] deallocated unified memory at " << location
-                          << " for context " << musa_context_;
-                }
+		AlignedGPUAllocator::free(location);
               });
         });
   } else if (type == MemoryType::kCollective) {

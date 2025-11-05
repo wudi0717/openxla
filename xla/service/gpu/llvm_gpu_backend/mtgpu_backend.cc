@@ -803,6 +803,20 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   std::string llFile;
   //Just for debug
   const std::filesystem::path file = "xla_test_debug.ll";
+  const std::filesystem::path mufile = "xla_test_debug.mubin";
+  if (std::filesystem::exists(mufile) && std::filesystem::is_regular_file(mufile)) {
+    std::ifstream bin(mufile, std::ios::binary | std::ios::ate);
+    if (!bin) throw std::runtime_error("cannot open mubin");
+    size_t sz = bin.tellg();
+    bin.seekg(0, std::ios::beg);
+    hsaco.resize(sz);
+    bin.read(reinterpret_cast<char*>(hsaco.data()), sz);
+    bin.close();
+
+    HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
+
+    return hsaco;
+  }
   if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file)) {
     linkFile = "xla_test_debug.ll";
     llFile = "xla_test_debug.ll";
