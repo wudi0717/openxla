@@ -264,11 +264,13 @@ PJRT_Error* PJRT_GpuDeviceTopology_Create(
 
   // Determine the platform ID and name based on the platform.
   xla::PjRtPlatformId platform_id =
-      (std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "ROCM") ? xla::RocmId()
-                                                             : xla::CudaId();
+      (std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "MUSA") ? xla::MusaId() :
+      ((std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "ROCM") ? xla::RocmId()
+                                                              : xla::CudaId());
   std::string platform_name =
-      (std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "ROCM") ? xla::RocmName()
-                                                             : xla::CudaName();
+      (std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "MUSA") ? xla::MusaName() :
+      ((std::string(PJRT_GPU_PLUGIN_PLATFORM_NAME) == "ROCM") ? xla::RocmName()
+                                                              : xla::CudaName());
 
   absl::flat_hash_map<std::string, xla::PjRtValueType> create_options =
       pjrt::ConvertFromPjRtNamedValueList(args->create_options,
