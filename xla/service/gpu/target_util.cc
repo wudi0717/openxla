@@ -334,8 +334,10 @@ namespace {
 // TODO(b/370452608): Add more functions that have a fast approximation for f32
 // that we can use for f16 types.
 bool HasFastF32Approximation(TargetDeviceFunctionID func_id) {
-  return func_id == TargetDeviceFunctionID::kExp ||
-         func_id == TargetDeviceFunctionID::kLog;
+//  return func_id == TargetDeviceFunctionID::kExp ||
+//         func_id == TargetDeviceFunctionID::kLog;
+  //MT not support fast right now!
+  return false;
 }
 }  // namespace
 

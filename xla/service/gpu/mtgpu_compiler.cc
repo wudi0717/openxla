@@ -86,16 +86,16 @@ class ConvBfloat16Support : public FloatSupport {
 
   bool SupportsLowPrecisionOperand(const HloInstruction& hlo,
                                    int64_t operand_index) const override {
-    return (hlo.opcode() != HloOpcode::kConvolution) || is_conv_bf16_supported_;
+    return is_conv_bf16_supported_;
   }
 
   bool SupportsLowPrecisionOutput(const HloInstruction& hlo) const override {
-    return (hlo.opcode() != HloOpcode::kConvolution) || is_conv_bf16_supported_;
+    return is_conv_bf16_supported_;
   }
 
   bool SupportsMixedPrecisions(const HloInstruction& hlo) const override {
     // Skip all HLOs other than convolutions.
-    return (hlo.opcode() != HloOpcode::kConvolution);
+    return false;
   }
 
  private:
@@ -110,15 +110,15 @@ class MatmulBfloat16Support : public FloatSupport {
 
   bool SupportsLowPrecisionOperand(const HloInstruction& hlo,
                                    int64_t operand_index) const override {
-    return (hlo.opcode() != HloOpcode::kDot) || is_matmul_bf16_supported_;
+    return false;
   }
 
   bool SupportsLowPrecisionOutput(const HloInstruction& hlo) const override {
-    return (hlo.opcode() != HloOpcode::kDot) || is_matmul_bf16_supported_;
+    return false;
   }
 
   bool SupportsMixedPrecisions(const HloInstruction& hlo) const override {
-    return true;
+    return false;
   }
 
  private:
@@ -138,12 +138,16 @@ absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
       /*layout_sensitive=*/false,
       /*allow_mixed_precision=*/false);
 
+  //const std::pair<PrimitiveType, PrimitiveType> ar_promoted_types[] = {
+  //    {BF16, F32}};
+  //pipeline.AddPass<AllReducePromotion>(ar_promoted_types);
+
   // Convert unsupported bf16 convolutions to f32.
   ConvBfloat16Support conv_bf16_support;
   pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
 
-  MatmulBfloat16Support matmul_bf16_support;
-  pipeline.AddPass<FloatNormalization>(&matmul_bf16_support);
+  //MatmulBfloat16Support matmul_bf16_support;
+  //pipeline.AddPass<FloatNormalization>(&matmul_bf16_support);
 
   //pipeline.AddPass<GpusolverRewriter>(
   //    stream_executor::RocmSolverContext::Create);
