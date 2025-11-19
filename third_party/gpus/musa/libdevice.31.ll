@@ -17847,6 +17847,15 @@ define protected float @__mt_cbrt_f32(float noundef %0) #0 {
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__nv_cbrtf(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @__mt_cbrt_f32(float noundef %3) #12
+  ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__mt_ldexp_f32(float noundef %0, i32 noundef %1) #0 {
   %3 = alloca float, align 4
   %4 = alloca i32, align 4
@@ -45777,6 +45786,15 @@ define protected float @__nv_log1pf(float noundef %0) #0 {
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__nv_logf(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @__mt_log_f32(float noundef %3) #12
+  ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__nv_fast_logf(float noundef %0) #0 {
   %2 = alloca float, align 4
   store float %0, ptr %2, align 4
   %3 = load float, ptr %2, align 4
