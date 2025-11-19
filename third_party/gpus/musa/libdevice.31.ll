@@ -1,4 +1,4 @@
-; ModuleID = '/home/mccxadmin/moon/workspace/install/mtcc20/mtgpu/bitcode/libdevice.31.bc'
+; ModuleID = './libdevice.31.bc'
 source_filename = "llvm-link"
 target datalayout = "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128"
 target triple = "mtgpu-mt-musa"
@@ -262,20 +262,236 @@ define protected half @__mt_tt_e5m2_to_f16(i8 noundef zeroext %0) #0 {
 ; Function Attrs: nounwind memory(none)
 declare half @llvm.musa.e5m22f16.rn(i8) #1
 
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2bf16_to_v2e4m3(<2 x bfloat> noundef %0) #0 {
+  %2 = alloca <2 x bfloat>, align 4
+  %3 = alloca float, align 4
+  %4 = alloca float, align 4
+  %5 = alloca <2 x float>, align 8
+  store <2 x bfloat> %0, ptr %2, align 4
+  %6 = load <2 x bfloat>, ptr %2, align 4
+  %7 = extractelement <2 x bfloat> %6, i32 0
+  %8 = call float @llvm.musa.bfloat162float(bfloat %7)
+  store float %8, ptr %3, align 4
+  %9 = load <2 x bfloat>, ptr %2, align 4
+  %10 = extractelement <2 x bfloat> %9, i32 1
+  %11 = call float @llvm.musa.bfloat162float(bfloat %10)
+  store float %11, ptr %4, align 4
+  %12 = load float, ptr %3, align 4
+  %13 = insertelement <2 x float> poison, float %12, i32 0
+  %14 = load float, ptr %4, align 4
+  %15 = insertelement <2 x float> %13, float %14, i32 1
+  store <2 x float> %15, ptr %5, align 8
+  %16 = load <2 x float>, ptr %5, align 8
+  %17 = call <2 x i8> @__mt_tt_v2f32_to_v2e4m3(<2 x float> noundef %16) #12
+  ret <2 x i8> %17
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2f32_to_v2e4m3(<2 x float> noundef %0) #0 {
+  %2 = alloca <2 x float>, align 8
+  store <2 x float> %0, ptr %2, align 8
+  %3 = load <2 x float>, ptr %2, align 8
+  %4 = call <2 x i8> @llvm.musa.f2e4m3.rn.bst2(<2 x float> %3)
+  ret <2 x i8> %4
+}
+
 ; Function Attrs: nounwind memory(none)
 declare <2 x i8> @llvm.musa.f2e4m3.rn.bst2(<2 x float>) #1
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2bf16_to_v2e5m2(<2 x bfloat> noundef %0) #0 {
+  %2 = alloca <2 x bfloat>, align 4
+  %3 = alloca float, align 4
+  %4 = alloca float, align 4
+  %5 = alloca <2 x float>, align 8
+  store <2 x bfloat> %0, ptr %2, align 4
+  %6 = load <2 x bfloat>, ptr %2, align 4
+  %7 = extractelement <2 x bfloat> %6, i32 0
+  %8 = call float @llvm.musa.bfloat162float(bfloat %7)
+  store float %8, ptr %3, align 4
+  %9 = load <2 x bfloat>, ptr %2, align 4
+  %10 = extractelement <2 x bfloat> %9, i32 1
+  %11 = call float @llvm.musa.bfloat162float(bfloat %10)
+  store float %11, ptr %4, align 4
+  %12 = load float, ptr %3, align 4
+  %13 = insertelement <2 x float> poison, float %12, i32 0
+  %14 = load float, ptr %4, align 4
+  %15 = insertelement <2 x float> %13, float %14, i32 1
+  store <2 x float> %15, ptr %5, align 8
+  %16 = load <2 x float>, ptr %5, align 8
+  %17 = call <2 x i8> @__mt_tt_v2f32_to_v2e5m2(<2 x float> noundef %16) #12
+  ret <2 x i8> %17
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2f32_to_v2e5m2(<2 x float> noundef %0) #0 {
+  %2 = alloca <2 x float>, align 8
+  store <2 x float> %0, ptr %2, align 8
+  %3 = load <2 x float>, ptr %2, align 8
+  %4 = call <2 x i8> @llvm.musa.f2e5m2.rn.bst2(<2 x float> %3)
+  ret <2 x i8> %4
+}
 
 ; Function Attrs: nounwind memory(none)
 declare <2 x i8> @llvm.musa.f2e5m2.rn.bst2(<2 x float>) #1
 
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2f16_to_v2e4m3(<2 x half> noundef %0) #0 {
+  %2 = alloca <2 x half>, align 4
+  store <2 x half> %0, ptr %2, align 4
+  %3 = load <2 x half>, ptr %2, align 4
+  %4 = call <2 x i8> @llvm.musa.f162e4m3.rn.bst2(<2 x half> %3)
+  ret <2 x i8> %4
+}
+
 ; Function Attrs: nounwind memory(none)
 declare <2 x i8> @llvm.musa.f162e4m3.rn.bst2(<2 x half>) #1
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x i8> @__mt_tt_v2f16_to_v2e5m2(<2 x half> noundef %0) #0 {
+  %2 = alloca <2 x half>, align 4
+  store <2 x half> %0, ptr %2, align 4
+  %3 = load <2 x half>, ptr %2, align 4
+  %4 = call <2 x i8> @llvm.musa.f162e5m2.rn.bst2(<2 x half> %3)
+  ret <2 x i8> %4
+}
 
 ; Function Attrs: nounwind memory(none)
 declare <2 x i8> @llvm.musa.f162e5m2.rn.bst2(<2 x half>) #1
 
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x bfloat> @__mt_tt_v2e4m3_to_v2bf16(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  %3 = alloca <2 x float>, align 8
+  %4 = alloca bfloat, align 2
+  %5 = alloca bfloat, align 2
+  %6 = alloca <2 x bfloat>, align 4
+  store <2 x i8> %0, ptr %2, align 2
+  %7 = load <2 x i8>, ptr %2, align 2
+  %8 = call <2 x float> @__mt_tt_v2e4m3_to_v2f32(<2 x i8> noundef %7) #12
+  store <2 x float> %8, ptr %3, align 8
+  %9 = load <2 x float>, ptr %3, align 8
+  %10 = extractelement <2 x float> %9, i32 0
+  %11 = call bfloat @llvm.musa.float2bfloat16(float %10)
+  store bfloat %11, ptr %4, align 2
+  %12 = load <2 x float>, ptr %3, align 8
+  %13 = extractelement <2 x float> %12, i32 1
+  %14 = call bfloat @llvm.musa.float2bfloat16(float %13)
+  store bfloat %14, ptr %5, align 2
+  %15 = load bfloat, ptr %4, align 2
+  %16 = insertelement <2 x bfloat> poison, bfloat %15, i32 0
+  %17 = load bfloat, ptr %5, align 2
+  %18 = insertelement <2 x bfloat> %16, bfloat %17, i32 1
+  store <2 x bfloat> %18, ptr %6, align 4
+  %19 = load <2 x bfloat>, ptr %6, align 4
+  ret <2 x bfloat> %19
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x float> @__mt_tt_v2e4m3_to_v2f32(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  %3 = alloca <2 x half>, align 4
+  %4 = alloca float, align 4
+  %5 = alloca float, align 4
+  %6 = alloca <2 x float>, align 8
+  store <2 x i8> %0, ptr %2, align 2
+  %7 = load <2 x i8>, ptr %2, align 2
+  %8 = call <2 x half> @__mt_tt_v2e4m3_to_v2f16(<2 x i8> noundef %7) #12
+  store <2 x half> %8, ptr %3, align 4
+  %9 = load <2 x half>, ptr %3, align 4
+  %10 = extractelement <2 x half> %9, i32 0
+  %11 = fpext half %10 to float
+  store float %11, ptr %4, align 4
+  %12 = load <2 x half>, ptr %3, align 4
+  %13 = extractelement <2 x half> %12, i32 1
+  %14 = fpext half %13 to float
+  store float %14, ptr %5, align 4
+  %15 = load float, ptr %4, align 4
+  %16 = insertelement <2 x float> poison, float %15, i32 0
+  %17 = load float, ptr %5, align 4
+  %18 = insertelement <2 x float> %16, float %17, i32 1
+  store <2 x float> %18, ptr %6, align 8
+  %19 = load <2 x float>, ptr %6, align 8
+  ret <2 x float> %19
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x half> @__mt_tt_v2e4m3_to_v2f16(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  store <2 x i8> %0, ptr %2, align 2
+  %3 = load <2 x i8>, ptr %2, align 2
+  %4 = call <2 x half> @llvm.musa.e4m32f16.rn.bst2(<2 x i8> %3)
+  ret <2 x half> %4
+}
+
 ; Function Attrs: nounwind memory(none)
 declare <2 x half> @llvm.musa.e4m32f16.rn.bst2(<2 x i8>) #1
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x bfloat> @__mt_tt_v2e5m2_to_v2bf16(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  %3 = alloca <2 x float>, align 8
+  %4 = alloca bfloat, align 2
+  %5 = alloca bfloat, align 2
+  %6 = alloca <2 x bfloat>, align 4
+  store <2 x i8> %0, ptr %2, align 2
+  %7 = load <2 x i8>, ptr %2, align 2
+  %8 = call <2 x float> @__mt_tt_v2e5m2_to_v2f32(<2 x i8> noundef %7) #12
+  store <2 x float> %8, ptr %3, align 8
+  %9 = load <2 x float>, ptr %3, align 8
+  %10 = extractelement <2 x float> %9, i32 0
+  %11 = call bfloat @llvm.musa.float2bfloat16(float %10)
+  store bfloat %11, ptr %4, align 2
+  %12 = load <2 x float>, ptr %3, align 8
+  %13 = extractelement <2 x float> %12, i32 1
+  %14 = call bfloat @llvm.musa.float2bfloat16(float %13)
+  store bfloat %14, ptr %5, align 2
+  %15 = load bfloat, ptr %4, align 2
+  %16 = insertelement <2 x bfloat> poison, bfloat %15, i32 0
+  %17 = load bfloat, ptr %5, align 2
+  %18 = insertelement <2 x bfloat> %16, bfloat %17, i32 1
+  store <2 x bfloat> %18, ptr %6, align 4
+  %19 = load <2 x bfloat>, ptr %6, align 4
+  ret <2 x bfloat> %19
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x float> @__mt_tt_v2e5m2_to_v2f32(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  %3 = alloca <2 x half>, align 4
+  %4 = alloca float, align 4
+  %5 = alloca float, align 4
+  %6 = alloca <2 x float>, align 8
+  store <2 x i8> %0, ptr %2, align 2
+  %7 = load <2 x i8>, ptr %2, align 2
+  %8 = call <2 x half> @__mt_tt_v2e5m2_to_v2f16(<2 x i8> noundef %7) #12
+  store <2 x half> %8, ptr %3, align 4
+  %9 = load <2 x half>, ptr %3, align 4
+  %10 = extractelement <2 x half> %9, i32 0
+  %11 = fpext half %10 to float
+  store float %11, ptr %4, align 4
+  %12 = load <2 x half>, ptr %3, align 4
+  %13 = extractelement <2 x half> %12, i32 1
+  %14 = fpext half %13 to float
+  store float %14, ptr %5, align 4
+  %15 = load float, ptr %4, align 4
+  %16 = insertelement <2 x float> poison, float %15, i32 0
+  %17 = load float, ptr %5, align 4
+  %18 = insertelement <2 x float> %16, float %17, i32 1
+  store <2 x float> %18, ptr %6, align 8
+  %19 = load <2 x float>, ptr %6, align 8
+  ret <2 x float> %19
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected <2 x half> @__mt_tt_v2e5m2_to_v2f16(<2 x i8> noundef %0) #0 {
+  %2 = alloca <2 x i8>, align 2
+  store <2 x i8> %0, ptr %2, align 2
+  %3 = load <2 x i8>, ptr %2, align 2
+  %4 = call <2 x half> @llvm.musa.e5m22f16.rn.bst2(<2 x i8> %3)
+  ret <2 x half> %4
+}
 
 ; Function Attrs: nounwind memory(none)
 declare <2 x half> @llvm.musa.e5m22f16.rn.bst2(<2 x i8>) #1
@@ -14882,6 +15098,506 @@ define protected %struct.exp16_sig32 @softfloat_shortShiftLeft128(i64 noundef %0
 }
 
 ; Function Attrs: alwaysinline nounwind
+define protected float @softfloat_sqrtF32(float noundef %0, i8 noundef zeroext %1) #2 {
+  %3 = alloca float, align 4
+  %4 = alloca float, align 4
+  %5 = alloca i8, align 1
+  %6 = alloca %union.i32_f32, align 4
+  %7 = alloca i64, align 8
+  %8 = alloca i8, align 1
+  %9 = alloca i64, align 8
+  %10 = alloca i64, align 8
+  %11 = alloca i64, align 8
+  %12 = alloca %struct.exp16_sig32, align 8
+  %13 = alloca i64, align 8
+  %14 = alloca i64, align 8
+  %15 = alloca i64, align 8
+  %16 = alloca i32, align 4
+  %17 = alloca %union.i32_f32, align 4
+  %18 = alloca float, align 4
+  %19 = alloca %struct.exp16_sig32, align 8
+  store float %0, ptr %4, align 4
+  store i8 %1, ptr %5, align 1
+  store i64 2147483647, ptr %11, align 8
+  %20 = load i64, ptr %11, align 8
+  %21 = trunc i64 %20 to i32
+  store i32 %21, ptr %17, align 4
+  %22 = load float, ptr %17, align 4
+  store float %22, ptr %18, align 4
+  store i64 0, ptr %11, align 8
+  %23 = load float, ptr %4, align 4
+  store float %23, ptr %6, align 4
+  %24 = load i32, ptr %6, align 4
+  %25 = zext i32 %24 to i64
+  store i64 %25, ptr %7, align 8
+  %26 = load i64, ptr %7, align 8
+  %27 = trunc i64 %26 to i32
+  %28 = lshr i32 %27, 31
+  %29 = icmp ne i32 %28, 0
+  %30 = zext i1 %29 to i8
+  store i8 %30, ptr %8, align 1
+  %31 = load i64, ptr %7, align 8
+  %32 = lshr i64 %31, 23
+  %33 = and i64 %32, 255
+  store i64 %33, ptr %9, align 8
+  %34 = load i64, ptr %7, align 8
+  %35 = and i64 %34, 8388607
+  store i64 %35, ptr %10, align 8
+  %36 = load i64, ptr %9, align 8
+  %37 = icmp eq i64 %36, 255
+  br i1 %37, label %38, label %48
+
+38:                                               ; preds = %2
+  %39 = load i64, ptr %10, align 8
+  %40 = icmp ne i64 %39, 0
+  br i1 %40, label %46, label %41
+
+41:                                               ; preds = %38
+  %42 = load i8, ptr %8, align 1
+  %43 = trunc i8 %42 to i1
+  br i1 %43, label %46, label %44
+
+44:                                               ; preds = %41
+  %45 = load float, ptr %4, align 4
+  store float %45, ptr %3, align 4
+  br label %141
+
+46:                                               ; preds = %41, %38
+  %47 = load float, ptr %18, align 4
+  store float %47, ptr %3, align 4
+  br label %141
+
+48:                                               ; preds = %2
+  %49 = load i8, ptr %8, align 1
+  %50 = trunc i8 %49 to i1
+  br i1 %50, label %51, label %60
+
+51:                                               ; preds = %48
+  %52 = load i64, ptr %9, align 8
+  %53 = load i64, ptr %10, align 8
+  %54 = or i64 %52, %53
+  %55 = icmp ne i64 %54, 0
+  br i1 %55, label %58, label %56
+
+56:                                               ; preds = %51
+  %57 = load float, ptr %4, align 4
+  store float %57, ptr %3, align 4
+  br label %141
+
+58:                                               ; preds = %51
+  %59 = load float, ptr %18, align 4
+  store float %59, ptr %3, align 4
+  br label %141
+
+60:                                               ; preds = %48
+  %61 = load i64, ptr %9, align 8
+  %62 = icmp ne i64 %61, 0
+  br i1 %62, label %79, label %63
+
+63:                                               ; preds = %60
+  %64 = load i64, ptr %10, align 8
+  %65 = icmp ne i64 %64, 0
+  br i1 %65, label %68, label %66
+
+66:                                               ; preds = %63
+  %67 = load float, ptr %4, align 4
+  store float %67, ptr %3, align 4
+  br label %141
+
+68:                                               ; preds = %63
+  %69 = load i64, ptr %10, align 8
+  %70 = call %struct.exp16_sig32 @softfloat_normSubnormalF32Sig(i64 noundef %69)
+  %71 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %19, i32 0, i32 0
+  %72 = extractvalue %struct.exp16_sig32 %70, 0
+  store i64 %72, ptr %71, align 8
+  %73 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %19, i32 0, i32 1
+  %74 = extractvalue %struct.exp16_sig32 %70, 1
+  store i64 %74, ptr %73, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %12, ptr align 8 %19, i64 16, i1 false)
+  %75 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %12, i32 0, i32 0
+  %76 = load i64, ptr %75, align 8
+  store i64 %76, ptr %9, align 8
+  %77 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %12, i32 0, i32 1
+  %78 = load i64, ptr %77, align 8
+  store i64 %78, ptr %10, align 8
+  br label %79
+
+79:                                               ; preds = %68, %60
+  %80 = load i64, ptr %9, align 8
+  %81 = sub nsw i64 %80, 127
+  %82 = ashr i64 %81, 1
+  %83 = add nsw i64 %82, 126
+  store i64 %83, ptr %13, align 8
+  %84 = load i64, ptr %9, align 8
+  %85 = and i64 %84, 1
+  store i64 %85, ptr %9, align 8
+  %86 = load i64, ptr %10, align 8
+  %87 = or i64 %86, 8388608
+  %88 = shl i64 %87, 8
+  store i64 %88, ptr %10, align 8
+  %89 = load i64, ptr %10, align 8
+  %90 = load i64, ptr %9, align 8
+  %91 = trunc i64 %90 to i32
+  %92 = load i64, ptr %10, align 8
+  %93 = trunc i64 %92 to i32
+  %94 = call i32 @softfloat_approxRecipSqrt32_1(i32 noundef %91, i32 noundef %93)
+  %95 = zext i32 %94 to i64
+  %96 = mul i64 %89, %95
+  %97 = lshr i64 %96, 32
+  store i64 %97, ptr %14, align 8
+  %98 = load i64, ptr %9, align 8
+  %99 = icmp ne i64 %98, 0
+  br i1 %99, label %100, label %103
+
+100:                                              ; preds = %79
+  %101 = load i64, ptr %14, align 8
+  %102 = lshr i64 %101, 1
+  store i64 %102, ptr %14, align 8
+  br label %103
+
+103:                                              ; preds = %100, %79
+  %104 = load i64, ptr %14, align 8
+  %105 = add i64 %104, 2
+  store i64 %105, ptr %14, align 8
+  %106 = load i64, ptr %14, align 8
+  %107 = and i64 %106, 63
+  %108 = icmp ult i64 %107, 2
+  br i1 %108, label %109, label %132
+
+109:                                              ; preds = %103
+  %110 = load i64, ptr %14, align 8
+  %111 = lshr i64 %110, 2
+  store i64 %111, ptr %15, align 8
+  %112 = load i64, ptr %15, align 8
+  %113 = load i64, ptr %15, align 8
+  %114 = mul i64 %112, %113
+  %115 = trunc i64 %114 to i32
+  store i32 %115, ptr %16, align 4
+  %116 = load i64, ptr %14, align 8
+  %117 = and i64 %116, -4
+  store i64 %117, ptr %14, align 8
+  %118 = load i32, ptr %16, align 4
+  %119 = and i32 %118, -2147483648
+  %120 = icmp ne i32 %119, 0
+  br i1 %120, label %121, label %124
+
+121:                                              ; preds = %109
+  %122 = load i64, ptr %14, align 8
+  %123 = or i64 %122, 1
+  store i64 %123, ptr %14, align 8
+  br label %131
+
+124:                                              ; preds = %109
+  %125 = load i32, ptr %16, align 4
+  %126 = icmp ne i32 %125, 0
+  br i1 %126, label %127, label %130
+
+127:                                              ; preds = %124
+  %128 = load i64, ptr %14, align 8
+  %129 = add i64 %128, -1
+  store i64 %129, ptr %14, align 8
+  br label %130
+
+130:                                              ; preds = %127, %124
+  br label %131
+
+131:                                              ; preds = %130, %121
+  br label %132
+
+132:                                              ; preds = %131, %103
+  %133 = load i64, ptr %13, align 8
+  %134 = load i64, ptr %14, align 8
+  %135 = load i8, ptr %5, align 1
+  %136 = call float @softfloat_roundPackToF32(i1 noundef zeroext false, i64 noundef %133, i64 noundef %134, i8 noundef zeroext %135)
+  store float %136, ptr %3, align 4
+  br label %141
+
+137:                                              ; No predecessors!
+  %138 = load i64, ptr %11, align 8
+  %139 = trunc i64 %138 to i32
+  store i32 %139, ptr %17, align 4
+  %140 = load float, ptr %17, align 4
+  store float %140, ptr %3, align 4
+  br label %141
+
+141:                                              ; preds = %137, %132, %66, %58, %56, %46, %44
+  %142 = load float, ptr %3, align 4
+  ret float %142
+}
+
+; Function Attrs: alwaysinline nounwind
+define protected double @softfloat_sqrtF64(double noundef %0, i8 noundef zeroext %1) #2 {
+  %3 = alloca double, align 8
+  %4 = alloca double, align 8
+  %5 = alloca i8, align 1
+  %6 = alloca %union.longlong_double, align 8
+  %7 = alloca i64, align 8
+  %8 = alloca i8, align 1
+  %9 = alloca i64, align 8
+  %10 = alloca i64, align 8
+  %11 = alloca i64, align 8
+  %12 = alloca %struct.exp16_sig32, align 8
+  %13 = alloca i64, align 8
+  %14 = alloca i32, align 4
+  %15 = alloca i32, align 4
+  %16 = alloca i32, align 4
+  %17 = alloca i64, align 8
+  %18 = alloca i32, align 4
+  %19 = alloca i64, align 8
+  %20 = alloca i64, align 8
+  %21 = alloca %union.longlong_double, align 8
+  %22 = alloca float, align 4
+  %23 = alloca %struct.exp16_sig32, align 8
+  store double %0, ptr %4, align 8
+  store i8 %1, ptr %5, align 1
+  store i64 -2251799813685248, ptr %11, align 8
+  %24 = load i64, ptr %11, align 8
+  store i64 %24, ptr %21, align 8
+  %25 = load double, ptr %21, align 8
+  %26 = fptrunc double %25 to float
+  store float %26, ptr %22, align 4
+  store i64 0, ptr %11, align 8
+  %27 = load double, ptr %4, align 8
+  store double %27, ptr %6, align 8
+  %28 = load i64, ptr %6, align 8
+  store i64 %28, ptr %7, align 8
+  %29 = load i64, ptr %7, align 8
+  %30 = lshr i64 %29, 63
+  %31 = icmp ne i64 %30, 0
+  %32 = zext i1 %31 to i8
+  store i8 %32, ptr %8, align 1
+  %33 = load i64, ptr %7, align 8
+  %34 = lshr i64 %33, 52
+  %35 = and i64 %34, 2047
+  store i64 %35, ptr %9, align 8
+  %36 = load i64, ptr %7, align 8
+  %37 = and i64 %36, 4503599627370495
+  store i64 %37, ptr %10, align 8
+  %38 = load i64, ptr %9, align 8
+  %39 = icmp eq i64 %38, 2047
+  br i1 %39, label %40, label %51
+
+40:                                               ; preds = %2
+  %41 = load i64, ptr %10, align 8
+  %42 = icmp ne i64 %41, 0
+  br i1 %42, label %49, label %43
+
+43:                                               ; preds = %40
+  %44 = load i8, ptr %8, align 1
+  %45 = trunc i8 %44 to i1
+  br i1 %45, label %46, label %49
+
+46:                                               ; preds = %43
+  %47 = load float, ptr %22, align 4
+  %48 = fpext float %47 to double
+  store double %48, ptr %3, align 8
+  br label %177
+
+49:                                               ; preds = %43, %40
+  %50 = load double, ptr %4, align 8
+  store double %50, ptr %3, align 8
+  br label %177
+
+51:                                               ; preds = %2
+  %52 = load i8, ptr %8, align 1
+  %53 = trunc i8 %52 to i1
+  br i1 %53, label %54, label %64
+
+54:                                               ; preds = %51
+  %55 = load i64, ptr %9, align 8
+  %56 = load i64, ptr %10, align 8
+  %57 = or i64 %55, %56
+  %58 = icmp ne i64 %57, 0
+  br i1 %58, label %61, label %59
+
+59:                                               ; preds = %54
+  %60 = load double, ptr %4, align 8
+  store double %60, ptr %3, align 8
+  br label %177
+
+61:                                               ; preds = %54
+  %62 = load float, ptr %22, align 4
+  %63 = fpext float %62 to double
+  store double %63, ptr %3, align 8
+  br label %177
+
+64:                                               ; preds = %51
+  %65 = load i64, ptr %9, align 8
+  %66 = icmp ne i64 %65, 0
+  br i1 %66, label %83, label %67
+
+67:                                               ; preds = %64
+  %68 = load i64, ptr %10, align 8
+  %69 = icmp ne i64 %68, 0
+  br i1 %69, label %72, label %70
+
+70:                                               ; preds = %67
+  %71 = load double, ptr %4, align 8
+  store double %71, ptr %3, align 8
+  br label %177
+
+72:                                               ; preds = %67
+  %73 = load i64, ptr %10, align 8
+  %74 = call %struct.exp16_sig32 @softfloat_normSubnormalF64Sig(i64 noundef %73)
+  %75 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %23, i32 0, i32 0
+  %76 = extractvalue %struct.exp16_sig32 %74, 0
+  store i64 %76, ptr %75, align 8
+  %77 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %23, i32 0, i32 1
+  %78 = extractvalue %struct.exp16_sig32 %74, 1
+  store i64 %78, ptr %77, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 8 %12, ptr align 8 %23, i64 16, i1 false)
+  %79 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %12, i32 0, i32 0
+  %80 = load i64, ptr %79, align 8
+  store i64 %80, ptr %9, align 8
+  %81 = getelementptr inbounds nuw %struct.exp16_sig32, ptr %12, i32 0, i32 1
+  %82 = load i64, ptr %81, align 8
+  store i64 %82, ptr %10, align 8
+  br label %83
+
+83:                                               ; preds = %72, %64
+  %84 = load i64, ptr %9, align 8
+  %85 = sub nsw i64 %84, 1023
+  %86 = ashr i64 %85, 1
+  %87 = add nsw i64 %86, 1022
+  store i64 %87, ptr %13, align 8
+  %88 = load i64, ptr %9, align 8
+  %89 = and i64 %88, 1
+  store i64 %89, ptr %9, align 8
+  %90 = load i64, ptr %10, align 8
+  %91 = or i64 %90, 4503599627370496
+  store i64 %91, ptr %10, align 8
+  %92 = load i64, ptr %10, align 8
+  %93 = lshr i64 %92, 21
+  %94 = trunc i64 %93 to i32
+  store i32 %94, ptr %14, align 4
+  %95 = load i64, ptr %9, align 8
+  %96 = trunc i64 %95 to i32
+  %97 = load i32, ptr %14, align 4
+  %98 = call i32 @softfloat_approxRecipSqrt32_1(i32 noundef %96, i32 noundef %97)
+  store i32 %98, ptr %15, align 4
+  %99 = load i32, ptr %14, align 4
+  %100 = zext i32 %99 to i64
+  %101 = load i32, ptr %15, align 4
+  %102 = zext i32 %101 to i64
+  %103 = mul i64 %100, %102
+  %104 = lshr i64 %103, 32
+  %105 = trunc i64 %104 to i32
+  store i32 %105, ptr %16, align 4
+  %106 = load i64, ptr %9, align 8
+  %107 = icmp ne i64 %106, 0
+  br i1 %107, label %108, label %113
+
+108:                                              ; preds = %83
+  %109 = load i64, ptr %10, align 8
+  %110 = shl i64 %109, 8
+  store i64 %110, ptr %10, align 8
+  %111 = load i32, ptr %16, align 4
+  %112 = lshr i32 %111, 1
+  store i32 %112, ptr %16, align 4
+  br label %116
+
+113:                                              ; preds = %83
+  %114 = load i64, ptr %10, align 8
+  %115 = shl i64 %114, 9
+  store i64 %115, ptr %10, align 8
+  br label %116
+
+116:                                              ; preds = %113, %108
+  %117 = load i64, ptr %10, align 8
+  %118 = load i32, ptr %16, align 4
+  %119 = zext i32 %118 to i64
+  %120 = load i32, ptr %16, align 4
+  %121 = zext i32 %120 to i64
+  %122 = mul i64 %119, %121
+  %123 = sub i64 %117, %122
+  store i64 %123, ptr %17, align 8
+  %124 = load i64, ptr %17, align 8
+  %125 = lshr i64 %124, 2
+  %126 = trunc i64 %125 to i32
+  %127 = zext i32 %126 to i64
+  %128 = load i32, ptr %15, align 4
+  %129 = zext i32 %128 to i64
+  %130 = mul i64 %127, %129
+  %131 = lshr i64 %130, 32
+  %132 = trunc i64 %131 to i32
+  store i32 %132, ptr %18, align 4
+  %133 = load i32, ptr %16, align 4
+  %134 = zext i32 %133 to i64
+  %135 = shl i64 %134, 32
+  %136 = or i64 %135, 32
+  %137 = load i32, ptr %18, align 4
+  %138 = zext i32 %137 to i64
+  %139 = shl i64 %138, 3
+  %140 = add i64 %136, %139
+  store i64 %140, ptr %19, align 8
+  %141 = load i64, ptr %19, align 8
+  %142 = and i64 %141, 511
+  %143 = icmp ult i64 %142, 34
+  br i1 %143, label %144, label %169
+
+144:                                              ; preds = %116
+  %145 = load i64, ptr %19, align 8
+  %146 = and i64 %145, -64
+  store i64 %146, ptr %19, align 8
+  %147 = load i64, ptr %19, align 8
+  %148 = lshr i64 %147, 6
+  store i64 %148, ptr %20, align 8
+  %149 = load i64, ptr %10, align 8
+  %150 = shl i64 %149, 52
+  %151 = load i64, ptr %20, align 8
+  %152 = load i64, ptr %20, align 8
+  %153 = mul i64 %151, %152
+  %154 = sub i64 %150, %153
+  store i64 %154, ptr %17, align 8
+  %155 = load i64, ptr %17, align 8
+  %156 = and i64 %155, -9223372036854775808
+  %157 = icmp ne i64 %156, 0
+  br i1 %157, label %158, label %161
+
+158:                                              ; preds = %144
+  %159 = load i64, ptr %19, align 8
+  %160 = add i64 %159, -1
+  store i64 %160, ptr %19, align 8
+  br label %168
+
+161:                                              ; preds = %144
+  %162 = load i64, ptr %17, align 8
+  %163 = icmp ne i64 %162, 0
+  br i1 %163, label %164, label %167
+
+164:                                              ; preds = %161
+  %165 = load i64, ptr %19, align 8
+  %166 = or i64 %165, 1
+  store i64 %166, ptr %19, align 8
+  br label %167
+
+167:                                              ; preds = %164, %161
+  br label %168
+
+168:                                              ; preds = %167, %158
+  br label %169
+
+169:                                              ; preds = %168, %116
+  %170 = load i64, ptr %13, align 8
+  %171 = load i64, ptr %19, align 8
+  %172 = load i8, ptr %5, align 1
+  %173 = call double @softfloat_roundPackToF64(i64 noundef 0, i64 noundef %170, i64 noundef %171, i8 noundef zeroext %172)
+  store double %173, ptr %3, align 8
+  br label %177
+
+174:                                              ; No predecessors!
+  %175 = load i64, ptr %11, align 8
+  store i64 %175, ptr %21, align 8
+  %176 = load double, ptr %21, align 8
+  store double %176, ptr %3, align 8
+  br label %177
+
+177:                                              ; preds = %174, %169, %70, %61, %59, %49, %46
+  %178 = load double, ptr %3, align 8
+  ret double %178
+}
+
+; Function Attrs: alwaysinline nounwind
 define protected float @softfloat_subMagsF32(i64 noundef %0, i64 noundef %1, i8 noundef zeroext %2) #2 {
   %4 = alloca float, align 4
   %5 = alloca i64, align 8
@@ -19832,6 +20548,108 @@ define protected float @__mtpriv_erfcx_f32(float noundef %0) #5 {
 declare float @llvm.musa.rcp(float) #4
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__mt_erfcx_f32(float noundef %0) #0 {
+  %2 = alloca %union.i32_f32, align 4
+  %3 = alloca float, align 4
+  %4 = alloca float, align 4
+  %5 = alloca float, align 4
+  %6 = alloca float, align 4
+  %7 = alloca float, align 4
+  %8 = alloca float, align 4
+  %9 = alloca float, align 4
+  %10 = alloca float, align 4
+  %11 = alloca float, align 4
+  store float %0, ptr %3, align 4
+  %12 = load float, ptr %3, align 4
+  %13 = call float @__mt_fabs_f32(float noundef %12) #12
+  store float %13, ptr %4, align 4
+  %14 = load float, ptr %4, align 4
+  %15 = fcmp olt float %14, 0x40241BBF80000000
+  br i1 %15, label %16, label %19
+
+16:                                               ; preds = %1
+  %17 = load float, ptr %4, align 4
+  %18 = call float @__mtpriv_erfcx_f32(float noundef %17)
+  store float %18, ptr %5, align 4
+  br label %39
+
+19:                                               ; preds = %1
+  %20 = load float, ptr %4, align 4
+  %21 = fmul float 2.500000e-01, %20
+  %22 = call float @llvm.musa.rcp(float %21)
+  store float %22, ptr %6, align 4
+  %23 = load float, ptr %6, align 4
+  %24 = load float, ptr %6, align 4
+  %25 = fmul float %23, %24
+  %26 = fmul float %25, 6.250000e-02
+  store float %26, ptr %7, align 4
+  %27 = load float, ptr %7, align 4
+  %28 = load float, ptr %7, align 4
+  %29 = load float, ptr %7, align 4
+  %30 = load float, ptr %7, align 4
+  %31 = call float @__mt_fma_f32(float noundef %30, float noundef 6.562500e+00, float noundef -1.875000e+00) #12
+  %32 = call float @__mt_fma_f32(float noundef %29, float noundef %31, float noundef 7.500000e-01) #12
+  %33 = call float @__mt_fma_f32(float noundef %28, float noundef %32, float noundef -5.000000e-01) #12
+  %34 = call float @__mt_fma_f32(float noundef %27, float noundef %33, float noundef 1.000000e+00) #12
+  store float %34, ptr %8, align 4
+  %35 = load float, ptr %6, align 4
+  %36 = fmul float 0x3FC20DD760000000, %35
+  %37 = load float, ptr %8, align 4
+  %38 = fmul float %36, %37
+  store float %38, ptr %5, align 4
+  br label %39
+
+39:                                               ; preds = %19, %16
+  %40 = load float, ptr %3, align 4
+  %41 = fcmp olt float %40, 0.000000e+00
+  br i1 %41, label %42, label %68
+
+42:                                               ; preds = %39
+  %43 = load float, ptr %3, align 4
+  %44 = load float, ptr %3, align 4
+  %45 = fmul float %43, %44
+  store float %45, ptr %9, align 4
+  %46 = load float, ptr %3, align 4
+  %47 = load float, ptr %3, align 4
+  %48 = load float, ptr %9, align 4
+  %49 = fneg float %48
+  %50 = call float @__mt_fma_f32(float noundef %46, float noundef %47, float noundef %49) #12
+  store float %50, ptr %10, align 4
+  %51 = load float, ptr %9, align 4
+  %52 = call float @__mt_exp_f32(float noundef %51) #12
+  store float %52, ptr %11, align 4
+  %53 = load float, ptr %11, align 4
+  %54 = load float, ptr %10, align 4
+  %55 = load float, ptr %11, align 4
+  %56 = call float @__mt_fma_f32(float noundef %53, float noundef %54, float noundef %55) #12
+  %57 = load float, ptr %5, align 4
+  %58 = fneg float %57
+  %59 = call float @__mt_fma_f32(float noundef 2.000000e+00, float noundef %56, float noundef %58) #12
+  store float %59, ptr %5, align 4
+  %60 = load float, ptr %3, align 4
+  %61 = fcmp olt float %60, 0xC022D6ABC0000000
+  br i1 %61, label %62, label %64
+
+62:                                               ; preds = %42
+  store i32 2139095040, ptr %2, align 4
+  %63 = load float, ptr %2, align 4
+  br label %66
+
+64:                                               ; preds = %42
+  %65 = load float, ptr %5, align 4
+  br label %66
+
+66:                                               ; preds = %64, %62
+  %67 = phi float [ %63, %62 ], [ %65, %64 ]
+  store float %67, ptr %5, align 4
+  br label %68
+
+68:                                               ; preds = %66, %39
+  %69 = load float, ptr %5, align 4
+  ret float %69
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__mt_exp_fast_f32(float noundef %0) #0 {
   %2 = alloca float, align 4
   %3 = alloca float, align 4
@@ -23899,6 +24717,33 @@ define protected float @__mt_sinh_f32(float noundef %0) #0 {
   ret float %102
 }
 
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__mt_sqrt_rd_f32(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @softfloat_sqrtF32(float noundef %3, i8 noundef zeroext 2)
+  ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__mt_sqrt_ru_f32(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @softfloat_sqrtF32(float noundef %3, i8 noundef zeroext 3)
+  ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__mt_sqrt_rz_f32(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @softfloat_sqrtF32(float noundef %3, i8 noundef zeroext 1)
+  ret float %4
+}
+
 ; Function Attrs: alwaysinline nounwind
 define protected float @__kernel_tanf(float noundef %0, float noundef %1, i32 noundef %2) #2 {
   %4 = alloca float, align 4
@@ -24229,6 +25074,786 @@ define protected i32 @abstop12(float noundef %0) #2 {
   ret i32 %5
 }
 
+; Function Attrs: alwaysinline nounwind
+define protected float @__mt_tan_f32(float noundef %0) #2 {
+  %2 = alloca float, align 4
+  %3 = alloca float, align 4
+  %4 = alloca float, align 4
+  %5 = alloca float, align 4
+  %6 = alloca float, align 4
+  %7 = alloca i32, align 4
+  %8 = alloca float, align 4
+  %9 = alloca float, align 4
+  %10 = alloca float, align 4
+  %11 = alloca float, align 4
+  %12 = alloca float, align 4
+  %13 = alloca i32, align 4
+  %14 = alloca i32, align 4
+  %15 = alloca %union.anon, align 4
+  %16 = alloca float, align 4
+  %17 = alloca float, align 4
+  %18 = alloca i32, align 4
+  %19 = alloca %union.anon, align 4
+  %20 = alloca %union.anon, align 4
+  %21 = alloca %union.anon, align 4
+  %22 = alloca %union.anon, align 4
+  %23 = alloca float, align 4
+  %24 = alloca float, align 4
+  %25 = alloca float, align 4
+  %26 = alloca i32, align 4
+  %27 = alloca float, align 4
+  %28 = alloca float, align 4
+  %29 = alloca float, align 4
+  %30 = alloca float, align 4
+  %31 = alloca float, align 4
+  %32 = alloca i32, align 4
+  %33 = alloca i32, align 4
+  %34 = alloca %union.anon, align 4
+  %35 = alloca float, align 4
+  %36 = alloca float, align 4
+  %37 = alloca i32, align 4
+  %38 = alloca %union.anon, align 4
+  %39 = alloca %union.anon, align 4
+  %40 = alloca %union.anon, align 4
+  %41 = alloca %union.anon, align 4
+  %42 = alloca float, align 4
+  %43 = alloca float, align 4
+  %44 = alloca [2 x float], align 4
+  %45 = alloca float, align 4
+  %46 = alloca i32, align 4
+  %47 = alloca i32, align 4
+  %48 = alloca %union.anon, align 4
+  %49 = alloca double, align 8
+  %50 = alloca ptr, align 8
+  %51 = alloca double, align 8
+  %52 = alloca i32, align 4
+  %53 = alloca i32, align 4
+  %54 = alloca i32, align 4
+  %55 = alloca ptr, align 8
+  %56 = alloca i32, align 4
+  %57 = alloca i64, align 8
+  %58 = alloca i64, align 8
+  %59 = alloca i64, align 8
+  %60 = alloca i64, align 8
+  %61 = alloca double, align 8
+  store float %0, ptr %43, align 4
+  store float 0.000000e+00, ptr %45, align 4
+  br label %62
+
+62:                                               ; preds = %1
+  %63 = load float, ptr %43, align 4
+  store float %63, ptr %48, align 4
+  %64 = load i32, ptr %48, align 4
+  store i32 %64, ptr %47, align 4
+  br label %65
+
+65:                                               ; preds = %62
+  %66 = load i32, ptr %47, align 4
+  %67 = and i32 %66, 2147483647
+  store i32 %67, ptr %47, align 4
+  %68 = load i32, ptr %47, align 4
+  %69 = icmp sle i32 %68, 1061752794
+  br i1 %69, label %70, label %247
+
+70:                                               ; preds = %65
+  %71 = load float, ptr %43, align 4
+  %72 = load float, ptr %45, align 4
+  store float %71, ptr %5, align 4
+  store float %72, ptr %6, align 4
+  store i32 1, ptr %7, align 4
+  %73 = load float, ptr %5, align 4
+  store float %73, ptr %15, align 4
+  %74 = load i32, ptr %15, align 4
+  store i32 %74, ptr %14, align 4
+  %75 = load i32, ptr %14, align 4
+  %76 = and i32 %75, 2147483647
+  store i32 %76, ptr %13, align 4
+  %77 = load i32, ptr %13, align 4
+  %78 = icmp slt i32 %77, 956301312
+  br i1 %78, label %79, label %102
+
+79:                                               ; preds = %70
+  %80 = load float, ptr %5, align 4
+  %81 = fptosi float %80 to i32
+  %82 = icmp eq i32 %81, 0
+  br i1 %82, label %83, label %101
+
+83:                                               ; preds = %79
+  %84 = load i32, ptr %13, align 4
+  %85 = load i32, ptr %7, align 4
+  %86 = add nsw i32 %85, 1
+  %87 = or i32 %84, %86
+  %88 = icmp eq i32 %87, 0
+  br i1 %88, label %89, label %93
+
+89:                                               ; preds = %83
+  %90 = load float, ptr %5, align 4
+  %91 = call float @llvm.fabs.f32(float %90)
+  %92 = fdiv float 1.000000e+00, %91
+  store float %92, ptr %4, align 4
+  br label %245
+
+93:                                               ; preds = %83
+  %94 = load i32, ptr %7, align 4
+  %95 = icmp eq i32 %94, 1
+  br i1 %95, label %96, label %98
+
+96:                                               ; preds = %93
+  %97 = load float, ptr %5, align 4
+  store float %97, ptr %4, align 4
+  br label %245
+
+98:                                               ; preds = %93
+  %99 = load float, ptr %5, align 4
+  %100 = fdiv float -1.000000e+00, %99
+  store float %100, ptr %4, align 4
+  br label %245
+
+101:                                              ; preds = %79
+  br label %102
+
+102:                                              ; preds = %101, %70
+  %103 = load i32, ptr %13, align 4
+  %104 = icmp sge i32 %103, 1059889472
+  br i1 %104, label %105, label %140
+
+105:                                              ; preds = %102
+  %106 = load i32, ptr %14, align 4
+  %107 = icmp slt i32 %106, 0
+  br i1 %107, label %108, label %113
+
+108:                                              ; preds = %105
+  %109 = load float, ptr %5, align 4
+  %110 = fneg float %109
+  store float %110, ptr %5, align 4
+  %111 = load float, ptr %6, align 4
+  %112 = fneg float %111
+  store float %112, ptr %6, align 4
+  br label %113
+
+113:                                              ; preds = %108, %105
+  %114 = load float, ptr %5, align 4
+  %115 = fsub float 0x3FE921FB40000000, %114
+  store float %115, ptr %8, align 4
+  %116 = load float, ptr %6, align 4
+  %117 = fsub float 0x3E64442D00000000, %116
+  store float %117, ptr %11, align 4
+  %118 = load float, ptr %8, align 4
+  %119 = load float, ptr %11, align 4
+  %120 = fadd float %118, %119
+  store float %120, ptr %5, align 4
+  store float 0.000000e+00, ptr %6, align 4
+  %121 = load float, ptr %5, align 4
+  %122 = call float @llvm.fabs.f32(float %121)
+  %123 = fcmp olt float %122, 0x3F20000000000000
+  br i1 %123, label %124, label %139
+
+124:                                              ; preds = %113
+  %125 = load i32, ptr %14, align 4
+  %126 = ashr i32 %125, 30
+  %127 = and i32 %126, 2
+  %128 = sub nsw i32 1, %127
+  %129 = load i32, ptr %7, align 4
+  %130 = mul nsw i32 %128, %129
+  %131 = sitofp i32 %130 to float
+  %132 = load i32, ptr %7, align 4
+  %133 = mul nsw i32 2, %132
+  %134 = sitofp i32 %133 to float
+  %135 = load float, ptr %5, align 4
+  %136 = fneg float %134
+  %137 = call float @llvm.fmuladd.f32(float %136, float %135, float 1.000000e+00)
+  %138 = fmul float %131, %137
+  store float %138, ptr %4, align 4
+  br label %245
+
+139:                                              ; preds = %113
+  br label %140
+
+140:                                              ; preds = %139, %102
+  %141 = load float, ptr %5, align 4
+  %142 = load float, ptr %5, align 4
+  %143 = fmul float %141, %142
+  store float %143, ptr %8, align 4
+  %144 = load float, ptr %8, align 4
+  %145 = load float, ptr %8, align 4
+  %146 = fmul float %144, %145
+  store float %146, ptr %11, align 4
+  %147 = load float, ptr %11, align 4
+  %148 = load float, ptr %11, align 4
+  %149 = load float, ptr %11, align 4
+  %150 = load float, ptr %11, align 4
+  %151 = load float, ptr %11, align 4
+  %152 = call float @llvm.fmuladd.f32(float %151, float 0xBEF375CBE0000000, float 0x3F147E88A0000000)
+  %153 = call float @llvm.fmuladd.f32(float %150, float %152, float 0x3F4344D900000000)
+  %154 = call float @llvm.fmuladd.f32(float %149, float %153, float 0x3F6D6D22C0000000)
+  %155 = call float @llvm.fmuladd.f32(float %148, float %154, float 0x3F9664F480000000)
+  %156 = call float @llvm.fmuladd.f32(float %147, float %155, float 0x3FC1111120000000)
+  store float %156, ptr %9, align 4
+  %157 = load float, ptr %8, align 4
+  %158 = load float, ptr %11, align 4
+  %159 = load float, ptr %11, align 4
+  %160 = load float, ptr %11, align 4
+  %161 = load float, ptr %11, align 4
+  %162 = load float, ptr %11, align 4
+  %163 = call float @llvm.fmuladd.f32(float %162, float 0x3EFB2A7080000000, float 0x3F12B80F40000000)
+  %164 = call float @llvm.fmuladd.f32(float %161, float %163, float 0x3F3026F720000000)
+  %165 = call float @llvm.fmuladd.f32(float %160, float %164, float 0x3F57DBC900000000)
+  %166 = call float @llvm.fmuladd.f32(float %159, float %165, float 0x3F8226E3E0000000)
+  %167 = call float @llvm.fmuladd.f32(float %158, float %166, float 0x3FABA1BA20000000)
+  %168 = fmul float %157, %167
+  store float %168, ptr %10, align 4
+  %169 = load float, ptr %8, align 4
+  %170 = load float, ptr %5, align 4
+  %171 = fmul float %169, %170
+  store float %171, ptr %12, align 4
+  %172 = load float, ptr %6, align 4
+  %173 = load float, ptr %8, align 4
+  %174 = load float, ptr %12, align 4
+  %175 = load float, ptr %9, align 4
+  %176 = load float, ptr %10, align 4
+  %177 = fadd float %175, %176
+  %178 = load float, ptr %6, align 4
+  %179 = call float @llvm.fmuladd.f32(float %174, float %177, float %178)
+  %180 = call float @llvm.fmuladd.f32(float %173, float %179, float %172)
+  store float %180, ptr %9, align 4
+  %181 = load float, ptr %12, align 4
+  %182 = load float, ptr %9, align 4
+  %183 = call float @llvm.fmuladd.f32(float 0x3FD5555560000000, float %181, float %182)
+  store float %183, ptr %9, align 4
+  %184 = load float, ptr %5, align 4
+  %185 = load float, ptr %9, align 4
+  %186 = fadd float %184, %185
+  store float %186, ptr %11, align 4
+  %187 = load i32, ptr %13, align 4
+  %188 = icmp sge i32 %187, 1059889472
+  br i1 %188, label %189, label %211
+
+189:                                              ; preds = %140
+  %190 = load i32, ptr %7, align 4
+  %191 = sitofp i32 %190 to float
+  store float %191, ptr %10, align 4
+  %192 = load i32, ptr %14, align 4
+  %193 = ashr i32 %192, 30
+  %194 = and i32 %193, 2
+  %195 = sub nsw i32 1, %194
+  %196 = sitofp i32 %195 to float
+  %197 = load float, ptr %10, align 4
+  %198 = load float, ptr %5, align 4
+  %199 = load float, ptr %11, align 4
+  %200 = load float, ptr %11, align 4
+  %201 = fmul float %199, %200
+  %202 = load float, ptr %11, align 4
+  %203 = load float, ptr %10, align 4
+  %204 = fadd float %202, %203
+  %205 = fdiv float %201, %204
+  %206 = load float, ptr %9, align 4
+  %207 = fsub float %205, %206
+  %208 = fsub float %198, %207
+  %209 = call float @llvm.fmuladd.f32(float -2.000000e+00, float %208, float %197)
+  %210 = fmul float %196, %209
+  store float %210, ptr %4, align 4
+  br label %245
+
+211:                                              ; preds = %140
+  %212 = load i32, ptr %7, align 4
+  %213 = icmp eq i32 %212, 1
+  br i1 %213, label %214, label %216
+
+214:                                              ; preds = %211
+  %215 = load float, ptr %11, align 4
+  store float %215, ptr %4, align 4
+  br label %245
+
+216:                                              ; preds = %211
+  %217 = load float, ptr %11, align 4
+  store float %217, ptr %8, align 4
+  %218 = load float, ptr %8, align 4
+  store float %218, ptr %19, align 4
+  %219 = load i32, ptr %19, align 4
+  store i32 %219, ptr %18, align 4
+  %220 = load i32, ptr %18, align 4
+  %221 = and i32 %220, -4096
+  store i32 %221, ptr %20, align 4
+  %222 = load float, ptr %20, align 4
+  store float %222, ptr %8, align 4
+  %223 = load float, ptr %9, align 4
+  %224 = load float, ptr %8, align 4
+  %225 = load float, ptr %5, align 4
+  %226 = fsub float %224, %225
+  %227 = fsub float %223, %226
+  store float %227, ptr %10, align 4
+  %228 = load float, ptr %11, align 4
+  %229 = fdiv float -1.000000e+00, %228
+  store float %229, ptr %16, align 4
+  store float %229, ptr %17, align 4
+  %230 = load float, ptr %17, align 4
+  store float %230, ptr %21, align 4
+  %231 = load i32, ptr %21, align 4
+  store i32 %231, ptr %18, align 4
+  %232 = load i32, ptr %18, align 4
+  %233 = and i32 %232, -4096
+  store i32 %233, ptr %22, align 4
+  %234 = load float, ptr %22, align 4
+  store float %234, ptr %17, align 4
+  %235 = load float, ptr %17, align 4
+  %236 = load float, ptr %8, align 4
+  %237 = call float @llvm.fmuladd.f32(float %235, float %236, float 1.000000e+00)
+  store float %237, ptr %12, align 4
+  %238 = load float, ptr %17, align 4
+  %239 = load float, ptr %16, align 4
+  %240 = load float, ptr %12, align 4
+  %241 = load float, ptr %17, align 4
+  %242 = load float, ptr %10, align 4
+  %243 = call float @llvm.fmuladd.f32(float %241, float %242, float %240)
+  %244 = call float @llvm.fmuladd.f32(float %239, float %243, float %238)
+  store float %244, ptr %4, align 4
+  br label %245
+
+245:                                              ; preds = %89, %96, %98, %124, %189, %214, %216
+  %246 = load float, ptr %4, align 4
+  store float %246, ptr %42, align 4
+  br label %546
+
+247:                                              ; preds = %65
+  %248 = load i32, ptr %47, align 4
+  %249 = icmp sge i32 %248, 2139095040
+  br i1 %249, label %250, label %254
+
+250:                                              ; preds = %247
+  %251 = load float, ptr %43, align 4
+  %252 = load float, ptr %43, align 4
+  %253 = fsub float %251, %252
+  store float %253, ptr %42, align 4
+  br label %546
+
+254:                                              ; preds = %247
+  br label %255
+
+255:                                              ; preds = %254
+  %256 = load float, ptr %43, align 4
+  %257 = fpext float %256 to double
+  store double %257, ptr %49, align 8
+  store ptr @__sincosf_table, ptr %50, align 8
+  %258 = load float, ptr %43, align 4
+  store float %258, ptr %2, align 4
+  %259 = load i32, ptr %2, align 4
+  %260 = lshr i32 %259, 20
+  %261 = and i32 %260, 2047
+  store float 1.200000e+02, ptr %3, align 4
+  %262 = load i32, ptr %3, align 4
+  %263 = lshr i32 %262, 20
+  %264 = and i32 %263, 2047
+  %265 = icmp ult i32 %261, %264
+  br i1 %265, label %266, label %285
+
+266:                                              ; preds = %255
+  %267 = load double, ptr %49, align 8
+  %268 = load ptr, ptr %50, align 8
+  %269 = getelementptr inbounds nuw %struct.sincos_t, ptr %268, i32 0, i32 1
+  %270 = load double, ptr %269, align 8
+  %271 = fmul double %267, %270
+  store double %271, ptr %51, align 8
+  %272 = load double, ptr %51, align 8
+  %273 = fptosi double %272 to i32
+  %274 = add nsw i32 %273, 8388608
+  %275 = ashr i32 %274, 24
+  store i32 %275, ptr %52, align 4
+  %276 = load i32, ptr %52, align 4
+  store i32 %276, ptr %46, align 4
+  %277 = load double, ptr %49, align 8
+  %278 = load i32, ptr %52, align 4
+  %279 = sitofp i32 %278 to double
+  %280 = load ptr, ptr %50, align 8
+  %281 = getelementptr inbounds nuw %struct.sincos_t, ptr %280, i32 0, i32 2
+  %282 = load double, ptr %281, align 8
+  %283 = fneg double %279
+  %284 = call double @llvm.fmuladd.f64(double %283, double %282, double %277)
+  store double %284, ptr %49, align 8
+  br label %353
+
+285:                                              ; preds = %255
+  %286 = load i32, ptr %43, align 4
+  store i32 %286, ptr %53, align 4
+  %287 = load i32, ptr %53, align 4
+  %288 = lshr i32 %287, 31
+  store i32 %288, ptr %54, align 4
+  %289 = load i32, ptr %53, align 4
+  %290 = lshr i32 %289, 26
+  %291 = and i32 %290, 15
+  %292 = zext i32 %291 to i64
+  %293 = getelementptr inbounds nuw [24 x i32], ptr @__inv_pio4, i64 0, i64 %292
+  store ptr %293, ptr %55, align 8
+  %294 = load i32, ptr %53, align 4
+  %295 = lshr i32 %294, 23
+  %296 = and i32 %295, 7
+  store i32 %296, ptr %56, align 4
+  %297 = load i32, ptr %53, align 4
+  %298 = and i32 %297, 16777215
+  %299 = or i32 %298, 8388608
+  store i32 %299, ptr %53, align 4
+  %300 = load i32, ptr %56, align 4
+  %301 = load i32, ptr %53, align 4
+  %302 = shl i32 %301, %300
+  store i32 %302, ptr %53, align 4
+  %303 = load i32, ptr %53, align 4
+  %304 = load ptr, ptr %55, align 8
+  %305 = getelementptr inbounds i32, ptr %304, i64 0
+  %306 = load i32, ptr %305, align 4
+  %307 = mul i32 %303, %306
+  %308 = zext i32 %307 to i64
+  store i64 %308, ptr %58, align 8
+  %309 = load i32, ptr %53, align 4
+  %310 = zext i32 %309 to i64
+  %311 = load ptr, ptr %55, align 8
+  %312 = getelementptr inbounds i32, ptr %311, i64 4
+  %313 = load i32, ptr %312, align 4
+  %314 = zext i32 %313 to i64
+  %315 = mul i64 %310, %314
+  store i64 %315, ptr %59, align 8
+  %316 = load i32, ptr %53, align 4
+  %317 = zext i32 %316 to i64
+  %318 = load ptr, ptr %55, align 8
+  %319 = getelementptr inbounds i32, ptr %318, i64 8
+  %320 = load i32, ptr %319, align 4
+  %321 = zext i32 %320 to i64
+  %322 = mul i64 %317, %321
+  store i64 %322, ptr %60, align 8
+  %323 = load i64, ptr %60, align 8
+  %324 = lshr i64 %323, 32
+  %325 = load i64, ptr %58, align 8
+  %326 = shl i64 %325, 32
+  %327 = or i64 %324, %326
+  store i64 %327, ptr %58, align 8
+  %328 = load i64, ptr %59, align 8
+  %329 = load i64, ptr %58, align 8
+  %330 = add i64 %329, %328
+  store i64 %330, ptr %58, align 8
+  %331 = load i64, ptr %58, align 8
+  %332 = add i64 %331, 2305843009213693952
+  %333 = lshr i64 %332, 62
+  store i64 %333, ptr %57, align 8
+  %334 = load i64, ptr %57, align 8
+  %335 = shl i64 %334, 62
+  %336 = load i64, ptr %58, align 8
+  %337 = sub i64 %336, %335
+  store i64 %337, ptr %58, align 8
+  %338 = load i64, ptr %58, align 8
+  %339 = sitofp i64 %338 to double
+  store double %339, ptr %61, align 8
+  %340 = load i64, ptr %57, align 8
+  %341 = trunc i64 %340 to i32
+  store i32 %341, ptr %46, align 4
+  %342 = load double, ptr %61, align 8
+  %343 = fmul double %342, 0x3C1921FB54442D18
+  store double %343, ptr %49, align 8
+  %344 = load i32, ptr %54, align 4
+  %345 = icmp ne i32 %344, 0
+  br i1 %345, label %346, label %349
+
+346:                                              ; preds = %285
+  %347 = load double, ptr %49, align 8
+  %348 = fneg double %347
+  br label %351
+
+349:                                              ; preds = %285
+  %350 = load double, ptr %49, align 8
+  br label %351
+
+351:                                              ; preds = %349, %346
+  %352 = phi double [ %348, %346 ], [ %350, %349 ]
+  store double %352, ptr %49, align 8
+  br label %353
+
+353:                                              ; preds = %351, %266
+  %354 = load double, ptr %49, align 8
+  %355 = fptrunc double %354 to float
+  %356 = getelementptr inbounds [2 x float], ptr %44, i64 0, i64 0
+  store float %355, ptr %356, align 4
+  %357 = load double, ptr %49, align 8
+  %358 = getelementptr inbounds [2 x float], ptr %44, i64 0, i64 0
+  %359 = load float, ptr %358, align 4
+  %360 = fpext float %359 to double
+  %361 = fsub double %357, %360
+  %362 = fptrunc double %361 to float
+  %363 = getelementptr inbounds [2 x float], ptr %44, i64 0, i64 1
+  store float %362, ptr %363, align 4
+  %364 = getelementptr inbounds [2 x float], ptr %44, i64 0, i64 0
+  %365 = load float, ptr %364, align 4
+  %366 = getelementptr inbounds [2 x float], ptr %44, i64 0, i64 1
+  %367 = load float, ptr %366, align 4
+  %368 = load i32, ptr %46, align 4
+  %369 = and i32 %368, 1
+  %370 = shl i32 %369, 1
+  %371 = sub nsw i32 1, %370
+  store float %365, ptr %24, align 4
+  store float %367, ptr %25, align 4
+  store i32 %371, ptr %26, align 4
+  %372 = load float, ptr %24, align 4
+  store float %372, ptr %34, align 4
+  %373 = load i32, ptr %34, align 4
+  store i32 %373, ptr %33, align 4
+  %374 = load i32, ptr %33, align 4
+  %375 = and i32 %374, 2147483647
+  store i32 %375, ptr %32, align 4
+  %376 = load i32, ptr %32, align 4
+  %377 = icmp slt i32 %376, 956301312
+  br i1 %377, label %378, label %401
+
+378:                                              ; preds = %353
+  %379 = load float, ptr %24, align 4
+  %380 = fptosi float %379 to i32
+  %381 = icmp eq i32 %380, 0
+  br i1 %381, label %382, label %400
+
+382:                                              ; preds = %378
+  %383 = load i32, ptr %32, align 4
+  %384 = load i32, ptr %26, align 4
+  %385 = add nsw i32 %384, 1
+  %386 = or i32 %383, %385
+  %387 = icmp eq i32 %386, 0
+  br i1 %387, label %388, label %392
+
+388:                                              ; preds = %382
+  %389 = load float, ptr %24, align 4
+  %390 = call float @llvm.fabs.f32(float %389)
+  %391 = fdiv float 1.000000e+00, %390
+  store float %391, ptr %23, align 4
+  br label %544
+
+392:                                              ; preds = %382
+  %393 = load i32, ptr %26, align 4
+  %394 = icmp eq i32 %393, 1
+  br i1 %394, label %395, label %397
+
+395:                                              ; preds = %392
+  %396 = load float, ptr %24, align 4
+  store float %396, ptr %23, align 4
+  br label %544
+
+397:                                              ; preds = %392
+  %398 = load float, ptr %24, align 4
+  %399 = fdiv float -1.000000e+00, %398
+  store float %399, ptr %23, align 4
+  br label %544
+
+400:                                              ; preds = %378
+  br label %401
+
+401:                                              ; preds = %400, %353
+  %402 = load i32, ptr %32, align 4
+  %403 = icmp sge i32 %402, 1059889472
+  br i1 %403, label %404, label %439
+
+404:                                              ; preds = %401
+  %405 = load i32, ptr %33, align 4
+  %406 = icmp slt i32 %405, 0
+  br i1 %406, label %407, label %412
+
+407:                                              ; preds = %404
+  %408 = load float, ptr %24, align 4
+  %409 = fneg float %408
+  store float %409, ptr %24, align 4
+  %410 = load float, ptr %25, align 4
+  %411 = fneg float %410
+  store float %411, ptr %25, align 4
+  br label %412
+
+412:                                              ; preds = %407, %404
+  %413 = load float, ptr %24, align 4
+  %414 = fsub float 0x3FE921FB40000000, %413
+  store float %414, ptr %27, align 4
+  %415 = load float, ptr %25, align 4
+  %416 = fsub float 0x3E64442D00000000, %415
+  store float %416, ptr %30, align 4
+  %417 = load float, ptr %27, align 4
+  %418 = load float, ptr %30, align 4
+  %419 = fadd float %417, %418
+  store float %419, ptr %24, align 4
+  store float 0.000000e+00, ptr %25, align 4
+  %420 = load float, ptr %24, align 4
+  %421 = call float @llvm.fabs.f32(float %420)
+  %422 = fcmp olt float %421, 0x3F20000000000000
+  br i1 %422, label %423, label %438
+
+423:                                              ; preds = %412
+  %424 = load i32, ptr %33, align 4
+  %425 = ashr i32 %424, 30
+  %426 = and i32 %425, 2
+  %427 = sub nsw i32 1, %426
+  %428 = load i32, ptr %26, align 4
+  %429 = mul nsw i32 %427, %428
+  %430 = sitofp i32 %429 to float
+  %431 = load i32, ptr %26, align 4
+  %432 = mul nsw i32 2, %431
+  %433 = sitofp i32 %432 to float
+  %434 = load float, ptr %24, align 4
+  %435 = fneg float %433
+  %436 = call float @llvm.fmuladd.f32(float %435, float %434, float 1.000000e+00)
+  %437 = fmul float %430, %436
+  store float %437, ptr %23, align 4
+  br label %544
+
+438:                                              ; preds = %412
+  br label %439
+
+439:                                              ; preds = %438, %401
+  %440 = load float, ptr %24, align 4
+  %441 = load float, ptr %24, align 4
+  %442 = fmul float %440, %441
+  store float %442, ptr %27, align 4
+  %443 = load float, ptr %27, align 4
+  %444 = load float, ptr %27, align 4
+  %445 = fmul float %443, %444
+  store float %445, ptr %30, align 4
+  %446 = load float, ptr %30, align 4
+  %447 = load float, ptr %30, align 4
+  %448 = load float, ptr %30, align 4
+  %449 = load float, ptr %30, align 4
+  %450 = load float, ptr %30, align 4
+  %451 = call float @llvm.fmuladd.f32(float %450, float 0xBEF375CBE0000000, float 0x3F147E88A0000000)
+  %452 = call float @llvm.fmuladd.f32(float %449, float %451, float 0x3F4344D900000000)
+  %453 = call float @llvm.fmuladd.f32(float %448, float %452, float 0x3F6D6D22C0000000)
+  %454 = call float @llvm.fmuladd.f32(float %447, float %453, float 0x3F9664F480000000)
+  %455 = call float @llvm.fmuladd.f32(float %446, float %454, float 0x3FC1111120000000)
+  store float %455, ptr %28, align 4
+  %456 = load float, ptr %27, align 4
+  %457 = load float, ptr %30, align 4
+  %458 = load float, ptr %30, align 4
+  %459 = load float, ptr %30, align 4
+  %460 = load float, ptr %30, align 4
+  %461 = load float, ptr %30, align 4
+  %462 = call float @llvm.fmuladd.f32(float %461, float 0x3EFB2A7080000000, float 0x3F12B80F40000000)
+  %463 = call float @llvm.fmuladd.f32(float %460, float %462, float 0x3F3026F720000000)
+  %464 = call float @llvm.fmuladd.f32(float %459, float %463, float 0x3F57DBC900000000)
+  %465 = call float @llvm.fmuladd.f32(float %458, float %464, float 0x3F8226E3E0000000)
+  %466 = call float @llvm.fmuladd.f32(float %457, float %465, float 0x3FABA1BA20000000)
+  %467 = fmul float %456, %466
+  store float %467, ptr %29, align 4
+  %468 = load float, ptr %27, align 4
+  %469 = load float, ptr %24, align 4
+  %470 = fmul float %468, %469
+  store float %470, ptr %31, align 4
+  %471 = load float, ptr %25, align 4
+  %472 = load float, ptr %27, align 4
+  %473 = load float, ptr %31, align 4
+  %474 = load float, ptr %28, align 4
+  %475 = load float, ptr %29, align 4
+  %476 = fadd float %474, %475
+  %477 = load float, ptr %25, align 4
+  %478 = call float @llvm.fmuladd.f32(float %473, float %476, float %477)
+  %479 = call float @llvm.fmuladd.f32(float %472, float %478, float %471)
+  store float %479, ptr %28, align 4
+  %480 = load float, ptr %31, align 4
+  %481 = load float, ptr %28, align 4
+  %482 = call float @llvm.fmuladd.f32(float 0x3FD5555560000000, float %480, float %481)
+  store float %482, ptr %28, align 4
+  %483 = load float, ptr %24, align 4
+  %484 = load float, ptr %28, align 4
+  %485 = fadd float %483, %484
+  store float %485, ptr %30, align 4
+  %486 = load i32, ptr %32, align 4
+  %487 = icmp sge i32 %486, 1059889472
+  br i1 %487, label %488, label %510
+
+488:                                              ; preds = %439
+  %489 = load i32, ptr %26, align 4
+  %490 = sitofp i32 %489 to float
+  store float %490, ptr %29, align 4
+  %491 = load i32, ptr %33, align 4
+  %492 = ashr i32 %491, 30
+  %493 = and i32 %492, 2
+  %494 = sub nsw i32 1, %493
+  %495 = sitofp i32 %494 to float
+  %496 = load float, ptr %29, align 4
+  %497 = load float, ptr %24, align 4
+  %498 = load float, ptr %30, align 4
+  %499 = load float, ptr %30, align 4
+  %500 = fmul float %498, %499
+  %501 = load float, ptr %30, align 4
+  %502 = load float, ptr %29, align 4
+  %503 = fadd float %501, %502
+  %504 = fdiv float %500, %503
+  %505 = load float, ptr %28, align 4
+  %506 = fsub float %504, %505
+  %507 = fsub float %497, %506
+  %508 = call float @llvm.fmuladd.f32(float -2.000000e+00, float %507, float %496)
+  %509 = fmul float %495, %508
+  store float %509, ptr %23, align 4
+  br label %544
+
+510:                                              ; preds = %439
+  %511 = load i32, ptr %26, align 4
+  %512 = icmp eq i32 %511, 1
+  br i1 %512, label %513, label %515
+
+513:                                              ; preds = %510
+  %514 = load float, ptr %30, align 4
+  store float %514, ptr %23, align 4
+  br label %544
+
+515:                                              ; preds = %510
+  %516 = load float, ptr %30, align 4
+  store float %516, ptr %27, align 4
+  %517 = load float, ptr %27, align 4
+  store float %517, ptr %38, align 4
+  %518 = load i32, ptr %38, align 4
+  store i32 %518, ptr %37, align 4
+  %519 = load i32, ptr %37, align 4
+  %520 = and i32 %519, -4096
+  store i32 %520, ptr %39, align 4
+  %521 = load float, ptr %39, align 4
+  store float %521, ptr %27, align 4
+  %522 = load float, ptr %28, align 4
+  %523 = load float, ptr %27, align 4
+  %524 = load float, ptr %24, align 4
+  %525 = fsub float %523, %524
+  %526 = fsub float %522, %525
+  store float %526, ptr %29, align 4
+  %527 = load float, ptr %30, align 4
+  %528 = fdiv float -1.000000e+00, %527
+  store float %528, ptr %35, align 4
+  store float %528, ptr %36, align 4
+  %529 = load float, ptr %36, align 4
+  store float %529, ptr %40, align 4
+  %530 = load i32, ptr %40, align 4
+  store i32 %530, ptr %37, align 4
+  %531 = load i32, ptr %37, align 4
+  %532 = and i32 %531, -4096
+  store i32 %532, ptr %41, align 4
+  %533 = load float, ptr %41, align 4
+  store float %533, ptr %36, align 4
+  %534 = load float, ptr %36, align 4
+  %535 = load float, ptr %27, align 4
+  %536 = call float @llvm.fmuladd.f32(float %534, float %535, float 1.000000e+00)
+  store float %536, ptr %31, align 4
+  %537 = load float, ptr %36, align 4
+  %538 = load float, ptr %35, align 4
+  %539 = load float, ptr %31, align 4
+  %540 = load float, ptr %36, align 4
+  %541 = load float, ptr %29, align 4
+  %542 = call float @llvm.fmuladd.f32(float %540, float %541, float %539)
+  %543 = call float @llvm.fmuladd.f32(float %538, float %542, float %537)
+  store float %543, ptr %23, align 4
+  br label %544
+
+544:                                              ; preds = %388, %395, %397, %423, %488, %513, %515
+  %545 = load float, ptr %23, align 4
+  store float %545, ptr %42, align 4
+  br label %546
+
+546:                                              ; preds = %544, %250, %245
+  %547 = load float, ptr %42, align 4
+  ret float %547
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__nv_tanf(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @__mt_tan_f32(float noundef %3) #12
+  ret float %4
+}
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__mt_tanh_f32(float noundef %0) #0 {
@@ -27911,6 +29536,100 @@ define protected double @__mt_add_f64(double noundef %0, double noundef %1) #0 {
   ret double %55
 }
 
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_cos_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca [2 x double], align 8
+  %5 = alloca double, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
+  store double %0, ptr %3, align 8
+  store double 0.000000e+00, ptr %5, align 8
+  %8 = load double, ptr %3, align 8
+  %9 = call i32 @__HI(double noundef %8)
+  store i32 %9, ptr %7, align 4
+  %10 = load i32, ptr %7, align 4
+  %11 = and i32 %10, 2147483647
+  store i32 %11, ptr %7, align 4
+  %12 = load i32, ptr %7, align 4
+  %13 = icmp sle i32 %12, 1072243195
+  br i1 %13, label %14, label %18
+
+14:                                               ; preds = %1
+  %15 = load double, ptr %3, align 8
+  %16 = load double, ptr %5, align 8
+  %17 = call double @__kernel_cos(double noundef %15, double noundef %16)
+  store double %17, ptr %2, align 8
+  br label %57
+
+18:                                               ; preds = %1
+  %19 = load i32, ptr %7, align 4
+  %20 = icmp sge i32 %19, 2146435072
+  br i1 %20, label %21, label %25
+
+21:                                               ; preds = %18
+  %22 = load double, ptr %3, align 8
+  %23 = load double, ptr %3, align 8
+  %24 = fsub double %22, %23
+  store double %24, ptr %2, align 8
+  br label %57
+
+25:                                               ; preds = %18
+  %26 = load double, ptr %3, align 8
+  %27 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %28 = call i32 @__ieee754_rem_pio2(double noundef %26, ptr noundef %27)
+  store i32 %28, ptr %6, align 4
+  %29 = load i32, ptr %6, align 4
+  %30 = and i32 %29, 3
+  switch i32 %30, label %51 [
+    i32 0, label %31
+    i32 1, label %37
+    i32 2, label %44
+  ]
+
+31:                                               ; preds = %25
+  %32 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %33 = load double, ptr %32, align 8
+  %34 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %35 = load double, ptr %34, align 8
+  %36 = call double @__kernel_cos(double noundef %33, double noundef %35)
+  store double %36, ptr %2, align 8
+  br label %57
+
+37:                                               ; preds = %25
+  %38 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %39 = load double, ptr %38, align 8
+  %40 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %41 = load double, ptr %40, align 8
+  %42 = call double @__kernel_sin(double noundef %39, double noundef %41, i32 noundef 1)
+  %43 = fneg double %42
+  store double %43, ptr %2, align 8
+  br label %57
+
+44:                                               ; preds = %25
+  %45 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %46 = load double, ptr %45, align 8
+  %47 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %48 = load double, ptr %47, align 8
+  %49 = call double @__kernel_cos(double noundef %46, double noundef %48)
+  %50 = fneg double %49
+  store double %50, ptr %2, align 8
+  br label %57
+
+51:                                               ; preds = %25
+  %52 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %53 = load double, ptr %52, align 8
+  %54 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %55 = load double, ptr %54, align 8
+  %56 = call double @__kernel_sin(double noundef %53, double noundef %55, i32 noundef 1)
+  store double %56, ptr %2, align 8
+  br label %57
+
+57:                                               ; preds = %51, %44, %37, %31, %21, %14
+  %58 = load double, ptr %2, align 8
+  ret double %58
+}
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected double @__mt_cosh_f64(double noundef %0) #0 {
@@ -29059,6 +30778,244 @@ define protected double @__mt_exp_f64(double noundef %0) #0 {
 203:                                              ; preds = %193, %186, %159, %129, %69, %61, %55, %45
   %204 = load double, ptr %2, align 8
   ret double %204
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_cospi_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca double, align 8
+  %5 = alloca double, align 8
+  %6 = alloca double, align 8
+  %7 = alloca i32, align 4
+  %8 = alloca i64, align 8
+  %9 = alloca i64, align 8
+  %10 = alloca i64, align 8
+  store double %0, ptr %3, align 8
+  store double 1.000000e+00, ptr %6, align 8
+  %11 = load double, ptr %3, align 8
+  %12 = call i32 @__HI(double noundef %11)
+  %13 = and i32 2147483647, %12
+  store i32 %13, ptr %7, align 4
+  %14 = load i32, ptr %7, align 4
+  %15 = icmp slt i32 %14, 1070596096
+  br i1 %15, label %16, label %20
+
+16:                                               ; preds = %1
+  %17 = load double, ptr %3, align 8
+  %18 = fmul double 0x400921FB54442D18, %17
+  %19 = call double @__kernel_cos(double noundef %18, double noundef 0.000000e+00)
+  store double %19, ptr %2, align 8
+  br label %86
+
+20:                                               ; preds = %1
+  %21 = load double, ptr %3, align 8
+  %22 = call double @__mt_fabs_f64(double noundef %21) #12
+  store double %22, ptr %4, align 8
+  %23 = load i32, ptr %7, align 4
+  %24 = icmp sge i32 %23, 2146435072
+  br i1 %24, label %25, label %27
+
+25:                                               ; preds = %20
+  %26 = call double @as_double_from_ulonglong(i64 noundef 9218868437227405313)
+  store double %26, ptr %2, align 8
+  br label %86
+
+27:                                               ; preds = %20
+  %28 = load double, ptr %4, align 8
+  %29 = call double @__mt_floor_f64(double noundef %28) #12
+  store double %29, ptr %5, align 8
+  %30 = load double, ptr %5, align 8
+  %31 = fcmp ogt double %30, 0.000000e+00
+  br i1 %31, label %32, label %55
+
+32:                                               ; preds = %27
+  %33 = load double, ptr %5, align 8
+  %34 = call i64 @as_ulonglong_from_double(double noundef %33)
+  store i64 %34, ptr %8, align 8
+  %35 = load i64, ptr %8, align 8
+  %36 = and i64 %35, 9218868437227405312
+  %37 = lshr i64 %36, 52
+  %38 = sub i64 %37, 1023
+  store i64 %38, ptr %9, align 8
+  %39 = load i64, ptr %8, align 8
+  %40 = and i64 %39, 4503599627370495
+  %41 = or i64 %40, 4503599627370496
+  store i64 %41, ptr %10, align 8
+  %42 = load i64, ptr %9, align 8
+  %43 = icmp ugt i64 %42, 52
+  br i1 %43, label %44, label %45
+
+44:                                               ; preds = %32
+  store double 1.000000e+00, ptr %2, align 8
+  br label %86
+
+45:                                               ; preds = %32
+  %46 = load i64, ptr %10, align 8
+  %47 = load i64, ptr %9, align 8
+  %48 = sub i64 52, %47
+  %49 = lshr i64 %46, %48
+  store i64 %49, ptr %10, align 8
+  %50 = load i64, ptr %10, align 8
+  %51 = and i64 %50, 1
+  %52 = icmp ne i64 %51, 0
+  br i1 %52, label %53, label %54
+
+53:                                               ; preds = %45
+  store double -1.000000e+00, ptr %6, align 8
+  br label %54
+
+54:                                               ; preds = %53, %45
+  br label %55
+
+55:                                               ; preds = %54, %27
+  %56 = load double, ptr %5, align 8
+  %57 = load double, ptr %4, align 8
+  %58 = fcmp une double %56, %57
+  br i1 %58, label %59, label %76
+
+59:                                               ; preds = %55
+  %60 = load double, ptr %4, align 8
+  %61 = load double, ptr %5, align 8
+  %62 = fsub double %60, %61
+  store double %62, ptr %4, align 8
+  %63 = load double, ptr %4, align 8
+  %64 = fcmp ogt double %63, 5.000000e-01
+  br i1 %64, label %65, label %75
+
+65:                                               ; preds = %59
+  %66 = load double, ptr %4, align 8
+  %67 = fsub double %66, 5.000000e-01
+  store double %67, ptr %4, align 8
+  %68 = load double, ptr %6, align 8
+  %69 = fmul double %68, -1.000000e+00
+  store double %69, ptr %6, align 8
+  %70 = load double, ptr %6, align 8
+  %71 = load double, ptr %4, align 8
+  %72 = fmul double %71, 0x400921FB54442D18
+  %73 = call double @__mt_sin_f64(double noundef %72) #12
+  %74 = fmul double %70, %73
+  store double %74, ptr %2, align 8
+  br label %86
+
+75:                                               ; preds = %59
+  br label %78
+
+76:                                               ; preds = %55
+  %77 = load double, ptr %6, align 8
+  store double %77, ptr %2, align 8
+  br label %86
+
+78:                                               ; preds = %75
+  %79 = load double, ptr %6, align 8
+  %80 = load double, ptr %4, align 8
+  %81 = fsub double 5.000000e-01, %80
+  %82 = fmul double %81, 0x400921FB54442D18
+  %83 = call double @__mt_sin_f64(double noundef %82) #12
+  %84 = fmul double %79, %83
+  store double %84, ptr %4, align 8
+  %85 = load double, ptr %4, align 8
+  store double %85, ptr %2, align 8
+  br label %86
+
+86:                                               ; preds = %78, %76, %65, %44, %25, %16
+  %87 = load double, ptr %2, align 8
+  ret double %87
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_sin_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca [2 x double], align 8
+  %5 = alloca double, align 8
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
+  store double %0, ptr %3, align 8
+  store double 0.000000e+00, ptr %5, align 8
+  %8 = load double, ptr %3, align 8
+  %9 = call i32 @__HI(double noundef %8)
+  store i32 %9, ptr %7, align 4
+  %10 = load i32, ptr %7, align 4
+  %11 = and i32 %10, 2147483647
+  store i32 %11, ptr %7, align 4
+  %12 = load i32, ptr %7, align 4
+  %13 = icmp sle i32 %12, 1072243195
+  br i1 %13, label %14, label %18
+
+14:                                               ; preds = %1
+  %15 = load double, ptr %3, align 8
+  %16 = load double, ptr %5, align 8
+  %17 = call double @__kernel_sin(double noundef %15, double noundef %16, i32 noundef 0)
+  store double %17, ptr %2, align 8
+  br label %57
+
+18:                                               ; preds = %1
+  %19 = load i32, ptr %7, align 4
+  %20 = icmp sge i32 %19, 2146435072
+  br i1 %20, label %21, label %25
+
+21:                                               ; preds = %18
+  %22 = load double, ptr %3, align 8
+  %23 = load double, ptr %3, align 8
+  %24 = fsub double %22, %23
+  store double %24, ptr %2, align 8
+  br label %57
+
+25:                                               ; preds = %18
+  %26 = load double, ptr %3, align 8
+  %27 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %28 = call i32 @__ieee754_rem_pio2(double noundef %26, ptr noundef %27)
+  store i32 %28, ptr %6, align 4
+  %29 = load i32, ptr %6, align 4
+  %30 = and i32 %29, 3
+  switch i32 %30, label %50 [
+    i32 0, label %31
+    i32 1, label %37
+    i32 2, label %43
+  ]
+
+31:                                               ; preds = %25
+  %32 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %33 = load double, ptr %32, align 8
+  %34 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %35 = load double, ptr %34, align 8
+  %36 = call double @__kernel_sin(double noundef %33, double noundef %35, i32 noundef 1)
+  store double %36, ptr %2, align 8
+  br label %57
+
+37:                                               ; preds = %25
+  %38 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %39 = load double, ptr %38, align 8
+  %40 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %41 = load double, ptr %40, align 8
+  %42 = call double @__kernel_cos(double noundef %39, double noundef %41)
+  store double %42, ptr %2, align 8
+  br label %57
+
+43:                                               ; preds = %25
+  %44 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %45 = load double, ptr %44, align 8
+  %46 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %47 = load double, ptr %46, align 8
+  %48 = call double @__kernel_sin(double noundef %45, double noundef %47, i32 noundef 1)
+  %49 = fneg double %48
+  store double %49, ptr %2, align 8
+  br label %57
+
+50:                                               ; preds = %25
+  %51 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 0
+  %52 = load double, ptr %51, align 8
+  %53 = getelementptr inbounds [2 x double], ptr %4, i64 0, i64 1
+  %54 = load double, ptr %53, align 8
+  %55 = call double @__kernel_cos(double noundef %52, double noundef %54)
+  %56 = fneg double %55
+  store double %56, ptr %2, align 8
+  br label %57
+
+57:                                               ; preds = %50, %43, %37, %31, %21, %14
+  %58 = load double, ptr %2, align 8
+  ret double %58
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
@@ -34726,6 +36683,917 @@ define protected double @__mt_hypot_f64(double noundef %0, double noundef %1) #0
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_lgamma_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca double, align 8
+  %5 = alloca double, align 8
+  %6 = alloca double, align 8
+  %7 = alloca double, align 8
+  %8 = alloca double, align 8
+  %9 = alloca double, align 8
+  %10 = alloca double, align 8
+  %11 = alloca double, align 8
+  %12 = alloca double, align 8
+  %13 = alloca double, align 8
+  %14 = alloca double, align 8
+  %15 = alloca double, align 8
+  %16 = alloca double, align 8
+  %17 = alloca double, align 8
+  %18 = alloca double, align 8
+  %19 = alloca double, align 8
+  %20 = alloca double, align 8
+  %21 = alloca double, align 8
+  %22 = alloca double, align 8
+  %23 = alloca double, align 8
+  %24 = alloca double, align 8
+  %25 = alloca double, align 8
+  %26 = alloca double, align 8
+  %27 = alloca double, align 8
+  %28 = alloca double, align 8
+  %29 = alloca double, align 8
+  %30 = alloca double, align 8
+  %31 = alloca double, align 8
+  %32 = alloca double, align 8
+  %33 = alloca double, align 8
+  %34 = alloca double, align 8
+  %35 = alloca double, align 8
+  %36 = alloca double, align 8
+  %37 = alloca double, align 8
+  %38 = alloca double, align 8
+  %39 = alloca double, align 8
+  %40 = alloca double, align 8
+  %41 = alloca double, align 8
+  %42 = alloca double, align 8
+  %43 = alloca double, align 8
+  %44 = alloca double, align 8
+  %45 = alloca double, align 8
+  %46 = alloca double, align 8
+  %47 = alloca double, align 8
+  %48 = alloca double, align 8
+  %49 = alloca double, align 8
+  %50 = alloca double, align 8
+  %51 = alloca double, align 8
+  %52 = alloca double, align 8
+  %53 = alloca double, align 8
+  %54 = alloca double, align 8
+  %55 = alloca double, align 8
+  %56 = alloca double, align 8
+  %57 = alloca double, align 8
+  %58 = alloca double, align 8
+  %59 = alloca double, align 8
+  %60 = alloca double, align 8
+  %61 = alloca double, align 8
+  %62 = alloca double, align 8
+  %63 = alloca double, align 8
+  %64 = alloca double, align 8
+  %65 = alloca double, align 8
+  %66 = alloca double, align 8
+  %67 = alloca double, align 8
+  %68 = alloca double, align 8
+  %69 = alloca double, align 8
+  %70 = alloca double, align 8
+  %71 = alloca double, align 8
+  %72 = alloca double, align 8
+  %73 = alloca double, align 8
+  %74 = alloca double, align 8
+  %75 = alloca double, align 8
+  %76 = alloca double, align 8
+  %77 = alloca double, align 8
+  %78 = alloca double, align 8
+  %79 = alloca double, align 8
+  %80 = alloca double, align 8
+  %81 = alloca i32, align 4
+  %82 = alloca i32, align 4
+  %83 = alloca i32, align 4
+  %84 = alloca i32, align 4
+  store double %0, ptr %3, align 8
+  store double 0x4330000000000000, ptr %4, align 8
+  store double 5.000000e-01, ptr %5, align 8
+  store double 1.000000e+00, ptr %6, align 8
+  store double 0x400921FB54442D18, ptr %7, align 8
+  store double 0x3FB3C467E37DB0C8, ptr %8, align 8
+  store double 0x3FD4A34CC4A60FAD, ptr %9, align 8
+  store double 0x3FB13E001A5562A7, ptr %10, align 8
+  store double 0x3F951322AC92547B, ptr %11, align 8
+  store double 0x3F7E404FB68FEFE8, ptr %12, align 8
+  store double 0x3F67ADD8CCB7926B, ptr %13, align 8
+  store double 0x3F538A94116F3F5D, ptr %14, align 8
+  store double 0x3F40B6C689B99C00, ptr %15, align 8
+  store double 0x3F2CF2ECED10E54D, ptr %16, align 8
+  store double 0x3F1C5088987DFB07, ptr %17, align 8
+  store double 0x3EFA7074428CFA52, ptr %18, align 8
+  store double 0x3F07858E90A45837, ptr %19, align 8
+  store double 0x3FF762D86356BE3F, ptr %20, align 8
+  store double 0xBFBF19B9BCC38A42, ptr %21, align 8
+  store double 0xBC50C7CAA48A971F, ptr %22, align 8
+  store double 0x3FDEF72BC8EE38A2, ptr %23, align 8
+  store double 0xBFC2E4278DC6C509, ptr %24, align 8
+  store double 0x3FB08B4294D5419B, ptr %25, align 8
+  store double 0xBFA0C9A8DF35B713, ptr %26, align 8
+  store double 0x3F9266E7970AF9EC, ptr %27, align 8
+  store double 0xBF851F9FBA91EC6A, ptr %28, align 8
+  store double 0x3F78FCE0E370E344, ptr %29, align 8
+  store double 0xBF6E2EFFB3E914D7, ptr %30, align 8
+  store double 0x3F6282D32E15C915, ptr %31, align 8
+  store double 0xBF56FE8EBF2D1AF1, ptr %32, align 8
+  store double 0x3F4CDF0CEF61A8E9, ptr %33, align 8
+  store double 0xBF41A6109C73E0EC, ptr %34, align 8
+  store double 0x3F34AF6D6C0EBBF7, ptr %35, align 8
+  store double 0xBF347F24ECC38C38, ptr %36, align 8
+  store double 0x3F35FD3EE8C2D3F4, ptr %37, align 8
+  store double 0xBFB3C467E37DB0C8, ptr %38, align 8
+  store double 0x3FE4401E8B005DFF, ptr %39, align 8
+  store double 0x3FF7475CD119BD6F, ptr %40, align 8
+  store double 0x3FEF497644EA8450, ptr %41, align 8
+  store double 0x3FCD4EAEF6010924, ptr %42, align 8
+  store double 0x3F8B678BBF2BAB09, ptr %43, align 8
+  store double 0x4003A5D7C2BD619C, ptr %44, align 8
+  store double 0x40010725A42B18F5, ptr %45, align 8
+  store double 0x3FE89DFBE45050AF, ptr %46, align 8
+  store double 0x3FBAAE55D6537C88, ptr %47, align 8
+  store double 0x3F6A5ABB57D0CF61, ptr %48, align 8
+  store double 0xBFB3C467E37DB0C8, ptr %49, align 8
+  store double 0x3FCB848B36E20878, ptr %50, align 8
+  store double 0x3FD4D98F4F139F59, ptr %51, align 8
+  store double 0x3FC2BB9CBEE5F2F7, ptr %52, align 8
+  store double 0x3F9B481C7E939961, ptr %53, align 8
+  store double 0x3F5E26B67368F239, ptr %54, align 8
+  store double 0x3F00BFECDD17E945, ptr %55, align 8
+  store double 0x3FF645A762C4AB74, ptr %56, align 8
+  store double 0x3FE71A1893D3DCDC, ptr %57, align 8
+  store double 0x3FC601EDCCFBDF27, ptr %58, align 8
+  store double 0x3F9317EA742ED475, ptr %59, align 8
+  store double 0x3F497DDACA41A95B, ptr %60, align 8
+  store double 0x3EDEBAF7A5B38140, ptr %61, align 8
+  store double 0x3FDACFE390C97D69, ptr %62, align 8
+  store double 0x3FB555555555553B, ptr %63, align 8
+  store double 0xBF66C16C16B02E5C, ptr %64, align 8
+  store double 0x3F4A019F98CF38B6, ptr %65, align 8
+  store double 0xBF4380CB8C0FE741, ptr %66, align 8
+  store double 0x3F4B67BA4CDAD5D1, ptr %67, align 8
+  store double 0xBF5AB89D0B9E43E4, ptr %68, align 8
+  store double 0.000000e+00, ptr %69, align 8
+  %85 = load double, ptr %3, align 8
+  %86 = call i32 @__HI(double noundef %85)
+  store i32 %86, ptr %82, align 4
+  %87 = load double, ptr %3, align 8
+  %88 = call i32 @__LO(double noundef %87)
+  store i32 %88, ptr %83, align 4
+  %89 = load i32, ptr %82, align 4
+  %90 = and i32 %89, 2147483647
+  store i32 %90, ptr %84, align 4
+  %91 = load i32, ptr %84, align 4
+  %92 = icmp sge i32 %91, 2146435072
+  br i1 %92, label %93, label %97
+
+93:                                               ; preds = %1
+  %94 = load double, ptr %3, align 8
+  %95 = load double, ptr %3, align 8
+  %96 = fmul double %94, %95
+  store double %96, ptr %2, align 8
+  br label %515
+
+97:                                               ; preds = %1
+  %98 = load i32, ptr %84, align 4
+  %99 = load i32, ptr %83, align 4
+  %100 = or i32 %98, %99
+  %101 = icmp eq i32 %100, 0
+  br i1 %101, label %102, label %106
+
+102:                                              ; preds = %97
+  %103 = load double, ptr %6, align 8
+  %104 = load double, ptr %69, align 8
+  %105 = fdiv double %103, %104
+  store double %105, ptr %2, align 8
+  br label %515
+
+106:                                              ; preds = %97
+  %107 = load i32, ptr %84, align 4
+  %108 = icmp slt i32 %107, 999292928
+  br i1 %108, label %109, label %121
+
+109:                                              ; preds = %106
+  %110 = load i32, ptr %82, align 4
+  %111 = icmp slt i32 %110, 0
+  br i1 %111, label %112, label %117
+
+112:                                              ; preds = %109
+  %113 = load double, ptr %3, align 8
+  %114 = fneg double %113
+  %115 = call double @__mt_log_f64(double noundef %114) #12
+  %116 = fneg double %115
+  store double %116, ptr %2, align 8
+  br label %515
+
+117:                                              ; preds = %109
+  %118 = load double, ptr %3, align 8
+  %119 = call double @__mt_log_f64(double noundef %118) #12
+  %120 = fneg double %119
+  store double %120, ptr %2, align 8
+  br label %515
+
+121:                                              ; preds = %106
+  %122 = load i32, ptr %82, align 4
+  %123 = icmp slt i32 %122, 0
+  br i1 %123, label %124, label %151
+
+124:                                              ; preds = %121
+  %125 = load i32, ptr %84, align 4
+  %126 = icmp sge i32 %125, 1127219200
+  br i1 %126, label %127, label %131
+
+127:                                              ; preds = %124
+  %128 = load double, ptr %6, align 8
+  %129 = load double, ptr %69, align 8
+  %130 = fdiv double %128, %129
+  store double %130, ptr %2, align 8
+  br label %515
+
+131:                                              ; preds = %124
+  %132 = load double, ptr %3, align 8
+  %133 = call double @__mt_sinpi_f64(double noundef %132) #12
+  store double %133, ptr %70, align 8
+  %134 = load double, ptr %70, align 8
+  %135 = load double, ptr %69, align 8
+  %136 = fcmp oeq double %134, %135
+  br i1 %136, label %137, label %141
+
+137:                                              ; preds = %131
+  %138 = load double, ptr %6, align 8
+  %139 = load double, ptr %69, align 8
+  %140 = fdiv double %138, %139
+  store double %140, ptr %2, align 8
+  br label %515
+
+141:                                              ; preds = %131
+  %142 = load double, ptr %7, align 8
+  %143 = load double, ptr %70, align 8
+  %144 = load double, ptr %3, align 8
+  %145 = fmul double %143, %144
+  %146 = call double @__mt_fabs_f64(double noundef %145) #12
+  %147 = fdiv double %142, %146
+  %148 = call double @__mt_log_f64(double noundef %147) #12
+  store double %148, ptr %73, align 8
+  %149 = load double, ptr %3, align 8
+  %150 = fneg double %149
+  store double %150, ptr %3, align 8
+  br label %151
+
+151:                                              ; preds = %141, %121
+  %152 = load i32, ptr %84, align 4
+  %153 = sub nsw i32 %152, 1072693248
+  %154 = load i32, ptr %83, align 4
+  %155 = or i32 %153, %154
+  %156 = icmp eq i32 %155, 0
+  br i1 %156, label %163, label %157
+
+157:                                              ; preds = %151
+  %158 = load i32, ptr %84, align 4
+  %159 = sub nsw i32 %158, 1073741824
+  %160 = load i32, ptr %83, align 4
+  %161 = or i32 %159, %160
+  %162 = icmp eq i32 %161, 0
+  br i1 %162, label %163, label %164
+
+163:                                              ; preds = %157, %151
+  store double 0.000000e+00, ptr %79, align 8
+  br label %506
+
+164:                                              ; preds = %157
+  %165 = load i32, ptr %84, align 4
+  %166 = icmp slt i32 %165, 1073741824
+  br i1 %166, label %167, label %368
+
+167:                                              ; preds = %164
+  %168 = load i32, ptr %84, align 4
+  %169 = icmp sle i32 %168, 1072483532
+  br i1 %169, label %170, label %193
+
+170:                                              ; preds = %167
+  %171 = load double, ptr %3, align 8
+  %172 = call double @__mt_log_f64(double noundef %171) #12
+  %173 = fneg double %172
+  store double %173, ptr %79, align 8
+  %174 = load i32, ptr %84, align 4
+  %175 = icmp sge i32 %174, 1072130372
+  br i1 %175, label %176, label %180
+
+176:                                              ; preds = %170
+  %177 = load double, ptr %6, align 8
+  %178 = load double, ptr %3, align 8
+  %179 = fsub double %177, %178
+  store double %179, ptr %71, align 8
+  store i32 0, ptr %81, align 4
+  br label %192
+
+180:                                              ; preds = %170
+  %181 = load i32, ptr %84, align 4
+  %182 = icmp sge i32 %181, 1070442081
+  br i1 %182, label %183, label %189
+
+183:                                              ; preds = %180
+  %184 = load double, ptr %3, align 8
+  %185 = load double, ptr %20, align 8
+  %186 = load double, ptr %6, align 8
+  %187 = fsub double %185, %186
+  %188 = fsub double %184, %187
+  store double %188, ptr %71, align 8
+  store i32 1, ptr %81, align 4
+  br label %191
+
+189:                                              ; preds = %180
+  %190 = load double, ptr %3, align 8
+  store double %190, ptr %71, align 8
+  store i32 2, ptr %81, align 4
+  br label %191
+
+191:                                              ; preds = %189, %183
+  br label %192
+
+192:                                              ; preds = %191, %176
+  br label %213
+
+193:                                              ; preds = %167
+  %194 = load double, ptr %69, align 8
+  store double %194, ptr %79, align 8
+  %195 = load i32, ptr %84, align 4
+  %196 = icmp sge i32 %195, 1073460419
+  br i1 %196, label %197, label %200
+
+197:                                              ; preds = %193
+  %198 = load double, ptr %3, align 8
+  %199 = fsub double 2.000000e+00, %198
+  store double %199, ptr %71, align 8
+  store i32 0, ptr %81, align 4
+  br label %212
+
+200:                                              ; preds = %193
+  %201 = load i32, ptr %84, align 4
+  %202 = icmp sge i32 %201, 1072936132
+  br i1 %202, label %203, label %207
+
+203:                                              ; preds = %200
+  %204 = load double, ptr %3, align 8
+  %205 = load double, ptr %20, align 8
+  %206 = fsub double %204, %205
+  store double %206, ptr %71, align 8
+  store i32 1, ptr %81, align 4
+  br label %211
+
+207:                                              ; preds = %200
+  %208 = load double, ptr %3, align 8
+  %209 = load double, ptr %6, align 8
+  %210 = fsub double %208, %209
+  store double %210, ptr %71, align 8
+  store i32 2, ptr %81, align 4
+  br label %211
+
+211:                                              ; preds = %207, %203
+  br label %212
+
+212:                                              ; preds = %211, %197
+  br label %213
+
+213:                                              ; preds = %212, %192
+  %214 = load i32, ptr %81, align 4
+  switch i32 %214, label %367 [
+    i32 0, label %215
+    i32 1, label %262
+    i32 2, label %325
+  ]
+
+215:                                              ; preds = %213
+  %216 = load double, ptr %71, align 8
+  %217 = load double, ptr %71, align 8
+  %218 = fmul double %216, %217
+  store double %218, ptr %72, align 8
+  %219 = load double, ptr %8, align 8
+  %220 = load double, ptr %72, align 8
+  %221 = load double, ptr %10, align 8
+  %222 = load double, ptr %72, align 8
+  %223 = load double, ptr %12, align 8
+  %224 = load double, ptr %72, align 8
+  %225 = load double, ptr %14, align 8
+  %226 = load double, ptr %72, align 8
+  %227 = load double, ptr %16, align 8
+  %228 = load double, ptr %72, align 8
+  %229 = load double, ptr %18, align 8
+  %230 = call double @llvm.fmuladd.f64(double %228, double %229, double %227)
+  %231 = call double @llvm.fmuladd.f64(double %226, double %230, double %225)
+  %232 = call double @llvm.fmuladd.f64(double %224, double %231, double %223)
+  %233 = call double @llvm.fmuladd.f64(double %222, double %232, double %221)
+  %234 = call double @llvm.fmuladd.f64(double %220, double %233, double %219)
+  store double %234, ptr %75, align 8
+  %235 = load double, ptr %72, align 8
+  %236 = load double, ptr %9, align 8
+  %237 = load double, ptr %72, align 8
+  %238 = load double, ptr %11, align 8
+  %239 = load double, ptr %72, align 8
+  %240 = load double, ptr %13, align 8
+  %241 = load double, ptr %72, align 8
+  %242 = load double, ptr %15, align 8
+  %243 = load double, ptr %72, align 8
+  %244 = load double, ptr %17, align 8
+  %245 = load double, ptr %72, align 8
+  %246 = load double, ptr %19, align 8
+  %247 = call double @llvm.fmuladd.f64(double %245, double %246, double %244)
+  %248 = call double @llvm.fmuladd.f64(double %243, double %247, double %242)
+  %249 = call double @llvm.fmuladd.f64(double %241, double %248, double %240)
+  %250 = call double @llvm.fmuladd.f64(double %239, double %249, double %238)
+  %251 = call double @llvm.fmuladd.f64(double %237, double %250, double %236)
+  %252 = fmul double %235, %251
+  store double %252, ptr %76, align 8
+  %253 = load double, ptr %71, align 8
+  %254 = load double, ptr %75, align 8
+  %255 = load double, ptr %76, align 8
+  %256 = call double @llvm.fmuladd.f64(double %253, double %254, double %255)
+  store double %256, ptr %74, align 8
+  %257 = load double, ptr %74, align 8
+  %258 = load double, ptr %71, align 8
+  %259 = call double @llvm.fmuladd.f64(double -5.000000e-01, double %258, double %257)
+  %260 = load double, ptr %79, align 8
+  %261 = fadd double %260, %259
+  store double %261, ptr %79, align 8
+  br label %367
+
+262:                                              ; preds = %213
+  %263 = load double, ptr %71, align 8
+  %264 = load double, ptr %71, align 8
+  %265 = fmul double %263, %264
+  store double %265, ptr %72, align 8
+  %266 = load double, ptr %72, align 8
+  %267 = load double, ptr %71, align 8
+  %268 = fmul double %266, %267
+  store double %268, ptr %80, align 8
+  %269 = load double, ptr %23, align 8
+  %270 = load double, ptr %80, align 8
+  %271 = load double, ptr %26, align 8
+  %272 = load double, ptr %80, align 8
+  %273 = load double, ptr %29, align 8
+  %274 = load double, ptr %80, align 8
+  %275 = load double, ptr %32, align 8
+  %276 = load double, ptr %80, align 8
+  %277 = load double, ptr %35, align 8
+  %278 = call double @llvm.fmuladd.f64(double %276, double %277, double %275)
+  %279 = call double @llvm.fmuladd.f64(double %274, double %278, double %273)
+  %280 = call double @llvm.fmuladd.f64(double %272, double %279, double %271)
+  %281 = call double @llvm.fmuladd.f64(double %270, double %280, double %269)
+  store double %281, ptr %75, align 8
+  %282 = load double, ptr %24, align 8
+  %283 = load double, ptr %80, align 8
+  %284 = load double, ptr %27, align 8
+  %285 = load double, ptr %80, align 8
+  %286 = load double, ptr %30, align 8
+  %287 = load double, ptr %80, align 8
+  %288 = load double, ptr %33, align 8
+  %289 = load double, ptr %80, align 8
+  %290 = load double, ptr %36, align 8
+  %291 = call double @llvm.fmuladd.f64(double %289, double %290, double %288)
+  %292 = call double @llvm.fmuladd.f64(double %287, double %291, double %286)
+  %293 = call double @llvm.fmuladd.f64(double %285, double %292, double %284)
+  %294 = call double @llvm.fmuladd.f64(double %283, double %293, double %282)
+  store double %294, ptr %76, align 8
+  %295 = load double, ptr %25, align 8
+  %296 = load double, ptr %80, align 8
+  %297 = load double, ptr %28, align 8
+  %298 = load double, ptr %80, align 8
+  %299 = load double, ptr %31, align 8
+  %300 = load double, ptr %80, align 8
+  %301 = load double, ptr %34, align 8
+  %302 = load double, ptr %80, align 8
+  %303 = load double, ptr %37, align 8
+  %304 = call double @llvm.fmuladd.f64(double %302, double %303, double %301)
+  %305 = call double @llvm.fmuladd.f64(double %300, double %304, double %299)
+  %306 = call double @llvm.fmuladd.f64(double %298, double %305, double %297)
+  %307 = call double @llvm.fmuladd.f64(double %296, double %306, double %295)
+  store double %307, ptr %77, align 8
+  %308 = load double, ptr %72, align 8
+  %309 = load double, ptr %75, align 8
+  %310 = load double, ptr %22, align 8
+  %311 = load double, ptr %80, align 8
+  %312 = load double, ptr %76, align 8
+  %313 = load double, ptr %71, align 8
+  %314 = load double, ptr %77, align 8
+  %315 = call double @llvm.fmuladd.f64(double %313, double %314, double %312)
+  %316 = fneg double %311
+  %317 = call double @llvm.fmuladd.f64(double %316, double %315, double %310)
+  %318 = fneg double %317
+  %319 = call double @llvm.fmuladd.f64(double %308, double %309, double %318)
+  store double %319, ptr %74, align 8
+  %320 = load double, ptr %21, align 8
+  %321 = load double, ptr %74, align 8
+  %322 = fadd double %320, %321
+  %323 = load double, ptr %79, align 8
+  %324 = fadd double %323, %322
+  store double %324, ptr %79, align 8
+  br label %367
+
+325:                                              ; preds = %213
+  %326 = load double, ptr %71, align 8
+  %327 = load double, ptr %38, align 8
+  %328 = load double, ptr %71, align 8
+  %329 = load double, ptr %39, align 8
+  %330 = load double, ptr %71, align 8
+  %331 = load double, ptr %40, align 8
+  %332 = load double, ptr %71, align 8
+  %333 = load double, ptr %41, align 8
+  %334 = load double, ptr %71, align 8
+  %335 = load double, ptr %42, align 8
+  %336 = load double, ptr %71, align 8
+  %337 = load double, ptr %43, align 8
+  %338 = call double @llvm.fmuladd.f64(double %336, double %337, double %335)
+  %339 = call double @llvm.fmuladd.f64(double %334, double %338, double %333)
+  %340 = call double @llvm.fmuladd.f64(double %332, double %339, double %331)
+  %341 = call double @llvm.fmuladd.f64(double %330, double %340, double %329)
+  %342 = call double @llvm.fmuladd.f64(double %328, double %341, double %327)
+  %343 = fmul double %326, %342
+  store double %343, ptr %75, align 8
+  %344 = load double, ptr %6, align 8
+  %345 = load double, ptr %71, align 8
+  %346 = load double, ptr %44, align 8
+  %347 = load double, ptr %71, align 8
+  %348 = load double, ptr %45, align 8
+  %349 = load double, ptr %71, align 8
+  %350 = load double, ptr %46, align 8
+  %351 = load double, ptr %71, align 8
+  %352 = load double, ptr %47, align 8
+  %353 = load double, ptr %71, align 8
+  %354 = load double, ptr %48, align 8
+  %355 = call double @llvm.fmuladd.f64(double %353, double %354, double %352)
+  %356 = call double @llvm.fmuladd.f64(double %351, double %355, double %350)
+  %357 = call double @llvm.fmuladd.f64(double %349, double %356, double %348)
+  %358 = call double @llvm.fmuladd.f64(double %347, double %357, double %346)
+  %359 = call double @llvm.fmuladd.f64(double %345, double %358, double %344)
+  store double %359, ptr %76, align 8
+  %360 = load double, ptr %71, align 8
+  %361 = load double, ptr %75, align 8
+  %362 = load double, ptr %76, align 8
+  %363 = fdiv double %361, %362
+  %364 = call double @llvm.fmuladd.f64(double -5.000000e-01, double %360, double %363)
+  %365 = load double, ptr %79, align 8
+  %366 = fadd double %365, %364
+  store double %366, ptr %79, align 8
+  br label %367
+
+367:                                              ; preds = %325, %213, %262, %215
+  br label %505
+
+368:                                              ; preds = %164
+  %369 = load i32, ptr %84, align 4
+  %370 = icmp slt i32 %369, 1075838976
+  br i1 %370, label %371, label %457
+
+371:                                              ; preds = %368
+  %372 = load double, ptr %3, align 8
+  %373 = fptosi double %372 to i32
+  store i32 %373, ptr %81, align 4
+  %374 = load double, ptr %69, align 8
+  store double %374, ptr %70, align 8
+  %375 = load double, ptr %3, align 8
+  %376 = load i32, ptr %81, align 4
+  %377 = sitofp i32 %376 to double
+  %378 = fsub double %375, %377
+  store double %378, ptr %71, align 8
+  %379 = load double, ptr %71, align 8
+  %380 = load double, ptr %49, align 8
+  %381 = load double, ptr %71, align 8
+  %382 = load double, ptr %50, align 8
+  %383 = load double, ptr %71, align 8
+  %384 = load double, ptr %51, align 8
+  %385 = load double, ptr %71, align 8
+  %386 = load double, ptr %52, align 8
+  %387 = load double, ptr %71, align 8
+  %388 = load double, ptr %53, align 8
+  %389 = load double, ptr %71, align 8
+  %390 = load double, ptr %54, align 8
+  %391 = load double, ptr %71, align 8
+  %392 = load double, ptr %55, align 8
+  %393 = call double @llvm.fmuladd.f64(double %391, double %392, double %390)
+  %394 = call double @llvm.fmuladd.f64(double %389, double %393, double %388)
+  %395 = call double @llvm.fmuladd.f64(double %387, double %394, double %386)
+  %396 = call double @llvm.fmuladd.f64(double %385, double %395, double %384)
+  %397 = call double @llvm.fmuladd.f64(double %383, double %396, double %382)
+  %398 = call double @llvm.fmuladd.f64(double %381, double %397, double %380)
+  %399 = fmul double %379, %398
+  store double %399, ptr %74, align 8
+  %400 = load double, ptr %6, align 8
+  %401 = load double, ptr %71, align 8
+  %402 = load double, ptr %56, align 8
+  %403 = load double, ptr %71, align 8
+  %404 = load double, ptr %57, align 8
+  %405 = load double, ptr %71, align 8
+  %406 = load double, ptr %58, align 8
+  %407 = load double, ptr %71, align 8
+  %408 = load double, ptr %59, align 8
+  %409 = load double, ptr %71, align 8
+  %410 = load double, ptr %60, align 8
+  %411 = load double, ptr %71, align 8
+  %412 = load double, ptr %61, align 8
+  %413 = call double @llvm.fmuladd.f64(double %411, double %412, double %410)
+  %414 = call double @llvm.fmuladd.f64(double %409, double %413, double %408)
+  %415 = call double @llvm.fmuladd.f64(double %407, double %414, double %406)
+  %416 = call double @llvm.fmuladd.f64(double %405, double %415, double %404)
+  %417 = call double @llvm.fmuladd.f64(double %403, double %416, double %402)
+  %418 = call double @llvm.fmuladd.f64(double %401, double %417, double %400)
+  store double %418, ptr %78, align 8
+  %419 = load double, ptr %5, align 8
+  %420 = load double, ptr %71, align 8
+  %421 = load double, ptr %74, align 8
+  %422 = load double, ptr %78, align 8
+  %423 = fdiv double %421, %422
+  %424 = call double @llvm.fmuladd.f64(double %419, double %420, double %423)
+  store double %424, ptr %79, align 8
+  %425 = load double, ptr %6, align 8
+  store double %425, ptr %72, align 8
+  %426 = load i32, ptr %81, align 4
+  switch i32 %426, label %456 [
+    i32 7, label %427
+    i32 6, label %432
+    i32 5, label %437
+    i32 4, label %442
+    i32 3, label %447
+  ]
+
+427:                                              ; preds = %371
+  %428 = load double, ptr %71, align 8
+  %429 = fadd double %428, 6.000000e+00
+  %430 = load double, ptr %72, align 8
+  %431 = fmul double %430, %429
+  store double %431, ptr %72, align 8
+  br label %432
+
+432:                                              ; preds = %371, %427
+  %433 = load double, ptr %71, align 8
+  %434 = fadd double %433, 5.000000e+00
+  %435 = load double, ptr %72, align 8
+  %436 = fmul double %435, %434
+  store double %436, ptr %72, align 8
+  br label %437
+
+437:                                              ; preds = %371, %432
+  %438 = load double, ptr %71, align 8
+  %439 = fadd double %438, 4.000000e+00
+  %440 = load double, ptr %72, align 8
+  %441 = fmul double %440, %439
+  store double %441, ptr %72, align 8
+  br label %442
+
+442:                                              ; preds = %371, %437
+  %443 = load double, ptr %71, align 8
+  %444 = fadd double %443, 3.000000e+00
+  %445 = load double, ptr %72, align 8
+  %446 = fmul double %445, %444
+  store double %446, ptr %72, align 8
+  br label %447
+
+447:                                              ; preds = %371, %442
+  %448 = load double, ptr %71, align 8
+  %449 = fadd double %448, 2.000000e+00
+  %450 = load double, ptr %72, align 8
+  %451 = fmul double %450, %449
+  store double %451, ptr %72, align 8
+  %452 = load double, ptr %72, align 8
+  %453 = call double @__mt_log_f64(double noundef %452) #12
+  %454 = load double, ptr %79, align 8
+  %455 = fadd double %454, %453
+  store double %455, ptr %79, align 8
+  br label %456
+
+456:                                              ; preds = %371, %447
+  br label %504
+
+457:                                              ; preds = %368
+  %458 = load i32, ptr %84, align 4
+  %459 = icmp slt i32 %458, 1133510656
+  br i1 %459, label %460, label %496
+
+460:                                              ; preds = %457
+  %461 = load double, ptr %3, align 8
+  %462 = call double @__mt_log_f64(double noundef %461) #12
+  store double %462, ptr %70, align 8
+  %463 = load double, ptr %6, align 8
+  %464 = load double, ptr %3, align 8
+  %465 = fdiv double %463, %464
+  store double %465, ptr %72, align 8
+  %466 = load double, ptr %72, align 8
+  %467 = load double, ptr %72, align 8
+  %468 = fmul double %466, %467
+  store double %468, ptr %71, align 8
+  %469 = load double, ptr %62, align 8
+  %470 = load double, ptr %72, align 8
+  %471 = load double, ptr %63, align 8
+  %472 = load double, ptr %71, align 8
+  %473 = load double, ptr %64, align 8
+  %474 = load double, ptr %71, align 8
+  %475 = load double, ptr %65, align 8
+  %476 = load double, ptr %71, align 8
+  %477 = load double, ptr %66, align 8
+  %478 = load double, ptr %71, align 8
+  %479 = load double, ptr %67, align 8
+  %480 = load double, ptr %71, align 8
+  %481 = load double, ptr %68, align 8
+  %482 = call double @llvm.fmuladd.f64(double %480, double %481, double %479)
+  %483 = call double @llvm.fmuladd.f64(double %478, double %482, double %477)
+  %484 = call double @llvm.fmuladd.f64(double %476, double %483, double %475)
+  %485 = call double @llvm.fmuladd.f64(double %474, double %484, double %473)
+  %486 = call double @llvm.fmuladd.f64(double %472, double %485, double %471)
+  %487 = call double @llvm.fmuladd.f64(double %470, double %486, double %469)
+  store double %487, ptr %80, align 8
+  %488 = load double, ptr %3, align 8
+  %489 = load double, ptr %5, align 8
+  %490 = fsub double %488, %489
+  %491 = load double, ptr %70, align 8
+  %492 = load double, ptr %6, align 8
+  %493 = fsub double %491, %492
+  %494 = load double, ptr %80, align 8
+  %495 = call double @llvm.fmuladd.f64(double %490, double %493, double %494)
+  store double %495, ptr %79, align 8
+  br label %503
+
+496:                                              ; preds = %457
+  %497 = load double, ptr %3, align 8
+  %498 = load double, ptr %3, align 8
+  %499 = call double @__mt_log_f64(double noundef %498) #12
+  %500 = load double, ptr %6, align 8
+  %501 = fsub double %499, %500
+  %502 = fmul double %497, %501
+  store double %502, ptr %79, align 8
+  br label %503
+
+503:                                              ; preds = %496, %460
+  br label %504
+
+504:                                              ; preds = %503, %456
+  br label %505
+
+505:                                              ; preds = %504, %367
+  br label %506
+
+506:                                              ; preds = %505, %163
+  %507 = load i32, ptr %82, align 4
+  %508 = icmp slt i32 %507, 0
+  br i1 %508, label %509, label %513
+
+509:                                              ; preds = %506
+  %510 = load double, ptr %73, align 8
+  %511 = load double, ptr %79, align 8
+  %512 = fsub double %510, %511
+  store double %512, ptr %79, align 8
+  br label %513
+
+513:                                              ; preds = %509, %506
+  %514 = load double, ptr %79, align 8
+  store double %514, ptr %2, align 8
+  br label %515
+
+515:                                              ; preds = %513, %137, %127, %117, %112, %102, %93
+  %516 = load double, ptr %2, align 8
+  ret double %516
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_sinpi_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca double, align 8
+  %5 = alloca double, align 8
+  %6 = alloca double, align 8
+  %7 = alloca i32, align 4
+  %8 = alloca i64, align 8
+  %9 = alloca i32, align 4
+  %10 = alloca i64, align 8
+  store double %0, ptr %3, align 8
+  store double 1.000000e+00, ptr %6, align 8
+  %11 = load double, ptr %3, align 8
+  %12 = call i32 @__HI(double noundef %11)
+  %13 = and i32 2147483647, %12
+  store i32 %13, ptr %7, align 4
+  %14 = load i32, ptr %7, align 4
+  %15 = icmp slt i32 %14, 1070596096
+  br i1 %15, label %16, label %20
+
+16:                                               ; preds = %1
+  %17 = load double, ptr %3, align 8
+  %18 = fmul double 0x400921FB54442D18, %17
+  %19 = call double @__kernel_sin(double noundef %18, double noundef 0.000000e+00, i32 noundef 0)
+  store double %19, ptr %2, align 8
+  br label %85
+
+20:                                               ; preds = %1
+  %21 = load double, ptr %3, align 8
+  %22 = call double @__mt_fabs_f64(double noundef %21) #12
+  store double %22, ptr %4, align 8
+  %23 = load i32, ptr %7, align 4
+  %24 = icmp sge i32 %23, 2146435072
+  br i1 %24, label %25, label %27
+
+25:                                               ; preds = %20
+  %26 = call double @as_double_from_ulonglong(i64 noundef 9218868437227405313)
+  store double %26, ptr %2, align 8
+  br label %85
+
+27:                                               ; preds = %20
+  %28 = load double, ptr %4, align 8
+  %29 = call double @__mt_floor_f64(double noundef %28) #12
+  store double %29, ptr %5, align 8
+  %30 = load double, ptr %5, align 8
+  %31 = load double, ptr %4, align 8
+  %32 = fcmp une double %30, %31
+  br i1 %32, label %33, label %73
+
+33:                                               ; preds = %27
+  %34 = load double, ptr %4, align 8
+  %35 = load double, ptr %5, align 8
+  %36 = fsub double %34, %35
+  store double %36, ptr %4, align 8
+  %37 = load double, ptr %4, align 8
+  %38 = fcmp ogt double %37, 5.000000e-01
+  br i1 %38, label %39, label %44
+
+39:                                               ; preds = %33
+  %40 = load double, ptr %4, align 8
+  %41 = fsub double %40, 5.000000e-01
+  store double %41, ptr %4, align 8
+  %42 = load double, ptr %4, align 8
+  %43 = fsub double 5.000000e-01, %42
+  store double %43, ptr %4, align 8
+  br label %44
+
+44:                                               ; preds = %39, %33
+  %45 = load double, ptr %5, align 8
+  %46 = fcmp ogt double %45, 0.000000e+00
+  br i1 %46, label %47, label %72
+
+47:                                               ; preds = %44
+  %48 = load double, ptr %5, align 8
+  %49 = call i64 @as_ulonglong_from_double(double noundef %48)
+  store i64 %49, ptr %8, align 8
+  %50 = load i64, ptr %8, align 8
+  %51 = and i64 %50, 9218868437227405312
+  %52 = lshr i64 %51, 52
+  %53 = sub i64 %52, 1023
+  %54 = trunc i64 %53 to i32
+  store i32 %54, ptr %9, align 4
+  %55 = load i64, ptr %8, align 8
+  %56 = and i64 %55, 4503599627370495
+  %57 = or i64 %56, 4503599627370496
+  store i64 %57, ptr %10, align 8
+  %58 = load i32, ptr %9, align 4
+  %59 = icmp sgt i32 %58, 52
+  br i1 %59, label %60, label %61
+
+60:                                               ; preds = %47
+  store double 1.000000e+00, ptr %2, align 8
+  br label %85
+
+61:                                               ; preds = %47
+  %62 = load i64, ptr %10, align 8
+  %63 = load i32, ptr %9, align 4
+  %64 = sub nsw i32 52, %63
+  %65 = zext i32 %64 to i64
+  %66 = lshr i64 %62, %65
+  store i64 %66, ptr %10, align 8
+  %67 = load i64, ptr %10, align 8
+  %68 = and i64 %67, 1
+  %69 = icmp ne i64 %68, 0
+  br i1 %69, label %70, label %71
+
+70:                                               ; preds = %61
+  store double -1.000000e+00, ptr %6, align 8
+  br label %71
+
+71:                                               ; preds = %70, %61
+  br label %72
+
+72:                                               ; preds = %71, %44
+  br label %76
+
+73:                                               ; preds = %27
+  %74 = load double, ptr %3, align 8
+  %75 = call double @__mt_copysign_f64(double noundef 0.000000e+00, double noundef %74) #12
+  store double %75, ptr %2, align 8
+  br label %85
+
+76:                                               ; preds = %72
+  %77 = load double, ptr %4, align 8
+  %78 = fmul double %77, 0x400921FB54442D18
+  %79 = call double @__mt_sin_f64(double noundef %78) #12
+  store double %79, ptr %4, align 8
+  %80 = load double, ptr %6, align 8
+  %81 = load double, ptr %4, align 8
+  %82 = load double, ptr %3, align 8
+  %83 = call double @__mt_copysign_f64(double noundef %81, double noundef %82) #12
+  %84 = fmul double %80, %83
+  store double %84, ptr %2, align 8
+  br label %85
+
+85:                                               ; preds = %76, %73, %60, %25, %16
+  %86 = load double, ptr %2, align 8
+  ret double %86
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected i64 @__mt_llrint_f64(double noundef %0) #0 {
   %2 = alloca i64, align 8
   %3 = alloca double, align 8
@@ -37014,6 +39882,21 @@ define protected zeroext i1 @__mt_signbit_f64(double noundef %0) #0 {
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_sincos_f64(double noundef %0, ptr noundef %1) #0 {
+  %3 = alloca double, align 8
+  %4 = alloca ptr, align 8
+  store double %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %5 = load double, ptr %3, align 8
+  %6 = call double @__mt_cos_f64(double noundef %5) #12
+  %7 = load ptr, ptr %4, align 8
+  store double %6, ptr %7, align 8
+  %8 = load double, ptr %3, align 8
+  %9 = call double @__mt_sin_f64(double noundef %8) #12
+  ret double %9
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected double @__mt_sinh_f64(double noundef %0) #0 {
   %2 = alloca double, align 8
   %3 = alloca double, align 8
@@ -37182,6 +40065,24 @@ define protected double @__mt_sinh_f64(double noundef %0) #0 {
 110:                                              ; preds = %106, %95, %75, %62, %49, %40, %18
   %111 = load double, ptr %2, align 8
   ret double %111
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_sqrt_rd_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  store double %0, ptr %2, align 8
+  %3 = load double, ptr %2, align 8
+  %4 = call double @softfloat_sqrtF64(double noundef %3, i8 noundef zeroext 2)
+  ret double %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_sqrt_ru_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  store double %0, ptr %2, align 8
+  %3 = load double, ptr %2, align 8
+  %4 = call double @softfloat_sqrtF64(double noundef %3, i8 noundef zeroext 3)
+  ret double %4
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
@@ -37583,6 +40484,332 @@ define protected double @__mt_tanpi_f64(double noundef %0) #0 {
 125:                                              ; preds = %118, %115, %112, %110, %96, %81, %74, %25
   %126 = load double, ptr %2, align 8
   ret double %126
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__mt_tgamma_f64(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  %3 = alloca double, align 8
+  %4 = alloca %union.anon.0, align 8
+  %5 = alloca %union.anon.0, align 8
+  %6 = alloca %union.anon.0, align 8
+  %7 = alloca double, align 8
+  %8 = alloca double, align 8
+  %9 = alloca double, align 8
+  %10 = alloca double, align 8
+  %11 = alloca double, align 8
+  %12 = alloca i32, align 4
+  %13 = alloca i32, align 4
+  %14 = alloca double, align 8
+  %15 = alloca double, align 8
+  %16 = alloca double, align 8
+  %17 = alloca i32, align 4
+  store double %0, ptr %3, align 8
+  %18 = load double, ptr %3, align 8
+  store double %18, ptr %4, align 8
+  store i64 9218868437227405312, ptr %5, align 8
+  store i64 9223372036854775807, ptr %6, align 8
+  %19 = load i64, ptr %4, align 8
+  %20 = lshr i64 %19, 32
+  %21 = and i64 %20, 2147483647
+  %22 = trunc i64 %21 to i32
+  store i32 %22, ptr %12, align 4
+  %23 = load i64, ptr %4, align 8
+  %24 = lshr i64 %23, 63
+  %25 = trunc i64 %24 to i32
+  store i32 %25, ptr %13, align 4
+  %26 = load i32, ptr %12, align 4
+  %27 = icmp sge i32 %26, 2146435072
+  br i1 %27, label %28, label %37
+
+28:                                               ; preds = %1
+  %29 = load i32, ptr %13, align 4
+  %30 = icmp ne i32 %29, 0
+  br i1 %30, label %31, label %33
+
+31:                                               ; preds = %28
+  %32 = load double, ptr %6, align 8
+  store double %32, ptr %2, align 8
+  br label %204
+
+33:                                               ; preds = %28
+  %34 = load double, ptr %3, align 8
+  %35 = load double, ptr %5, align 8
+  %36 = fadd double %34, %35
+  store double %36, ptr %2, align 8
+  br label %204
+
+37:                                               ; preds = %1
+  %38 = load i32, ptr %12, align 4
+  %39 = icmp slt i32 %38, 1016070144
+  br i1 %39, label %40, label %43
+
+40:                                               ; preds = %37
+  %41 = load double, ptr %3, align 8
+  %42 = fdiv double 1.000000e+00, %41
+  store double %42, ptr %2, align 8
+  br label %204
+
+43:                                               ; preds = %37
+  %44 = load double, ptr %3, align 8
+  %45 = load double, ptr %3, align 8
+  %46 = call double @__mt_floor_f64(double noundef %45) #12
+  %47 = fcmp oeq double %44, %46
+  br i1 %47, label %48, label %63
+
+48:                                               ; preds = %43
+  %49 = load i32, ptr %13, align 4
+  %50 = icmp ne i32 %49, 0
+  br i1 %50, label %51, label %52
+
+51:                                               ; preds = %48
+  store double 0x7FF8000000000000, ptr %2, align 8
+  br label %204
+
+52:                                               ; preds = %48
+  %53 = load double, ptr %3, align 8
+  %54 = fcmp ole double %53, 2.300000e+01
+  br i1 %54, label %55, label %62
+
+55:                                               ; preds = %52
+  %56 = load double, ptr %3, align 8
+  %57 = fptosi double %56 to i32
+  %58 = sub nsw i32 %57, 1
+  %59 = sext i32 %58 to i64
+  %60 = getelementptr inbounds [23 x double], ptr @fact, i64 0, i64 %59
+  %61 = load double, ptr %60, align 8
+  store double %61, ptr %2, align 8
+  br label %204
+
+62:                                               ; preds = %52
+  br label %63
+
+63:                                               ; preds = %62, %43
+  %64 = load i32, ptr %12, align 4
+  %65 = icmp sge i32 %64, 1080492032
+  br i1 %65, label %66, label %83
+
+66:                                               ; preds = %63
+  %67 = load i32, ptr %13, align 4
+  %68 = icmp ne i32 %67, 0
+  br i1 %68, label %69, label %79
+
+69:                                               ; preds = %66
+  %70 = load double, ptr %3, align 8
+  %71 = call double @__mt_floor_f64(double noundef %70) #12
+  %72 = fmul double %71, 5.000000e-01
+  %73 = load double, ptr %3, align 8
+  %74 = fmul double %73, 5.000000e-01
+  %75 = call double @__mt_floor_f64(double noundef %74) #12
+  %76 = fcmp oeq double %72, %75
+  br i1 %76, label %77, label %78
+
+77:                                               ; preds = %69
+  store double 0.000000e+00, ptr %2, align 8
+  br label %204
+
+78:                                               ; preds = %69
+  store double -0.000000e+00, ptr %2, align 8
+  br label %204
+
+79:                                               ; preds = %66
+  %80 = load double, ptr %3, align 8
+  %81 = fmul double %80, 0x7FE0000000000000
+  store double %81, ptr %3, align 8
+  %82 = load double, ptr %3, align 8
+  store double %82, ptr %2, align 8
+  br label %204
+
+83:                                               ; preds = %63
+  %84 = load i32, ptr %13, align 4
+  %85 = icmp ne i32 %84, 0
+  br i1 %85, label %86, label %89
+
+86:                                               ; preds = %83
+  %87 = load double, ptr %3, align 8
+  %88 = fneg double %87
+  br label %91
+
+89:                                               ; preds = %83
+  %90 = load double, ptr %3, align 8
+  br label %91
+
+91:                                               ; preds = %89, %86
+  %92 = phi double [ %88, %86 ], [ %90, %89 ]
+  store double %92, ptr %7, align 8
+  %93 = load double, ptr %7, align 8
+  %94 = fadd double %93, 0x40161945B9800000
+  store double %94, ptr %8, align 8
+  %95 = load double, ptr %7, align 8
+  %96 = fcmp ogt double %95, 0x40161945B9800000
+  br i1 %96, label %97, label %103
+
+97:                                               ; preds = %91
+  %98 = load double, ptr %8, align 8
+  %99 = load double, ptr %7, align 8
+  %100 = fsub double %98, %99
+  store double %100, ptr %9, align 8
+  %101 = load double, ptr %9, align 8
+  %102 = fsub double %101, 0x40161945B9800000
+  store double %102, ptr %9, align 8
+  br label %109
+
+103:                                              ; preds = %91
+  %104 = load double, ptr %8, align 8
+  %105 = fsub double %104, 0x40161945B9800000
+  store double %105, ptr %9, align 8
+  %106 = load double, ptr %7, align 8
+  %107 = load double, ptr %9, align 8
+  %108 = fsub double %107, %106
+  store double %108, ptr %9, align 8
+  br label %109
+
+109:                                              ; preds = %103, %97
+  store double 0.000000e+00, ptr %15, align 8
+  store double 0.000000e+00, ptr %16, align 8
+  %110 = load double, ptr %7, align 8
+  %111 = fcmp olt double %110, 8.000000e+00
+  br i1 %111, label %112, label %135
+
+112:                                              ; preds = %109
+  store i32 12, ptr %17, align 4
+  br label %113
+
+113:                                              ; preds = %131, %112
+  %114 = load i32, ptr %17, align 4
+  %115 = icmp sge i32 %114, 0
+  br i1 %115, label %116, label %134
+
+116:                                              ; preds = %113
+  %117 = load double, ptr %15, align 8
+  %118 = load double, ptr %7, align 8
+  %119 = load i32, ptr %17, align 4
+  %120 = sext i32 %119 to i64
+  %121 = getelementptr inbounds [13 x double], ptr @Snum, i64 0, i64 %120
+  %122 = load double, ptr %121, align 8
+  %123 = call double @llvm.fmuladd.f64(double %117, double %118, double %122)
+  store double %123, ptr %15, align 8
+  %124 = load double, ptr %16, align 8
+  %125 = load double, ptr %7, align 8
+  %126 = load i32, ptr %17, align 4
+  %127 = sext i32 %126 to i64
+  %128 = getelementptr inbounds [13 x double], ptr @Sden, i64 0, i64 %127
+  %129 = load double, ptr %128, align 8
+  %130 = call double @llvm.fmuladd.f64(double %124, double %125, double %129)
+  store double %130, ptr %16, align 8
+  br label %131
+
+131:                                              ; preds = %116
+  %132 = load i32, ptr %17, align 4
+  %133 = add nsw i32 %132, -1
+  store i32 %133, ptr %17, align 4
+  br label %113, !llvm.loop !59
+
+134:                                              ; preds = %113
+  br label %160
+
+135:                                              ; preds = %109
+  store i32 0, ptr %17, align 4
+  br label %136
+
+136:                                              ; preds = %156, %135
+  %137 = load i32, ptr %17, align 4
+  %138 = icmp sle i32 %137, 12
+  br i1 %138, label %139, label %159
+
+139:                                              ; preds = %136
+  %140 = load double, ptr %15, align 8
+  %141 = load double, ptr %7, align 8
+  %142 = fdiv double %140, %141
+  %143 = load i32, ptr %17, align 4
+  %144 = sext i32 %143 to i64
+  %145 = getelementptr inbounds [13 x double], ptr @Snum, i64 0, i64 %144
+  %146 = load double, ptr %145, align 8
+  %147 = fadd double %142, %146
+  store double %147, ptr %15, align 8
+  %148 = load double, ptr %16, align 8
+  %149 = load double, ptr %7, align 8
+  %150 = fdiv double %148, %149
+  %151 = load i32, ptr %17, align 4
+  %152 = sext i32 %151 to i64
+  %153 = getelementptr inbounds [13 x double], ptr @Sden, i64 0, i64 %152
+  %154 = load double, ptr %153, align 8
+  %155 = fadd double %150, %154
+  store double %155, ptr %16, align 8
+  br label %156
+
+156:                                              ; preds = %139
+  %157 = load i32, ptr %17, align 4
+  %158 = add nsw i32 %157, 1
+  store i32 %158, ptr %17, align 4
+  br label %136, !llvm.loop !60
+
+159:                                              ; preds = %136
+  br label %160
+
+160:                                              ; preds = %159, %134
+  %161 = load double, ptr %15, align 8
+  %162 = load double, ptr %16, align 8
+  %163 = fdiv double %161, %162
+  store double %163, ptr %14, align 8
+  %164 = load double, ptr %7, align 8
+  %165 = fsub double %164, 5.000000e-01
+  store double %165, ptr %10, align 8
+  %166 = load double, ptr %14, align 8
+  %167 = load double, ptr %8, align 8
+  %168 = fneg double %167
+  %169 = call double @__mt_exp_f64(double noundef %168) #12
+  %170 = fmul double %166, %169
+  store double %170, ptr %11, align 8
+  %171 = load double, ptr %3, align 8
+  %172 = fcmp olt double %171, 0.000000e+00
+  br i1 %172, label %173, label %185
+
+173:                                              ; preds = %160
+  %174 = load double, ptr %7, align 8
+  %175 = call double @__mt_sinpi_f64(double noundef %174) #12
+  %176 = load double, ptr %7, align 8
+  %177 = fmul double %175, %176
+  %178 = load double, ptr %11, align 8
+  %179 = fmul double %177, %178
+  %180 = fdiv double 0xC00921FB54442D18, %179
+  store double %180, ptr %11, align 8
+  %181 = load double, ptr %9, align 8
+  %182 = fneg double %181
+  store double %182, ptr %9, align 8
+  %183 = load double, ptr %10, align 8
+  %184 = fneg double %183
+  store double %184, ptr %10, align 8
+  br label %185
+
+185:                                              ; preds = %173, %160
+  %186 = load double, ptr %9, align 8
+  %187 = fmul double %186, 0x40181945B9800000
+  %188 = load double, ptr %11, align 8
+  %189 = fmul double %187, %188
+  %190 = load double, ptr %8, align 8
+  %191 = fdiv double %189, %190
+  %192 = load double, ptr %11, align 8
+  %193 = fadd double %192, %191
+  store double %193, ptr %11, align 8
+  %194 = load double, ptr %8, align 8
+  %195 = load double, ptr %10, align 8
+  %196 = fmul double 5.000000e-01, %195
+  %197 = call double @__mt_pow_f64(double noundef %194, double noundef %196) #12
+  store double %197, ptr %10, align 8
+  %198 = load double, ptr %11, align 8
+  %199 = load double, ptr %10, align 8
+  %200 = fmul double %198, %199
+  %201 = load double, ptr %10, align 8
+  %202 = fmul double %200, %201
+  store double %202, ptr %8, align 8
+  %203 = load double, ptr %8, align 8
+  store double %203, ptr %2, align 8
+  br label %204
+
+204:                                              ; preds = %185, %79, %78, %77, %55, %51, %40, %33, %31
+  %205 = load double, ptr %2, align 8
+  ret double %205
 }
 
 ; Function Attrs: noinline nounwind optnone willreturn memory(none)
@@ -38376,6 +41603,45 @@ define protected i32 @__mt_sad(i32 noundef %0, i32 noundef %1, i32 noundef %2) #
 declare i64 @llvm.abs.i64(i64, i1 immarg) #4
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected i32 @__mt_ffsll_i64(i64 noundef %0) #0 {
+  %2 = alloca i32, align 4
+  %3 = alloca i64, align 8
+  store i64 %0, ptr %3, align 8
+  %4 = load i64, ptr %3, align 8
+  %5 = icmp eq i64 %4, 0
+  br i1 %5, label %6, label %7
+
+6:                                                ; preds = %1
+  store i32 0, ptr %2, align 4
+  br label %20
+
+7:                                                ; preds = %1
+  %8 = load i64, ptr %3, align 8
+  %9 = icmp eq i64 %8, -9223372036854775808
+  br i1 %9, label %10, label %11
+
+10:                                               ; preds = %7
+  store i32 64, ptr %2, align 4
+  br label %20
+
+11:                                               ; preds = %7
+  %12 = load i64, ptr %3, align 8
+  %13 = load i64, ptr %3, align 8
+  %14 = sub nsw i64 0, %13
+  %15 = and i64 %12, %14
+  %16 = sitofp i64 %15 to double
+  %17 = call double @__mt_log2_f64(double noundef %16) #12
+  %18 = fadd double %17, 1.000000e+00
+  %19 = fptosi double %18 to i32
+  store i32 %19, ptr %2, align 4
+  br label %20
+
+20:                                               ; preds = %11, %10, %6
+  %21 = load i32, ptr %2, align 4
+  ret i32 %21
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected i64 @__mt_mul64hi(i64 noundef %0, i64 noundef %1) #0 {
   %3 = alloca i64, align 8
   %4 = alloca i64, align 8
@@ -38650,6 +41916,15 @@ define protected float @__nv_copysignf(float noundef %0, float noundef %1) #0 {
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__nv_cos(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  store double %0, ptr %2, align 8
+  %3 = load double, ptr %2, align 8
+  %4 = call double @__mt_cos_f64(double noundef %3) #12
+  ret double %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected float @__nv_cosf(float noundef %0) #0 {
   %2 = alloca float, align 4
   store float %0, ptr %2, align 4
@@ -38674,6 +41949,15 @@ define protected float @__nv_coshf(float noundef %0) #0 {
   %3 = load float, ptr %2, align 4
   %4 = call float @__mt_cosh_f32(float noundef %3) #12
   ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__nv_cospi(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  store double %0, ptr %2, align 8
+  %3 = load double, ptr %2, align 8
+  %4 = call double @__mt_cospi_f64(double noundef %3) #12
+  ret double %4
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
@@ -45893,6 +49177,15 @@ define protected float @__nv_scalbnf(float noundef %0, i32 noundef %1) #0 {
   %6 = load i32, ptr %4, align 4
   %7 = call float @__mt_scalbn_f32(float noundef %5, i32 noundef %6) #12
   ret float %7
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected double @__nv_sin(double noundef %0) #0 {
+  %2 = alloca double, align 8
+  store double %0, ptr %2, align 8
+  %3 = load double, ptr %2, align 8
+  %4 = call double @__mt_sin_f64(double noundef %3) #12
+  ret double %4
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
@@ -56076,6 +59369,128 @@ define protected i32 @__mt_vote_ballot_sync_u32(i32 noundef %0, i32 noundef %1) 
   ret i32 %149
 }
 
+; Function Attrs: noinline nounwind optnone
+define protected half @__mt_atomicExch_f16(ptr noundef %0, half noundef %1) #5 {
+  %3 = alloca ptr, align 8
+  %4 = alloca half, align 2
+  %5 = alloca %union.i32_f32, align 4
+  %6 = alloca %union.i32_f32, align 4
+  %7 = alloca %union.i32_f32, align 4
+  %8 = alloca %union.ui16_f16, align 2
+  %9 = alloca %union.ui16_f16, align 2
+  %10 = alloca i8, align 1
+  store ptr %0, ptr %3, align 8
+  store half %1, ptr %4, align 2
+  %11 = load half, ptr %4, align 2
+  store half %11, ptr %8, align 2
+  store i8 1, ptr %10, align 1
+  %12 = load ptr, ptr %3, align 8
+  %13 = ptrtoint ptr %12 to i64
+  %14 = urem i64 %13, 4
+  %15 = icmp ne i64 %14, 0
+  br i1 %15, label %16, label %21
+
+16:                                               ; preds = %2
+  store i8 0, ptr %10, align 1
+  %17 = load ptr, ptr %3, align 8
+  %18 = ptrtoint ptr %17 to i64
+  %19 = and i64 %18, -4
+  %20 = inttoptr i64 %19 to ptr
+  store ptr %20, ptr %3, align 8
+  br label %21
+
+21:                                               ; preds = %16, %2
+  %22 = load ptr, ptr %3, align 8
+  %23 = load i32, ptr %22, align 4
+  store i32 %23, ptr %7, align 4
+  br label %24
+
+24:                                               ; preds = %61, %21
+  %25 = load i32, ptr %7, align 4
+  store i32 %25, ptr %6, align 4
+  %26 = load i8, ptr %10, align 1
+  %27 = trunc i8 %26 to i1
+  br i1 %27, label %28, label %34
+
+28:                                               ; preds = %24
+  %29 = load i32, ptr %6, align 4
+  %30 = and i32 %29, -65536
+  %31 = load i16, ptr %8, align 2
+  %32 = zext i16 %31 to i32
+  %33 = or i32 %30, %32
+  store i32 %33, ptr %5, align 4
+  br label %41
+
+34:                                               ; preds = %24
+  %35 = load i32, ptr %6, align 4
+  %36 = and i32 %35, 65535
+  %37 = load i16, ptr %8, align 2
+  %38 = zext i16 %37 to i32
+  %39 = shl i32 %38, 16
+  %40 = or i32 %36, %39
+  store i32 %40, ptr %5, align 4
+  br label %41
+
+41:                                               ; preds = %34, %28
+  %42 = load ptr, ptr %3, align 8
+  %43 = call i1 @llvm.musa.isspacep.shared(ptr %42)
+  br i1 %43, label %44, label %51
+
+44:                                               ; preds = %41
+  %45 = load ptr, ptr %3, align 8
+  %46 = call ptr @llvm.musa.ptr.gen.to.shared(ptr %45)
+  %47 = load i32, ptr %6, align 4
+  %48 = load i32, ptr %5, align 4
+  %49 = cmpxchg ptr %46, i32 %47, i32 %48 seq_cst seq_cst, align 4
+  %50 = extractvalue { i32, i1 } %49, 0
+  store i32 %50, ptr %7, align 4
+  br label %60
+
+51:                                               ; preds = %41
+  %52 = load ptr, ptr %3, align 8
+  %53 = call ptr @llvm.musa.ptr.gen.to.global(ptr %52)
+  %54 = load i32, ptr %6, align 4
+  %55 = load i32, ptr %5, align 4
+  %56 = load ptr, ptr %3, align 8
+  %57 = call ptr @llvm.musa.ptr.gen.to.global(ptr %56)
+  %58 = cmpxchg ptr %57, i32 %54, i32 %55 monotonic monotonic, align 4
+  %59 = extractvalue { i32, i1 } %58, 0
+  store i32 %59, ptr %7, align 4
+  br label %60
+
+60:                                               ; preds = %51, %44
+  br label %61
+
+61:                                               ; preds = %60
+  %62 = load i32, ptr %7, align 4
+  %63 = load i32, ptr %6, align 4
+  %64 = icmp ne i32 %62, %63
+  br i1 %64, label %24, label %65, !llvm.loop !84
+
+65:                                               ; preds = %61
+  %66 = load i8, ptr %10, align 1
+  %67 = trunc i8 %66 to i1
+  br i1 %67, label %68, label %72
+
+68:                                               ; preds = %65
+  %69 = load i32, ptr %6, align 4
+  %70 = and i32 %69, 65535
+  %71 = trunc i32 %70 to i16
+  store i16 %71, ptr %9, align 2
+  br label %76
+
+72:                                               ; preds = %65
+  %73 = load i32, ptr %6, align 4
+  %74 = lshr i32 %73, 16
+  %75 = trunc i32 %74 to i16
+  store i16 %75, ptr %9, align 2
+  br label %76
+
+76:                                               ; preds = %72, %68
+  %77 = load half, ptr %9, align 2
+  ret half %77
+}
+
 ; Function Attrs: nounwind memory(none)
 declare i1 @llvm.musa.isspacep.shared(ptr) #1
 
@@ -56085,21 +59500,425 @@ declare ptr @llvm.musa.ptr.gen.to.shared(ptr) #1
 ; Function Attrs: nounwind memory(none)
 declare ptr @llvm.musa.ptr.gen.to.global(ptr) #1
 
+; Function Attrs: noinline nounwind optnone
+define protected half @__mt_atomicAdd_f16(ptr noundef %0, half noundef %1) #5 {
+  %3 = alloca ptr, align 8
+  %4 = alloca half, align 2
+  %5 = alloca %union.i32_f32, align 4
+  %6 = alloca %union.i32_f32, align 4
+  %7 = alloca %union.i32_f32, align 4
+  %8 = alloca %union.ui16_f16, align 2
+  %9 = alloca %union.ui16_f16, align 2
+  %10 = alloca %union.ui16_f16, align 2
+  %11 = alloca i8, align 1
+  store ptr %0, ptr %3, align 8
+  store half %1, ptr %4, align 2
+  %12 = load half, ptr %4, align 2
+  store half %12, ptr %9, align 2
+  store i8 1, ptr %11, align 1
+  %13 = load ptr, ptr %3, align 8
+  %14 = ptrtoint ptr %13 to i64
+  %15 = urem i64 %14, 4
+  %16 = icmp ne i64 %15, 0
+  br i1 %16, label %17, label %22
+
+17:                                               ; preds = %2
+  store i8 0, ptr %11, align 1
+  %18 = load ptr, ptr %3, align 8
+  %19 = ptrtoint ptr %18 to i64
+  %20 = and i64 %19, -4
+  %21 = inttoptr i64 %20 to ptr
+  store ptr %21, ptr %3, align 8
+  br label %22
+
+22:                                               ; preds = %17, %2
+  %23 = load ptr, ptr %3, align 8
+  %24 = load i32, ptr %23, align 4
+  store i32 %24, ptr %7, align 4
+  br label %25
+
+25:                                               ; preds = %75, %22
+  %26 = load i32, ptr %7, align 4
+  store i32 %26, ptr %6, align 4
+  %27 = load i8, ptr %11, align 1
+  %28 = trunc i8 %27 to i1
+  br i1 %28, label %29, label %41
+
+29:                                               ; preds = %25
+  %30 = load i32, ptr %7, align 4
+  %31 = and i32 %30, 65535
+  %32 = trunc i32 %31 to i16
+  store i16 %32, ptr %8, align 2
+  %33 = load half, ptr %9, align 2
+  %34 = load half, ptr %8, align 2
+  %35 = fadd half %34, %33
+  store half %35, ptr %8, align 2
+  %36 = load i32, ptr %7, align 4
+  %37 = and i32 %36, -65536
+  %38 = load i16, ptr %8, align 2
+  %39 = zext i16 %38 to i32
+  %40 = or i32 %37, %39
+  store i32 %40, ptr %5, align 4
+  br label %55
+
+41:                                               ; preds = %25
+  %42 = load i32, ptr %7, align 4
+  %43 = and i32 %42, -65536
+  %44 = lshr i32 %43, 16
+  %45 = trunc i32 %44 to i16
+  store i16 %45, ptr %8, align 2
+  %46 = load half, ptr %9, align 2
+  %47 = load half, ptr %8, align 2
+  %48 = fadd half %47, %46
+  store half %48, ptr %8, align 2
+  %49 = load i16, ptr %8, align 2
+  %50 = zext i16 %49 to i32
+  %51 = shl i32 %50, 16
+  %52 = load i32, ptr %7, align 4
+  %53 = and i32 %52, 65535
+  %54 = or i32 %51, %53
+  store i32 %54, ptr %5, align 4
+  br label %55
+
+55:                                               ; preds = %41, %29
+  %56 = load ptr, ptr %3, align 8
+  %57 = call i1 @llvm.musa.isspacep.shared(ptr %56)
+  br i1 %57, label %58, label %65
+
+58:                                               ; preds = %55
+  %59 = load ptr, ptr %3, align 8
+  %60 = call ptr @llvm.musa.ptr.gen.to.shared(ptr %59)
+  %61 = load i32, ptr %6, align 4
+  %62 = load i32, ptr %5, align 4
+  %63 = cmpxchg ptr %60, i32 %61, i32 %62 seq_cst seq_cst, align 4
+  %64 = extractvalue { i32, i1 } %63, 0
+  store i32 %64, ptr %7, align 4
+  br label %74
+
+65:                                               ; preds = %55
+  %66 = load ptr, ptr %3, align 8
+  %67 = call ptr @llvm.musa.ptr.gen.to.global(ptr %66)
+  %68 = load i32, ptr %6, align 4
+  %69 = load i32, ptr %5, align 4
+  %70 = load ptr, ptr %3, align 8
+  %71 = call ptr @llvm.musa.ptr.gen.to.global(ptr %70)
+  %72 = cmpxchg ptr %71, i32 %68, i32 %69 monotonic monotonic, align 4
+  %73 = extractvalue { i32, i1 } %72, 0
+  store i32 %73, ptr %7, align 4
+  br label %74
+
+74:                                               ; preds = %65, %58
+  br label %75
+
+75:                                               ; preds = %74
+  %76 = load i32, ptr %7, align 4
+  %77 = load i32, ptr %6, align 4
+  %78 = icmp ne i32 %76, %77
+  br i1 %78, label %25, label %79, !llvm.loop !85
+
+79:                                               ; preds = %75
+  %80 = load i8, ptr %11, align 1
+  %81 = trunc i8 %80 to i1
+  br i1 %81, label %82, label %86
+
+82:                                               ; preds = %79
+  %83 = load i32, ptr %6, align 4
+  %84 = and i32 %83, 65535
+  %85 = trunc i32 %84 to i16
+  store i16 %85, ptr %10, align 2
+  br label %90
+
+86:                                               ; preds = %79
+  %87 = load i32, ptr %6, align 4
+  %88 = lshr i32 %87, 16
+  %89 = trunc i32 %88 to i16
+  store i16 %89, ptr %10, align 2
+  br label %90
+
+90:                                               ; preds = %86, %82
+  %91 = load half, ptr %10, align 2
+  ret half %91
+}
+
+; Function Attrs: noinline nounwind optnone
+define protected float @__mt_atomicAdd_f32(ptr noundef %0, float noundef %1) #5 {
+  %3 = alloca ptr, align 8
+  %4 = alloca float, align 4
+  %5 = alloca %union.i32_f32, align 4
+  %6 = alloca %union.i32_f32, align 4
+  %7 = alloca %union.i32_f32, align 4
+  store ptr %0, ptr %3, align 8
+  store float %1, ptr %4, align 4
+  %8 = load ptr, ptr %3, align 8
+  %9 = load float, ptr %8, align 4
+  store float %9, ptr %7, align 4
+  br label %10
+
+10:                                               ; preds = %34, %2
+  %11 = load float, ptr %7, align 4
+  store float %11, ptr %6, align 4
+  %12 = load float, ptr %6, align 4
+  %13 = load float, ptr %4, align 4
+  %14 = fadd float %12, %13
+  store float %14, ptr %5, align 4
+  %15 = load ptr, ptr %3, align 8
+  %16 = call i1 @llvm.musa.isspacep.shared(ptr %15)
+  br i1 %16, label %17, label %24
+
+17:                                               ; preds = %10
+  %18 = load ptr, ptr %3, align 8
+  %19 = call ptr @llvm.musa.ptr.gen.to.shared(ptr %18)
+  %20 = load i32, ptr %6, align 4
+  %21 = load i32, ptr %5, align 4
+  %22 = cmpxchg ptr %19, i32 %20, i32 %21 seq_cst seq_cst, align 4
+  %23 = extractvalue { i32, i1 } %22, 0
+  store i32 %23, ptr %7, align 4
+  br label %33
+
+24:                                               ; preds = %10
+  %25 = load ptr, ptr %3, align 8
+  %26 = call ptr @llvm.musa.ptr.gen.to.global(ptr %25)
+  %27 = load i32, ptr %6, align 4
+  %28 = load i32, ptr %5, align 4
+  %29 = load ptr, ptr %3, align 8
+  %30 = call ptr @llvm.musa.ptr.gen.to.global(ptr %29)
+  %31 = cmpxchg ptr %30, i32 %27, i32 %28 monotonic monotonic, align 4
+  %32 = extractvalue { i32, i1 } %31, 0
+  store i32 %32, ptr %7, align 4
+  br label %33
+
+33:                                               ; preds = %24, %17
+  br label %34
+
+34:                                               ; preds = %33
+  %35 = load i32, ptr %7, align 4
+  %36 = load i32, ptr %6, align 4
+  %37 = icmp ne i32 %35, %36
+  br i1 %37, label %10, label %38, !llvm.loop !86
+
+38:                                               ; preds = %34
+  %39 = load float, ptr %6, align 4
+  ret float %39
+}
+
+; Function Attrs: noinline nounwind optnone
+define protected double @__mt_atomicAdd_f64(ptr noundef %0, double noundef %1) #5 {
+  %3 = alloca ptr, align 8
+  %4 = alloca double, align 8
+  %5 = alloca %union.longlong_double, align 8
+  %6 = alloca %union.longlong_double, align 8
+  %7 = alloca %union.longlong_double, align 8
+  store ptr %0, ptr %3, align 8
+  store double %1, ptr %4, align 8
+  %8 = load ptr, ptr %3, align 8
+  %9 = load double, ptr %8, align 8
+  store double %9, ptr %7, align 8
+  br label %10
+
+10:                                               ; preds = %23, %2
+  %11 = load double, ptr %7, align 8
+  store double %11, ptr %6, align 8
+  %12 = load double, ptr %6, align 8
+  %13 = load double, ptr %4, align 8
+  %14 = fadd double %12, %13
+  store double %14, ptr %5, align 8
+  %15 = load ptr, ptr %3, align 8
+  %16 = call ptr @llvm.musa.ptr.gen.to.global(ptr %15)
+  %17 = load i64, ptr %6, align 8
+  %18 = load i64, ptr %5, align 8
+  %19 = load ptr, ptr %3, align 8
+  %20 = call ptr @llvm.musa.ptr.gen.to.global(ptr %19)
+  %21 = cmpxchg ptr %20, i64 %17, i64 %18 monotonic monotonic, align 8
+  %22 = extractvalue { i64, i1 } %21, 0
+  store i64 %22, ptr %7, align 8
+  br label %23
+
+23:                                               ; preds = %10
+  %24 = load i64, ptr %7, align 8
+  %25 = load i64, ptr %6, align 8
+  %26 = icmp ne i64 %24, %25
+  br i1 %26, label %10, label %27, !llvm.loop !87
+
+27:                                               ; preds = %23
+  %28 = load double, ptr %6, align 8
+  ret double %28
+}
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_memcpy_global2shared(ptr addrspace(3) noundef %0, ptr addrspace(1) noundef %1, i32 noundef %2, i32 noundef %3) #2 {
+  %5 = alloca ptr addrspace(3), align 8
+  %6 = alloca ptr addrspace(1), align 8
+  %7 = alloca i32, align 4
+  %8 = alloca i32, align 4
+  store ptr addrspace(3) %0, ptr %5, align 8
+  store ptr addrspace(1) %1, ptr %6, align 8
+  store i32 %2, ptr %7, align 4
+  store i32 %3, ptr %8, align 4
+  %9 = load ptr addrspace(3), ptr %5, align 8
+  %10 = load ptr addrspace(1), ptr %6, align 8
+  %11 = load i32, ptr %7, align 4
+  %12 = load i32, ptr %8, align 4
+  call void @llvm.musa.memcpy.g2s(ptr addrspace(3) %9, ptr addrspace(1) %10, i32 %11, i32 %12)
+  ret void
+}
 
 ; Function Attrs: nounwind memory(argmem: write)
 declare void @llvm.musa.memcpy.g2s(ptr addrspace(3) noalias writeonly, ptr addrspace(1) noalias readonly, i32, i32) #10
 
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_memcpy_global2shared_robust(ptr addrspace(3) noundef %0, ptr addrspace(1) noundef %1, i32 noundef %2, <3 x i32> noundef %3, i32 noundef %4) #2 {
+  %6 = alloca ptr addrspace(3), align 8
+  %7 = alloca ptr addrspace(1), align 8
+  %8 = alloca i32, align 4
+  %9 = alloca <3 x i32>, align 16
+  %10 = alloca i32, align 4
+  store ptr addrspace(3) %0, ptr %6, align 8
+  store ptr addrspace(1) %1, ptr %7, align 8
+  store i32 %2, ptr %8, align 4
+  %11 = shufflevector <3 x i32> %3, <3 x i32> poison, <4 x i32> <i32 0, i32 1, i32 2, i32 poison>
+  store <4 x i32> %11, ptr %9, align 16
+  store i32 %4, ptr %10, align 4
+  %12 = load ptr addrspace(3), ptr %6, align 8
+  %13 = load ptr addrspace(1), ptr %7, align 8
+  %14 = load i32, ptr %8, align 4
+  %15 = load <4 x i32>, ptr %9, align 16
+  %16 = shufflevector <4 x i32> %15, <4 x i32> poison, <3 x i32> <i32 0, i32 1, i32 2>
+  %17 = load i32, ptr %10, align 4
+  call void @llvm.musa.memcpy.g2s.robust(ptr addrspace(3) %12, ptr addrspace(1) %13, i32 %14, <3 x i32> %16, i32 %17)
+  ret void
+}
+
 ; Function Attrs: nounwind memory(argmem: write)
 declare void @llvm.musa.memcpy.g2s.robust(ptr addrspace(3) noalias writeonly, ptr addrspace(1) noalias readonly, i32, <3 x i32>, i32) #10
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_memcpy_global2shared_robust_v4(ptr addrspace(3) noundef %0, ptr addrspace(1) noundef %1, i32 noundef %2, <4 x i32> noundef %3, i32 noundef %4) #2 {
+  %6 = alloca ptr addrspace(3), align 8
+  %7 = alloca ptr addrspace(1), align 8
+  %8 = alloca i32, align 4
+  %9 = alloca <4 x i32>, align 16
+  %10 = alloca i32, align 4
+  store ptr addrspace(3) %0, ptr %6, align 8
+  store ptr addrspace(1) %1, ptr %7, align 8
+  store i32 %2, ptr %8, align 4
+  store <4 x i32> %3, ptr %9, align 16
+  store i32 %4, ptr %10, align 4
+  %11 = load ptr addrspace(3), ptr %6, align 8
+  %12 = load ptr addrspace(1), ptr %7, align 8
+  %13 = load i32, ptr %8, align 4
+  %14 = load <4 x i32>, ptr %9, align 16
+  %15 = load i32, ptr %10, align 4
+  call void @llvm.musa.memcpy.g2s.robust.v4(ptr addrspace(3) %11, ptr addrspace(1) %12, i32 %13, <4 x i32> %14, i32 %15)
+  ret void
+}
 
 ; Function Attrs: nounwind memory(argmem: write)
 declare void @llvm.musa.memcpy.g2s.robust.v4(ptr addrspace(3) noalias writeonly, ptr addrspace(1) noalias readonly, i32, <4 x i32>, i32) #10
 
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_memcpy_shared2global(ptr addrspace(3) noundef %0, ptr addrspace(1) noundef %1, i32 noundef %2) #2 {
+  %4 = alloca ptr addrspace(3), align 8
+  %5 = alloca ptr addrspace(1), align 8
+  %6 = alloca i32, align 4
+  store ptr addrspace(3) %0, ptr %4, align 8
+  store ptr addrspace(1) %1, ptr %5, align 8
+  store i32 %2, ptr %6, align 4
+  %7 = load ptr addrspace(3), ptr %4, align 8
+  %8 = load ptr addrspace(1), ptr %5, align 8
+  %9 = load i32, ptr %6, align 4
+  call void @llvm.musa.memcpy.s2g(ptr addrspace(3) %7, ptr addrspace(1) %8, i32 %9)
+  ret void
+}
+
 ; Function Attrs: nounwind memory(argmem: write)
 declare void @llvm.musa.memcpy.s2g(ptr addrspace(3) noalias writeonly, ptr addrspace(1) noalias readonly, i32) #10
 
+; Function Attrs: alwaysinline nounwind
+define protected signext i8 @__mt_prefetch_common_c(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call i8 @llvm.musa.prefetch.common.i8(ptr %5, i32 %6)
+  ret i8 %7
+}
+
 ; Function Attrs: nounwind
 declare i8 @llvm.musa.prefetch.common.i8(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected signext i16 @__mt_prefetch_common_s(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call i16 @llvm.musa.prefetch.common.i16(ptr %5, i32 %6)
+  ret i16 %7
+}
+
+; Function Attrs: nounwind
+declare i16 @llvm.musa.prefetch.common.i16(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected i32 @__mt_prefetch_common_i(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call i32 @llvm.musa.prefetch.common.i32(ptr %5, i32 %6)
+  ret i32 %7
+}
+
+; Function Attrs: nounwind
+declare i32 @llvm.musa.prefetch.common.i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected float @__mt_prefetch_common_f(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call float @llvm.musa.prefetch.common.f32(ptr %5, i32 %6)
+  ret float %7
+}
+
+; Function Attrs: nounwind
+declare float @llvm.musa.prefetch.common.f32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected double @__mt_prefetch_common_d(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call double @llvm.musa.prefetch.common.f64(ptr %5, i32 %6)
+  ret double %7
+}
+
+; Function Attrs: nounwind
+declare double @llvm.musa.prefetch.common.f64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_prefetch_common_only(ptr noundef %0) #2 {
+  %2 = alloca ptr, align 8
+  store ptr %0, ptr %2, align 8
+  %3 = load ptr, ptr %2, align 8
+  call void @llvm.musa.prefetch.only(ptr %3)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.prefetch.only(ptr) #11
 
 ; Function Attrs: alwaysinline nounwind
 define protected zeroext i8 @__mt_float2uchar_rz_sat(float noundef %0) #2 {
@@ -56605,12 +60424,455 @@ define protected void @__mt_volatile_generic_store_h4(<4 x half> noundef %0, ptr
 ; Function Attrs: nounwind
 declare void @llvm.musa.volatile.generic.store.v4f16.p0v4f16(<4 x half>, ptr) #11
 
+; Function Attrs: alwaysinline nounwind
+define protected <8 x half> @__mt_volatile_generic_load_h8(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <8 x half> @llvm.musa.volatile.generic.load.v8f16.p0v8f16(ptr %5, i32 %6)
+  ret <8 x half> %7
+}
+
 ; Function Attrs: nounwind
 declare <8 x half> @llvm.musa.volatile.generic.load.v8f16.p0v8f16(ptr, i32) #11
 
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_h8(<8 x half> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <8 x half>, align 16
+  %4 = alloca ptr, align 8
+  store <8 x half> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <8 x half>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v8f16.p0v8f16(<8 x half> %5, ptr %6)
+  ret void
+}
 
 ; Function Attrs: nounwind
 declare void @llvm.musa.volatile.generic.store.v8f16.p0v8f16(<8 x half>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x float> @__mt_volatile_generic_load_f2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x float> @llvm.musa.volatile.generic.load.v2f32.p0v2f32(ptr %5, i32 %6)
+  ret <2 x float> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x float> @llvm.musa.volatile.generic.load.v2f32.p0v2f32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_f2(<2 x float> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x float>, align 8
+  %4 = alloca ptr, align 8
+  store <2 x float> %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x float>, ptr %3, align 8
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v2f32.p0v2f32(<2 x float> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v2f32.p0v2f32(<2 x float>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x float> @__mt_volatile_generic_load_f4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x float> @llvm.musa.volatile.generic.load.v4f32.p0v4f32(ptr %5, i32 %6)
+  ret <4 x float> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x float> @llvm.musa.volatile.generic.load.v4f32.p0v4f32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_f4(<4 x float> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x float>, align 16
+  %4 = alloca ptr, align 8
+  store <4 x float> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x float>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v4f32.p0v4f32(<4 x float> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v4f32.p0v4f32(<4 x float>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i32> @__mt_volatile_generic_load_i2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i32> @llvm.musa.volatile.generic.load.v2i32.p0v2i32(ptr %5, i32 %6)
+  ret <2 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i32> @llvm.musa.volatile.generic.load.v2i32.p0v2i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_i2(<2 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i32>, align 8
+  %4 = alloca ptr, align 8
+  store <2 x i32> %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i32>, ptr %3, align 8
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v2i32.p0v2i32(<2 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v2i32.p0v2i32(<2 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i32> @__mt_volatile_generic_load_si2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i32> @llvm.musa.volatile.generic.load.sv2i32.p0sv2i32(ptr %5, i32 %6)
+  ret <2 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i32> @llvm.musa.volatile.generic.load.sv2i32.p0sv2i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_si2(<2 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i32>, align 8
+  %4 = alloca ptr, align 8
+  store <2 x i32> %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i32>, ptr %3, align 8
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.sv2i32.p0sv2i32(<2 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.sv2i32.p0sv2i32(<2 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i32> @__mt_volatile_generic_load_i4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i32> @llvm.musa.volatile.generic.load.v4i32.p0v4i32(ptr %5, i32 %6)
+  ret <4 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i32> @llvm.musa.volatile.generic.load.v4i32.p0v4i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_i4(<4 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i32>, align 16
+  %4 = alloca ptr, align 8
+  store <4 x i32> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i32>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v4i32.p0v4i32(<4 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v4i32.p0v4i32(<4 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i32> @__mt_volatile_generic_load_si4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i32> @llvm.musa.volatile.generic.load.sv4i32.p0sv4i32(ptr %5, i32 %6)
+  ret <4 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i32> @llvm.musa.volatile.generic.load.sv4i32.p0sv4i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_si4(<4 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i32>, align 16
+  %4 = alloca ptr, align 8
+  store <4 x i32> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i32>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.sv4i32.p0sv4i32(<4 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.sv4i32.p0sv4i32(<4 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i32> @__mt_volatile_generic_load_ui2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i32> @llvm.musa.volatile.generic.load.uv2i32.p0uv2i32(ptr %5, i32 %6)
+  ret <2 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i32> @llvm.musa.volatile.generic.load.uv2i32.p0uv2i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ui2(<2 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i32>, align 8
+  %4 = alloca ptr, align 8
+  store <2 x i32> %0, ptr %3, align 8
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i32>, ptr %3, align 8
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.uv2i32.p0uv2i32(<2 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.uv2i32.p0uv2i32(<2 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i32> @__mt_volatile_generic_load_ui4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i32> @llvm.musa.volatile.generic.load.uv4i32.p0uv4i32(ptr %5, i32 %6)
+  ret <4 x i32> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i32> @llvm.musa.volatile.generic.load.uv4i32.p0uv4i32(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ui4(<4 x i32> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i32>, align 16
+  %4 = alloca ptr, align 8
+  store <4 x i32> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i32>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.uv4i32.p0uv4i32(<4 x i32> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.uv4i32.p0uv4i32(<4 x i32>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i64> @__mt_volatile_generic_load_ll2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i64> @llvm.musa.volatile.generic.load.v2i64.p0v2i64(ptr %5, i32 %6)
+  ret <2 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i64> @llvm.musa.volatile.generic.load.v2i64.p0v2i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ll2(<2 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i64>, align 16
+  %4 = alloca ptr, align 8
+  store <2 x i64> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i64>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v2i64.p0v2i64(<2 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v2i64.p0v2i64(<2 x i64>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i64> @__mt_volatile_generic_load_sll2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i64> @llvm.musa.volatile.generic.load.sv2i64.p0sv2i64(ptr %5, i32 %6)
+  ret <2 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i64> @llvm.musa.volatile.generic.load.sv2i64.p0sv2i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_sll2(<2 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i64>, align 16
+  %4 = alloca ptr, align 8
+  store <2 x i64> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i64>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.sv2i64.p0sv2i64(<2 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.sv2i64.p0sv2i64(<2 x i64>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i64> @__mt_volatile_generic_load_ll4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i64> @llvm.musa.volatile.generic.load.v4i64.p0v4i64(ptr %5, i32 %6)
+  ret <4 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i64> @llvm.musa.volatile.generic.load.v4i64.p0v4i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ll4(<4 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i64>, align 32
+  %4 = alloca ptr, align 8
+  store <4 x i64> %0, ptr %3, align 32
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i64>, ptr %3, align 32
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.v4i64.p0v4i64(<4 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.v4i64.p0v4i64(<4 x i64>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i64> @__mt_volatile_generic_load_sll4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i64> @llvm.musa.volatile.generic.load.sv4i64.p0sv4i64(ptr %5, i32 %6)
+  ret <4 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i64> @llvm.musa.volatile.generic.load.sv4i64.p0sv4i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_sll4(<4 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i64>, align 32
+  %4 = alloca ptr, align 8
+  store <4 x i64> %0, ptr %3, align 32
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i64>, ptr %3, align 32
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.sv4i64.p0sv4i64(<4 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.sv4i64.p0sv4i64(<4 x i64>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <2 x i64> @__mt_volatile_generic_load_ull2(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <2 x i64> @llvm.musa.volatile.generic.load.uv2i64.p0uv2i64(ptr %5, i32 %6)
+  ret <2 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <2 x i64> @llvm.musa.volatile.generic.load.uv2i64.p0uv2i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ull2(<2 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <2 x i64>, align 16
+  %4 = alloca ptr, align 8
+  store <2 x i64> %0, ptr %3, align 16
+  store ptr %1, ptr %4, align 8
+  %5 = load <2 x i64>, ptr %3, align 16
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.uv2i64.p0uv2i64(<2 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.uv2i64.p0uv2i64(<2 x i64>, ptr) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected <4 x i64> @__mt_volatile_generic_load_ull4(ptr noundef %0, i32 noundef %1) #2 {
+  %3 = alloca ptr, align 8
+  %4 = alloca i32, align 4
+  store ptr %0, ptr %3, align 8
+  store i32 %1, ptr %4, align 4
+  %5 = load ptr, ptr %3, align 8
+  %6 = load i32, ptr %4, align 4
+  %7 = call <4 x i64> @llvm.musa.volatile.generic.load.uv4i64.p0uv4i64(ptr %5, i32 %6)
+  ret <4 x i64> %7
+}
+
+; Function Attrs: nounwind
+declare <4 x i64> @llvm.musa.volatile.generic.load.uv4i64.p0uv4i64(ptr, i32) #11
+
+; Function Attrs: alwaysinline nounwind
+define protected void @__mt_volatile_generic_store_ull4(<4 x i64> noundef %0, ptr noundef %1) #2 {
+  %3 = alloca <4 x i64>, align 32
+  %4 = alloca ptr, align 8
+  store <4 x i64> %0, ptr %3, align 32
+  store ptr %1, ptr %4, align 8
+  %5 = load <4 x i64>, ptr %3, align 32
+  %6 = load ptr, ptr %4, align 8
+  call void @llvm.musa.volatile.generic.store.uv4i64.p0uv4i64(<4 x i64> %5, ptr %6)
+  ret void
+}
+
+; Function Attrs: nounwind
+declare void @llvm.musa.volatile.generic.store.uv4i64.p0uv4i64(<4 x i64>, ptr) #11
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected i32 @__mt_bfe_u32(i32 noundef %0, i32 noundef %1, i32 noundef %2) #0 {
@@ -57402,7 +61664,7 @@ attributes #12 = { nounwind willreturn memory(none) }
 !llvm.ident = !{!0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0, !0}
 !llvm.module.flags = !{!1, !2, !3}
 
-!0 = !{!"clang version 20.1.8 (git@sh-code.mthreads.com:delei.zheng/mtcc20x.git 8b26b32a5b55d9c4a8d698de221ecdf3b5d34f39)\0Amcc version 3.1.0"}
+!0 = !{!"clang version 20.1.8 (git@sh-code.mthreads.com:delei.zheng/mtcc20x.git 18444ffbad8f024bc7d333006ca6cd24000a8287)\0Amcc version 3.1.0"}
 !1 = !{i32 1, !"wchar_size", i32 4}
 !2 = !{i32 8, !"PIC Level", i32 2}
 !3 = !{i32 7, !"PIE Level", i32 2}
