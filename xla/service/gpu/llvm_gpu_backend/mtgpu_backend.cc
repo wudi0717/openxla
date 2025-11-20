@@ -462,7 +462,7 @@ std::string LibDevicePath(std::string gcn_arch_name,
   return "";
 }
 
-static std::string randomTmpPath(const char *ext) {
+static std::string randomTmpPath() {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 15);
@@ -470,7 +470,7 @@ static std::string randomTmpPath(const char *ext) {
     for (int i = 0; i < 16; ++i) {
       random_name += "0123456789abcdef"[dis(gen)];
     }
-    return random_name+ext;
+    return random_name;
 }
 
 #include "musa_intrinsic.def"
@@ -797,8 +797,10 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   }
   VLOG(1) << "HSACO cache miss";
   
-  std::string objFile = randomTmpPath(".o");
-  std::string mubinFile = randomTmpPath(".mubin");
+  std::string temp_name = randomTmpPath();
+  std::string objFile = temp_name+".o";
+  std::string mubinFile = temp_name+".mubin";
+  std::string optFile = temp_name+"_opt.ll";
   std::string linkFile;
   std::string llFile;
   //Just for debug
@@ -834,8 +836,8 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
         "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
     module->setDataLayout(newDataLayout);
 
-    llFile = randomTmpPath(".ll");
-    linkFile = randomTmpPath("_link.ll");
+    llFile = temp_name+".ll";
+    linkFile = temp_name+"_link.ll";
     std::string bcFile = "/data/moon/github/openxla/third_party/gpus/musa/libdevice.31.ll";
 
     std::string ir_content;
@@ -859,7 +861,11 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
       throw std::runtime_error("llvm-link failed");
   }
 
-    std::string llcCmd = "llc \"" + linkFile + "\" -march=mtgpu -mcpu=mp_31 "
+    std::string optCmd = "opt -O2 \"" + linkFile + "\" -S -o \"" + optFile + "\"";
+    if (std::system(optCmd.c_str()) != 0)
+      throw std::runtime_error("opt failed");
+
+    std::string llcCmd = "llc \"" + optFile + "\" -march=mtgpu -mcpu=mp_31 "
                          "-filetype=obj -o \"" + objFile + "\"";
     if (std::system(llcCmd.c_str()) != 0)
       throw std::runtime_error("llc failed");
