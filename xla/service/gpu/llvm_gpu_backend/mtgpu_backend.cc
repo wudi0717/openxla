@@ -477,46 +477,39 @@ static std::string randomTmpPath() {
 using llvm::CallInst;
 static void preserveGlobalVars(llvm::Module &M)
 {
-    std::vector<llvm::Constant*> ToPreserve;
+    llvm::SmallPtrSet<llvm::Constant*, 16> Keep;   // 自动去重
 
-    // 1. 收集所有未被使用的全局变量
-    for (llvm::GlobalVariable &GV : M.globals()) {
-      if (GV.isDeclaration()) continue;          // 外部声明，跳过
-      if (GV.use_empty())                        // 真正未使用
-        ToPreserve.push_back(&GV);
-    }
+    /* 1. 已存在于 @llvm.used 里的元素 */
+    if (llvm::GlobalVariable *LLVMUsed = M.getGlobalVariable("llvm.used"))
+      if (auto *CA = llvm::dyn_cast<llvm::ConstantArray>(LLVMUsed->getInitializer()))
+        for (llvm::Value *Op : CA->operands())
+	{
+	  llvm::Value *V = llvm::cast<llvm::Constant>(Op)->getOperand(0);  // 先取 User 的 operand
+    	  Keep.insert(llvm::cast<llvm::Constant>(V)); 
+	}
 
-    if (ToPreserve.empty()) return ;        // 无工作，直接返回
+    /* 2. 本模块所有定义 */
+    for (llvm::GlobalVariable &GV : M.globals())
+      if (!GV.isDeclaration())
+        Keep.insert(&GV);
 
-    // 2. 读取或创建 @llvm.used
-    const char *UsedName = "llvm.used";
-    llvm::GlobalVariable *LLVMUsed = M.getGlobalVariable(UsedName);
-    if (LLVMUsed && LLVMUsed->isDeclaration()) LLVMUsed = nullptr;
-
-    if (LLVMUsed) {
-      // 已存在，读取老数据
-      llvm::ConstantArray *OldCA = llvm::cast<llvm::ConstantArray>(LLVMUsed->getInitializer());
-      for (llvm::Value *Op : OldCA->operands())
-        ToPreserve.push_back(llvm::cast<llvm::Constant>(Op));
-    }
-
-    // 3. 构造新数组类型
+    if (Keep.empty()) return ;
+    /* 3. 生成新的 @llvm.used */
+    llvm::LLVMContext &Ctx = M.getContext();
     llvm::ArrayType *ATy = llvm::ArrayType::get(llvm::PointerType::get(M.getContext(), 0),
-                                      ToPreserve.size());
+                                      Keep.size());
 
-    // 4. 构造常量数组
-    std::vector<llvm::Constant*> Casted;
-    for (llvm::Constant *C : ToPreserve)
-      Casted.push_back(
-          llvm::ConstantExpr::getPointerCast(C, llvm::PointerType::get(M.getContext(), 0)));
+    llvm::SmallVector<llvm::Constant*, 64> Elements;
+    for (llvm::Constant *C : Keep)
+      Elements.push_back(llvm::ConstantExpr::getPointerCast(C, llvm::PointerType::get(M.getContext(), 0)));
 
-    llvm::Constant *NewInit = llvm::ConstantArray::get(ATy, Casted);
+    llvm::Constant *NewInit = llvm::ConstantArray::get(ATy, Elements);
 
-    // 5. 创建或更新全局变量
+    llvm::GlobalVariable *LLVMUsed = M.getGlobalVariable("llvm.used");
     if (!LLVMUsed) {
       LLVMUsed = new llvm::GlobalVariable(M, ATy, false,
                                     llvm::GlobalValue::AppendingLinkage,
-                                    NewInit, UsedName);
+                                    NewInit, "llvm.used");
       LLVMUsed->setSection("llvm.metadata");
     } else {
       LLVMUsed->setInitializer(NewInit);
