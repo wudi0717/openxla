@@ -51,6 +51,10 @@ limitations under the License.
 #include "xla/tsl/platform/statusor.h"
 #include "tsl/platform/casts.h"
 
+extern "C" {
+MUresult MUSAAPI muStreamBeginCaptureToGraph(MUstream hStream, MUgraph hGraph, const MUgraphNode *dependencies, const MUgraphEdgeData *dependencyData, size_t numDependencies, MUstreamCaptureMode mode);
+}
+
 namespace stream_executor::gpu {
 namespace {
 absl::StatusOr<musaGraph_t> CreateGraph() {
@@ -490,17 +494,11 @@ absl::StatusOr<GraphNodeHandle> MusaCommandBuffer::CreateEmptyNode(
 
 absl::Status MusaCommandBuffer::Trace(
     Stream* stream, absl::AnyInvocable<absl::Status()> function) {
-#if 1
+#if 0
   return absl::UnimplementedError(
       "StreamBeginCaptureToGraph is not implemented for MUSA below version "
       "12.3. Therefore tracing is not supported.");
 #else
-  if (stream_exec_->GetDeviceDescription().driver_version() <
-      SemanticVersion{12, 3, 0}) {
-    return absl::UnimplementedError(
-        "StreamBeginCaptureToGraph is not implemented for MUSA below version "
-        "12.3. Therefore tracing is not supported.");
-  }
 
   TF_RETURN_IF_ERROR(CheckNotFinalized());
 
@@ -526,7 +524,7 @@ absl::Status MusaCommandBuffer::Trace(
   VLOG(5) << "End stream " << stream << " capture";
   MUgraph captured_graph;
   TF_RETURN_IF_ERROR(
-      musa::ToStatus(cuStreamEndCapture(stream_handle, &captured_graph),
+      musa::ToStatus(muStreamEndCapture(stream_handle, &captured_graph),
                      "Failed to end stream capture"));
   DCHECK(captured_graph == graph_) << "Stream capture should update graph_";
   uint64_t end_nanos = tsl::Env::Default()->NowNanos();
