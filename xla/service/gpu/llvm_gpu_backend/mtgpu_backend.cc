@@ -842,6 +842,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   std::string objFile = temp_name+".o";
   std::string mubinFile = temp_name+".mubin";
   std::string optFile = temp_name+"_opt.ll";
+  std::string orgFile = temp_name+"_org.ll";
   std::string linkFile;
   std::string llFile;
   //Just for debug
@@ -866,6 +867,13 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   }
   else
   {
+    //Dump org .ll
+    std::error_code EC;
+    llvm::raw_fd_ostream f_os(orgFile, EC, llvm::sys::fs::OF_Text);
+    if (EC) throw std::runtime_error("cannot open " + orgFile);
+    module->print(f_os, nullptr);
+    f_os.close();
+
     //Change func call convension.
 
     convertNvvmToMusaIntrinsics(*module);
@@ -891,7 +899,6 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     std::regex ptx_kernel_regex("ptx_kernel");
     ir_content = std::regex_replace(ir_content, ptx_kernel_regex, "mtgpu_kernel");
 
-    std::error_code EC;
     llvm::raw_fd_ostream os(llFile, EC, llvm::sys::fs::OF_Text);
     if (EC) throw std::runtime_error("cannot open " + llFile);
     os << ir_content;
