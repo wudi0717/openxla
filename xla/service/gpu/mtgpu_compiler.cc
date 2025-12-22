@@ -82,7 +82,7 @@ class ConvBfloat16Support : public FloatSupport {
  public:
   explicit ConvBfloat16Support()
       : FloatSupport(BF16),
-        is_conv_bf16_supported_(false) {}
+        is_conv_bf16_supported_(true) {}
 
   bool SupportsLowPrecisionOperand(const HloInstruction& hlo,
                                    int64_t operand_index) const override {
@@ -95,7 +95,7 @@ class ConvBfloat16Support : public FloatSupport {
 
   bool SupportsMixedPrecisions(const HloInstruction& hlo) const override {
     // Skip all HLOs other than convolutions.
-    return false;
+    return is_conv_bf16_supported_;
   }
 
  private:
@@ -146,7 +146,7 @@ absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
   ConvBfloat16Support conv_bf16_support;
 
    //Just for test bf16 by zp 20251222.
-  //pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
+  pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
 
   //MatmulBfloat16Support matmul_bf16_support;
   //pipeline.AddPass<FloatNormalization>(&matmul_bf16_support);
