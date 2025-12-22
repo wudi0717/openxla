@@ -144,7 +144,9 @@ absl::Status MTGPUCompiler::OptimizeHloConvolutionCanonicalization(
 
   // Convert unsupported bf16 convolutions to f32.
   ConvBfloat16Support conv_bf16_support;
-  pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
+
+   //Just for test bf16 by zp 20251222.
+  //pipeline.AddPass<FloatNormalization>(&conv_bf16_support);
 
   //MatmulBfloat16Support matmul_bf16_support;
   //pipeline.AddPass<FloatNormalization>(&matmul_bf16_support);
