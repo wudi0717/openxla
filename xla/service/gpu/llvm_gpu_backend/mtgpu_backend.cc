@@ -57,6 +57,7 @@ limitations under the License.
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/IR/PatternMatch.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Linker/Linker.h"
@@ -515,6 +516,71 @@ static void preserveGlobalVars(llvm::Module &M)
       LLVMUsed->setInitializer(NewInit);
     }
 }
+static void convertBF16BinOpToMusaIntrinsics(llvm::Module &M) {
+    llvm::LLVMContext &Ctx = M.getContext();
+    llvm::Type *BFloatTy = llvm::Type::getBFloatTy(Ctx);
+
+    // 1. 一次性声明两个内建
+    llvm::Function *HSub = M.getFunction("llvm.musa.hsub.bf16");
+    llvm::Function *HMul = M.getFunction("llvm.musa.hmul.bf16");
+    llvm::Function *HAdd = M.getFunction("llvm.musa.hadd.bf16");
+    if (!HSub) {
+      llvm::FunctionType *FTy = llvm::FunctionType::get(BFloatTy, {BFloatTy, BFloatTy}, false);
+      HSub = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                              "llvm.musa.hsub.bf16", &M);
+      HSub->setOnlyReadsMemory();
+      HSub->setDoesNotThrow();
+      HSub->setWillReturn();
+    }
+    if (!HMul) {
+      llvm::FunctionType *FTy = llvm::FunctionType::get(BFloatTy, {BFloatTy, BFloatTy}, false);
+      HMul = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                              "llvm.musa.hmul.bf16", &M);
+      HMul->setOnlyReadsMemory();
+      HMul->setDoesNotThrow();
+      HMul->setWillReturn();
+    }
+    if (!HAdd) {
+      llvm::FunctionType *FTy = llvm::FunctionType::get(BFloatTy, {BFloatTy, BFloatTy}, false);
+      HAdd = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                          "llvm.musa.hadd.bf16", &M);
+      HAdd->setOnlyReadsMemory(); HAdd->setDoesNotThrow(); HAdd->setWillReturn();
+    }    
+
+    // 2. 收集所有 fsub/fmul bfloat
+    llvm::SmallVector<llvm::BinaryOperator*, 8> WorkList;
+    for (llvm::Function &F : M)
+      for (llvm::BasicBlock &BB : F)
+        for (llvm::Instruction &I : BB)
+          if (auto *Bin = llvm::dyn_cast<llvm::BinaryOperator>(&I))
+            if (Bin->getType()->isBFloatTy() &&
+                (Bin->getOpcode() == llvm::Instruction::FSub ||
+                 Bin->getOpcode() == llvm::Instruction::FMul ||
+                 Bin->getOpcode() == llvm::Instruction::FAdd
+	       ))
+            WorkList.push_back(Bin);
+
+    // 3. 逐个替换
+    llvm::IRBuilder<> B(Ctx);
+    for (llvm::BinaryOperator *Bin : WorkList) {
+      B.SetInsertPoint(Bin);
+      llvm::Value *LHS = Bin->getOperand(0);
+      llvm::Value *RHS = Bin->getOperand(1);
+      llvm::Function *Callee = nullptr;
+      switch (Bin->getOpcode()) {
+        case llvm::Instruction::FAdd: Callee = HAdd; break;
+        case llvm::Instruction::FSub: Callee = HSub; break;
+        case llvm::Instruction::FMul: Callee = HMul; break;
+        default: break;          // 其他指令不管
+      }
+
+      llvm::CallInst *Call = B.CreateCall(Callee->getFunctionType(), Callee, {LHS, RHS}, Bin->getName());
+      Call->setTailCall();
+
+      Bin->replaceAllUsesWith(Call);
+      Bin->eraseFromParent();
+    }
+}
 
 static void convertIRToMusaIntrinsics2(llvm::Module &M) {
     llvm::LLVMContext &Ctx = M.getContext();
@@ -880,6 +946,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     convertIRToMusaIntrinsics(*module);
     convertIRToMusaIntrinsics1(*module);
     convertIRToMusaIntrinsics2(*module);
+    convertBF16BinOpToMusaIntrinsics(*module);
     preserveGlobalVars(*module);
     module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
     const char* newDataLayout = 
