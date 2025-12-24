@@ -48276,6 +48276,15 @@ define protected float @__nv_expf(float noundef %0) #0 {
 }
 
 ; Function Attrs: alwaysinline nounwind willreturn memory(none)
+define protected float @__nv_fast_expf(float noundef %0) #0 {
+  %2 = alloca float, align 4
+  store float %0, ptr %2, align 4
+  %3 = load float, ptr %2, align 4
+  %4 = call float @__mt_exp_f32(float noundef %3) #12
+  ret float %4
+}
+
+; Function Attrs: alwaysinline nounwind willreturn memory(none)
 define protected double @__nv_expm1(double noundef %0) #0 {
   %2 = alloca double, align 8
   store double %0, ptr %2, align 8
