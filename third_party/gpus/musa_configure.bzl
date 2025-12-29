@@ -158,9 +158,12 @@ def _musa_autoconf_impl(repository_ctx):
             "%{cpu_compiler}": "gcc",
             "%{compiler_is_clang}": "False",
             "%{mcc_path}": "/usr/local/musa/bin/mcc",
+            # "%{mcc_path}": "/data/lmw/musa/bin/mcc",
             "%{mcc_env}":  _mcc_env(repository_ctx),
             "%{musa_path}": "/usr/local/musa",
-            "%{musa_runtime_path}": "/usr/local/musa/lib",
+            # "%{musa_path}": "/data/lmw/musa",
+            # "%{musa_runtime_path}": "/usr/local/musa/lib",
+            "%{musa_runtime_path}": "/data/lmw/musa/lib",
             "%{musa_runtime_library}": "musart",
             "%{crosstool_verbose}": _crosstool_verbose(repository_ctx),
         },
@@ -177,6 +180,8 @@ def _musa_autoconf_impl(repository_ctx):
     # TODO(perfxlab): get path from env
     host_compiler_includes.append("/usr/local/musa/lib/clang/14.0.0/include/")
     host_compiler_includes.append("/usr/local/musa/lib/clang/20/include/")
+    # host_compiler_includes.append("/data/lmw/musa/lib/14.0.0/include/")
+    # host_compiler_includes.append("/data/lmw/musa/lib/20/include/")
 
     musa_defines = {}
     musa_defines["%{builtin_sysroot}"] = "/home/mccxadmin/moon/workspace/install/musa"

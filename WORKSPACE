@@ -1,6 +1,11 @@
 # buildifier: disable=load-on-top
 workspace(name = "xla")
 
+local_repository(
+    name = "llvm-project",
+    path = "/home/mccxadmin/jiangxiyue/llvm-project",
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Initialize toolchains for ML projects.
