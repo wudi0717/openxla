@@ -389,7 +389,8 @@ llvm::GlobalVariable* AllocateSharedMemoryTile(llvm::Module* module,
   return new llvm::GlobalVariable(
       *module, tile_type,
       /*isConstant=*/false, llvm::GlobalValue::PrivateLinkage,
-      llvm::UndefValue::get(tile_type), AsStringRef(name), nullptr,
+      llvm::ConstantAggregateZero::get(tile_type), AsStringRef(name), nullptr,
+      /*llvm::UndefValue::get(tile_type), AsStringRef(name), nullptr,*/
       llvm::GlobalValue::NotThreadLocal, kGPUSharedMemoryAddrSpace);
 }
 
