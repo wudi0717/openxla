@@ -41,8 +41,8 @@ namespace xla::gpu {
 absl::Status PollUntilDone(ncclComm_t comm, const std::atomic_bool& aborted) {
   auto poll = [](ncclComm_t comm,
                  const std::atomic_bool& aborted) -> absl::Status {
-    ncclResult_t state = ncclInProgress;
-    while (state == ncclInProgress && !aborted.load()) {
+    ncclResult_t state = mcclUnhandledMusaError;
+    while (state != mcclSuccess && !aborted.load()) {
       XLA_NCCL_RETURN_IF_ERROR(ncclCommGetAsyncError(comm, &state));
     }
     if (aborted.load()) {

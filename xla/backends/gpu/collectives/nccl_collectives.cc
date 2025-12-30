@@ -170,7 +170,8 @@ NcclCollectives::CreateCommunicators(const CliqueKey& clique_key,
     TF_ASSIGN_OR_RETURN(auto nccl_unique_id, AsNcclUniqueId(clique_ids->at(0)));
     ncclComm_t comm;
 #if 1
-    LOG(ERROR) << "[ERROR] ncclCommInitRankConfig not impl\n";
+    mcclResult_t res =  mcclCommInitRank(&comm, clique_key.num_devices(), nccl_unique_id,
+                                  ranks[i].rank.value());
 #else
     XLA_NCCL_RETURN_IF_ERROR(
         ncclCommInitRankConfig(&comm, clique_key.num_devices(), nccl_unique_id,

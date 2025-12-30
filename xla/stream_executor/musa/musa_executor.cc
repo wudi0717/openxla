@@ -1242,15 +1242,13 @@ dnn::DnnSupport* MusaExecutor::AsDnn() {
 }
 
 fft::FftSupport* MusaExecutor::AsFft() {
-  return nullptr;
-#if 0
   absl::MutexLock lock(&mu_);
   if (fft_ != nullptr) {
     return fft_.get();
   }
   PluginRegistry* registry = PluginRegistry::Instance();
   absl::StatusOr<PluginRegistry::FftFactory> status =
-      registry->GetFactory<PluginRegistry::FftFactory>(musa::kMusaPlatformId);
+      registry->GetFactory<PluginRegistry::FftFactory>(musa::kMUSaPlatformId);
   if (!status.ok()) {
     LOG(ERROR) << "Unable to retrieve FFT factory: "
                << status.status().message();
@@ -1261,7 +1259,6 @@ fft::FftSupport* MusaExecutor::AsFft() {
 
   fft_.reset(fft);
   return fft_.get();
-#endif
 }
 
 bool MusaExecutor::CanEnablePeerAccessTo(StreamExecutor* other) {

@@ -337,47 +337,47 @@ cc_library(
     alwayslink = True,
 )
 
-# cc_library(
-#     name = "mufft_if_static",
-#     tags = [
-#         "gpu",
-#         "musa-only",
-#     ],
-#     deps = if_static([
-#         "@local_config_musa//musa:mufft",
-#     ]),
-# )
+cc_library(
+    name = "mufft_if_static",
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = if_static([
+        "@local_config_musa//musa:mufft",
+    ]),
+)
 
-# cc_library(
-#     name = "mufft_plugin",
-#     srcs = ["musa_fft.cc"],
-#     hdrs = ["musa_fft.h"],
-#     tags = [
-#         "gpu",
-#         "musa-only",
-#     ],
-#     visibility = ["//visibility:public"],
-#     deps = [
-#         ":mufft_if_static",
-#         ":musa_complex_converters",
-#         ":musa_platform_id",
-#         "//xla/stream_executor:activate_context",
-#         "//xla/stream_executor:device_memory",
-#         "//xla/stream_executor:fft",
-#         "//xla/stream_executor:plugin_registry",
-#         "//xla/stream_executor:scratch_allocator",
-#         "//xla/stream_executor:stream",
-#         "//xla/stream_executor:stream_executor_h",
-#         "//xla/stream_executor/gpu:gpu_helpers_header",
-#         "//xla/stream_executor/platform:initialize",
-#         "//xla/tsl/platform:env",
-#         "//xla/tsl/platform:logging",
-#         "@com_google_absl//absl/status",
-#         "@local_config_musa//musa:musa_headers",
-#         "@tsl//tsl/platform:dso_loader",
-#     ],
-#     alwayslink = True,
-# )
+cc_library(
+    name = "mufft_plugin",
+    srcs = ["musa_fft.cc"],
+    hdrs = ["musa_fft.h"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mufft_if_static",
+        ":musa_complex_converters",
+        ":musa_platform_id",
+        "//xla/stream_executor:activate_context",
+        "//xla/stream_executor:device_memory",
+        "//xla/stream_executor:fft",
+        "//xla/stream_executor:plugin_registry",
+        "//xla/stream_executor:scratch_allocator",
+        "//xla/stream_executor:stream",
+        "//xla/stream_executor:stream_executor_h",
+        "//xla/stream_executor/gpu:gpu_helpers_header",
+        "//xla/stream_executor/platform:initialize",
+        "//xla/tsl/platform:env",
+        "//xla/tsl/platform:logging",
+        "@com_google_absl//absl/status",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform:dso_loader",
+    ],
+    alwayslink = True,
+)
 
 # cc_library(
 #     name = "mublaslt_if_static",
@@ -528,7 +528,7 @@ cc_library(
         # ":all_reduce_kernel_musa",
         # ":mublaslt_plugin",
         # ":buffer_comparator_kernel_musa",
-        # ":mufft_plugin",
+        ":mufft_plugin",
         # ":make_batch_pointers_kernel_musa",
         # ":ragged_all_to_all_kernel_musa",
         # ":redzone_allocator_kernel_musa",
