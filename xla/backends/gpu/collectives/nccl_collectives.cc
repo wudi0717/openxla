@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-
+#include "xla/backends/gpu/collectives/mccl_warp.h"
 #include "xla/backends/gpu/collectives/nccl_collectives.h"
 
 #include <cstdint>
@@ -169,14 +169,16 @@ NcclCollectives::CreateCommunicators(const CliqueKey& clique_key,
     auto activate_context = device->stream_executor()->Activate();
     TF_ASSIGN_OR_RETURN(auto nccl_unique_id, AsNcclUniqueId(clique_ids->at(0)));
     ncclComm_t comm;
-#if 1
-    mcclResult_t res =  mcclCommInitRank(&comm, clique_key.num_devices(), nccl_unique_id,
-                                  ranks[i].rank.value());
-#else
+// #if 1
+//     // LOG(ERROR) << "[ERROR] ncclCommInitRankConfig not impl\n";
+//     XLA_NCCL_RETURN_IF_ERROR(
+//         mcclCommInitRank(&comm, clique_key.num_devices(), nccl_unique_id,
+//                         ranks[i].rank.value()));
+// #else
     XLA_NCCL_RETURN_IF_ERROR(
         ncclCommInitRankConfig(&comm, clique_key.num_devices(), nccl_unique_id,
                                ranks[i].rank.value(), &comm_config));
-#endif
+// #endif
     return comm;
   };
 

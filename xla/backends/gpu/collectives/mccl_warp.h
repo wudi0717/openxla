@@ -19,6 +19,8 @@ limitations under the License.
 #if TENSORFLOW_USE_MUSA
 #define MARCH_TYPE 220
 #define NCCL_VERSION_CODE 21000
+#include <climits>
+#include <stdio.h>
 #include "mccl.h"
 #include "musa.h"
 // #define ncclConfig_t mcclConfig_t
@@ -79,7 +81,14 @@ typedef struct ncclConfig_v22800 {
 __inline__ const char* ncclGetLastError(ncclComm_t comm) {
   return "";
 }
-#define ncclInProgress mcclSuccess // TODO(perfxlab), not impl
+// #define ncclInProgress mcclSuccess // TODO(perfxlab), not impl
+#ifdef ncclInProgress
+#undef ncclInProgress
+#endif
+
+// 确保 != ncclSuccess（
+#define ncclInProgress ((ncclResult_t)999)
+
 #define ncclCommGetAsyncError mcclCommGetAsyncError
 #define ncclInt8 mcclInt8
 #define ncclUint8 mcclUint8
@@ -100,14 +109,50 @@ __inline__ const char* ncclGetLastError(ncclComm_t comm) {
 #define ncclMax mcclMax
 #define ncclCommDestroy mcclCommDestroy
 #define ncclCommAbort mcclCommAbort
-#define ncclGroupStart mcclGroupStart
-#define ncclGroupEnd mcclGroupEnd
+// #define ncclGroupStart mcclGroupStart
+// #define ncclGroupEnd mcclGroupEnd
 #define ncclAllReduce mcclAllReduce
 #define ncclBroadcast mcclBroadcast
 #define ncclReduceScatter mcclReduceScatter
 #define ncclAllGather mcclAllGather
-#define ncclSend mcclSend
-#define ncclRecv mcclRecv
+// #define ncclSend mcclSend
+// #define ncclRecv mcclRecv
+// #define ncclCommInitRankConfig mcclCommInitRankConfig
+static inline ncclResult_t ncclCommInitRankConfig(ncclComm_t* comm, int nranks,
+                                                 ncclUniqueId commId, int rank,
+                                                 ncclConfig_t* /*config*/) {
+  fprintf(stderr, "[MCCL SHIM] nranks=%d rank=%d\n", nranks, rank);
+  return mcclCommInitRank(comm, nranks, commId, rank);
+}
+
+static inline ncclResult_t ncclGroupStart_wrap() {
+  fprintf(stderr, "[MCCL SHIM] GroupStart\n");
+  return mcclGroupStart();
+}
+static inline ncclResult_t ncclGroupEnd_wrap() {
+  fprintf(stderr, "[MCCL SHIM] GroupEnd\n");
+  return mcclGroupEnd();
+}
+static inline ncclResult_t ncclSend_wrap(const void* sendbuff, size_t count,
+                                         ncclDataType_t datatype, int peer,
+                                         ncclComm_t comm, musaStream_t stream) {
+  fprintf(stderr, "[MCCL SHIM] Send peer=%d count=%zu\n", peer, count);
+  return mcclSend(sendbuff, count, datatype, peer, comm, stream);
+}
+static inline ncclResult_t ncclRecv_wrap(void* recvbuff, size_t count,
+                                         ncclDataType_t datatype, int peer,
+                                         ncclComm_t comm, musaStream_t stream) {
+  fprintf(stderr, "[MCCL SHIM] Recv peer=%d count=%zu\n", peer, count);
+  return mcclRecv(recvbuff, count, datatype, peer, comm, stream);
+}
+
+#define ncclGroupStart ncclGroupStart_wrap
+#define ncclGroupEnd   ncclGroupEnd_wrap
+#define ncclSend       ncclSend_wrap
+#define ncclRecv       ncclRecv_wrap
+
+
+#define ncclCommInitRank mcclCommInitRank
 #endif
 
 #endif  // XLA_BACKENDS_GPU_COLLECTIVES_RCCL_WARP_H_
