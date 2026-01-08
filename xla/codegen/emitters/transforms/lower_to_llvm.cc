@@ -23,6 +23,7 @@ limitations under the License.
 #include "mlir/Conversion/ComplexToLLVM/ComplexToLLVM.h"
 #include "mlir/Conversion/ControlFlowToLLVM/ControlFlowToLLVM.h"
 #include "mlir/Conversion/FuncToLLVM/ConvertFuncToLLVM.h"
+#include "mlir/Conversion/GPUToMTGPU/GPUToMTGPUPass.h"
 #include "mlir/Conversion/GPUToNVVM/GPUToNVVMPass.h"
 #include "mlir/Conversion/GPUToROCDL/GPUToROCDLPass.h"
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
@@ -108,6 +109,8 @@ class LowerToLLVMPass : public impl::LowerToLLVMPassBase<LowerToLLVMPass> {
             type_converter, patterns, mlir::gpu::amd::Runtime::Unknown,
             *maybeChipset);
         mlir::configureGpuToROCDLConversionLegality(target);
+      } else if (device_spec_.IsMtGpu()) {
+        mlir::populateGpuToMTGPUConversionPatterns(type_converter, patterns);
       } else {
         mlir::populateGpuToNVVMConversionPatterns(type_converter, patterns);
         mlir::configureGpuToNVVMConversionLegality(target);
