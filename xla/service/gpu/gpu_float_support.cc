@@ -111,11 +111,20 @@ bool GpuFloatSupport::IsSupported(const HloInstruction& hlo) const {
     // Other special ops.
     case HloOpcode::kBitcast:
     case HloOpcode::kBitcastConvert:
-    case HloOpcode::kConvert:
     case HloOpcode::kCompare:
     case HloOpcode::kReducePrecision:
     case HloOpcode::kXor:
       return true;
+    case HloOpcode::kConvert:
+      {
+      const PrimitiveType lhs_type = hlo.operand(0)->shape().element_type();
+      const PrimitiveType rhs_type = hlo.operand(1)->shape().element_type();
+      VLOG(1) << "Convert: " << hlo.ToString();
+      if (LowPrecisionType() == BF16 && (lhs_type == S8 || lhs_type == S32 || lhs_type == U8))
+        return false;
+
+      return true;
+      }
     // Elementwise ops.
     case HloOpcode::kExp:
     case HloOpcode::kLog:

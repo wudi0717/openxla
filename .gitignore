@@ -25,3 +25,16 @@ tools/python_bin_path.sh
 *.VC.opendb
 *.suo
 *.user
+
+# Ignore jxy debug files
+xla/tests/test_results
+xla/tests/data/test_result*
+compile.log
+target_config
+tasks
+todo
+*.swp
+build_run_hlo_module.sh
+debug_musa.gdb
+debug_run_hlo_module.sh
+.clangd
