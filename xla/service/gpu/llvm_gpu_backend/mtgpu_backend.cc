@@ -582,6 +582,50 @@ static void convertBF16BinOpToMusaIntrinsics(llvm::Module &M) {
     }
 }
 
+static void convertIRToMusaIntrinsics3(llvm::Module &M) {
+    llvm::LLVMContext &Ctx = M.getContext();
+    llvm::Type *BFloatTy = llvm::Type::getBFloatTy(Ctx);
+    llvm::Type *F32Ty    = llvm::Type::getFloatTy(Ctx);
+
+    // 1. 声明 musa 库函数（只一次）
+    llvm::Function *Callee = M.getFunction("llvm.musa.bfloat162float");
+    if (!Callee) {
+      llvm::FunctionType *FTy = llvm::FunctionType::get(F32Ty, {BFloatTy}, false);
+      Callee = llvm::Function::Create(FTy, llvm::GlobalValue::ExternalLinkage,
+                                "llvm.musa.bfloat162float", &M);
+      Callee->setOnlyReadsMemory();
+      Callee->setDoesNotThrow();
+      Callee->setWillReturn();
+    }
+
+    // 2. 扫描所有 fptosint (bfloat, bfloat)
+    llvm::SmallVector<llvm::FPToSIInst *, 8> WorkList;
+    for (llvm::Function &F : M)
+      for (llvm::BasicBlock &BB : F)
+        for (llvm::Instruction &I : BB)
+          if (auto *CI = llvm::dyn_cast<llvm::FPToSIInst>(&I))
+            if (CI->getSrcTy()->isBFloatTy())
+              WorkList.push_back(CI);
+
+    // 3. 逐个替换
+    llvm::IRBuilder<> B(Ctx);
+    for (llvm::FPToSIInst *CI : WorkList) {
+      llvm::Value *Op0 = CI->getOperand(0);
+
+      B.SetInsertPoint(CI);
+
+      // 3.1 转 float
+      llvm::CallInst *TempX = B.CreateCall(Callee->getFunctionType(), Callee, {Op0});
+      TempX->setTailCall();
+
+      // 3.2 新的 fcmp
+      llvm::Value *NewCmp = B.CreateFPToSI(TempX, CI->getType(), CI->getName());
+
+      CI->replaceAllUsesWith(NewCmp);
+      CI->eraseFromParent();
+    }
+}
+
 static void convertIRToMusaIntrinsics2(llvm::Module &M) {
     llvm::LLVMContext &Ctx = M.getContext();
     llvm::Type *BFloatTy = llvm::Type::getBFloatTy(Ctx);
@@ -946,6 +990,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     convertIRToMusaIntrinsics(*module);
     convertIRToMusaIntrinsics1(*module);
     convertIRToMusaIntrinsics2(*module);
+    convertIRToMusaIntrinsics3(*module);
     convertBF16BinOpToMusaIntrinsics(*module);
     preserveGlobalVars(*module);
     module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
