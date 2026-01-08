@@ -37,6 +37,7 @@ limitations under the License.
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/IntrinsicsAMDGPU.h"
 #include "llvm/IR/IntrinsicsNVPTX.h"
+#include "llvm/IR/IntrinsicsMTGPU.h"
 #include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
@@ -72,6 +73,9 @@ struct TargetIntrinsics {
   std::variant<llvm::Intrinsic::ID,
                std::function<llvm::CallInst*(llvm::IRBuilderBase*)>>
       spir_intrinsic_or_function;
+  std::variant<llvm::Intrinsic::ID,
+               std::function<llvm::CallInst*(llvm::IRBuilderBase*)>>
+      musa_intrinsic_or_function;
 };
 
 // Gets the llvm intrinsic ids on different platforms (NVPTX, AMDGPU)
@@ -87,6 +91,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 "_Z32__spirv_BuiltInLocalInvocationIdi", {b_->getInt32(0)},
                 {U32}, U64, {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_tid_x,
       };
     }
     case TargetIntrinsicID::kThreadIdy: {
@@ -98,6 +103,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 "_Z32__spirv_BuiltInLocalInvocationIdi", {b_->getInt32(1)},
                 {U32}, U64, {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_tid_y,
       };
     }
     case TargetIntrinsicID::kThreadIdz: {
@@ -109,6 +115,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 "_Z32__spirv_BuiltInLocalInvocationIdi", {b_->getInt32(2)},
                 {U32}, U64, {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_tid_z,
       };
     }
     case TargetIntrinsicID::kBlockIdx: {
@@ -120,6 +127,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                                           {b_->getInt32(0)}, {U32}, U64,
                                           {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_ctaid_x,
       };
     }
     case TargetIntrinsicID::kBlockIdy: {
@@ -131,6 +139,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                                           {b_->getInt32(1)}, {U32}, U64,
                                           {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_ctaid_y,
       };
     }
     case TargetIntrinsicID::kBlockIdz: {
@@ -142,6 +151,7 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                                           {b_->getInt32(2)}, {U32}, U64,
                                           {b_->getContext()}, b_);
           },
+          llvm::Intrinsic::musa_read_ptx_sreg_ctaid_z,
       };
     }
     case TargetIntrinsicID::kBarrierId: {
@@ -166,7 +176,9 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                     llvm::AttrBuilder(b_->getContext())
                         .addAttribute(llvm::Attribute::Convergent),
                     b_);
-              }};
+              },
+              llvm::Intrinsic::musa_barrier_sync,
+            };
     }
     case TargetIntrinsicID::kBlockDimx: {
       return {llvm::Intrinsic::nvvm_read_ptx_sreg_ntid_x,
@@ -179,7 +191,9 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 return EmitDeviceFunctionCall(
                     "_Z28__spirv_BuiltInWorkgroupSizei", {b_->getInt32(0)},
                     {U32}, U64, {b_->getContext()}, b_);
-              }};
+              },
+              llvm::Intrinsic::musa_read_ptx_sreg_ntid_x,
+            };
     }
     case TargetIntrinsicID::kBlockDimy: {
       return {llvm::Intrinsic::nvvm_read_ptx_sreg_ntid_y,
@@ -192,7 +206,9 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 return EmitDeviceFunctionCall(
                     "_Z28__spirv_BuiltInWorkgroupSizei", {b_->getInt32(1)},
                     {U32}, U64, {b_->getContext()}, b_);
-              }};
+              },
+              llvm::Intrinsic::musa_read_ptx_sreg_ntid_y,
+            };
     }
     case TargetIntrinsicID::kBlockDimz: {
       return {llvm::Intrinsic::nvvm_read_ptx_sreg_ntid_z,
@@ -205,7 +221,9 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                 return EmitDeviceFunctionCall(
                     "_Z28__spirv_BuiltInWorkgroupSizei", {b_->getInt32(2)},
                     {U32}, U64, {b_->getContext()}, b_);
-              }};
+              },
+              llvm::Intrinsic::musa_read_ptx_sreg_ntid_z,
+            };
     }
     case TargetIntrinsicID::kGroupBarrierId: {
       return {llvm::Intrinsic::nvvm_bar_warp_sync,
@@ -218,7 +236,9 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                     llvm::AttrBuilder(b_->getContext())
                         .addAttribute(llvm::Attribute::Convergent),
                     b_);
-              }};
+              },
+            llvm::Intrinsic::musa_bar_warp_sync,
+            };
     }
   }
 }
@@ -446,12 +466,15 @@ llvm::CallInst* EmitCallToTargetIntrinsic(
                std::function<llvm::CallInst*(llvm::IRBuilderBase*)>>
       llvm_intrinsic_or_function;
   llvm::Triple target_triple = llvm::Triple(module->getTargetTriple());
+  std::cerr << "[EmitCallToTargetIntrinsic] target_triple: " << target_triple.str() << std::endl;
   if (target_triple.isNVPTX()) {
     llvm_intrinsic_or_function = gpu_intrinsic_id.nvptx_intrinsic_or_function;
   } else if (target_triple.getArch() == llvm::Triple::amdgcn) {
     llvm_intrinsic_or_function = gpu_intrinsic_id.amdgpu_intrinsic_or_function;
   } else if (target_triple.isSPIR()) {
     llvm_intrinsic_or_function = gpu_intrinsic_id.spir_intrinsic_or_function;
+  } else if (target_triple.isMTGPU()) {
+    llvm_intrinsic_or_function = gpu_intrinsic_id.musa_intrinsic_or_function;
   } else {
     LOG(FATAL) << "Invalid triple " << target_triple.str();
   }
@@ -483,6 +506,10 @@ void AnnotateFunctionAsGpuKernel(llvm::Module* module, llvm::Function* func,
   } else if (target_triple.isSPIR()) {
     // Attach information so that it can be recognized as a SPIR kernel.
     func->setCallingConv(llvm::CallingConv::SPIR_KERNEL);
+  // } else if (target_triple == llvm::Triple("mtgpu-mt-musa")) {
+  } else if (target_triple.isMTGPU()) {
+    func->setCallingConv(llvm::CallingConv::PTX_Kernel);
+    // func->setCallingConv(llvm::CallingConv::MTGPU_Kernel);
   } else {
     LOG(FATAL) << "Invalid triple " << target_triple.str();
   }

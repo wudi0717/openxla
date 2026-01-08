@@ -58,14 +58,14 @@ namespace mtgpu {
 
 // The triple that represents our target on LLVM AMDGPU backend.
 inline const char* TargetTriple() {
-  static constexpr char kTargetTriple[] = "nvptx64-nvidia-cuda";
+  static constexpr char kTargetTriple[] = "mtgpu-mt-musa";
   return kTargetTriple;
 }
 
 // The data layout of the emitted module.
 inline const char* DataLayout() {
   static constexpr char kDataLayout[] =
-      "e-p6:32:32-i64:64-i128:128-v16:16-v32:32-n16:32:64";
+      "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
   return kDataLayout;
 }
 

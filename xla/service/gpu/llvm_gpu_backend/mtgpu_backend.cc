@@ -993,10 +993,6 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     convertIRToMusaIntrinsics3(*module);
     convertBF16BinOpToMusaIntrinsics(*module);
     preserveGlobalVars(*module);
-    module->setTargetTriple(llvm::Triple("mtgpu-mt-musa"));
-    const char* newDataLayout = 
-        "e-p:64:64:64:64-p1:64:64:64:64-p2:64:64:64:64-p3:32:32-p4:32:32-p5:64:64-i64:64-v16:16-v24:32-v32:32-v48:64-v96:128";
-    module->setDataLayout(newDataLayout);
 
     llFile = temp_name+".ll";
     linkFile = temp_name+"_link.ll";

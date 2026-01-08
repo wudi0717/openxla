@@ -59,6 +59,11 @@ class DeviceSpec {
            std::holds_alternative<stream_executor::CudaComputeCapability>(
                gpu().gpu_compute_capability());
   }
+  bool IsMtGpu() const {
+    return IsGpu() &&
+           std::holds_alternative<stream_executor::MusaComputeCapability>(
+               gpu().gpu_compute_capability());
+  }
 
  private:
   DeviceSpecType type_;
