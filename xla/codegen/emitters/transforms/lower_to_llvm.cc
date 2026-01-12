@@ -111,6 +111,7 @@ class LowerToLLVMPass : public impl::LowerToLLVMPassBase<LowerToLLVMPass> {
         mlir::configureGpuToROCDLConversionLegality(target);
       } else if (device_spec_.IsMtGpu()) {
         mlir::populateGpuToMTGPUConversionPatterns(type_converter, patterns);
+        mlir::configureGpuToMTGPUConversionLegality(target);
       } else {
         mlir::populateGpuToNVVMConversionPatterns(type_converter, patterns);
         mlir::configureGpuToNVVMConversionLegality(target);

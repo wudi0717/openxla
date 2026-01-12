@@ -114,6 +114,8 @@ cc_library(
         "@llvm-project//mlir:MemRefTransforms",
         "@llvm-project//mlir:NVVMDialect",
         "@llvm-project//mlir:NVVMToLLVMIRTranslation",
+        "@llvm-project//mlir:MTGPUDialect",
+        "@llvm-project//mlir:MTGPUToLLVMIRTranslation",
         "@llvm-project//mlir:Pass",
         "@llvm-project//mlir:ROCDLDialect",
         "@llvm-project//mlir:ROCDLToLLVMIRTranslation",

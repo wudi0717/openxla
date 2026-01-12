@@ -56,6 +56,7 @@ limitations under the License.
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/LLVMIR/NVVMDialect.h"
+#include "mlir/Dialect/LLVMIR/MTGPUDialect.h"
 #include "mlir/Dialect/LLVMIR/ROCDLDialect.h"
 #include "mlir/Dialect/LLVMIR/Transforms/InlinerInterfaceImpl.h"
 #include "mlir/Dialect/Math/IR/Math.h"
@@ -77,6 +78,7 @@ limitations under the License.
 #include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Dialect/NVVM/NVVMToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Dialect/MTGPU/MTGPUToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Dialect/ROCDL/ROCDLToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Export.h"
 #include "mlir/Transforms/Passes.h"
@@ -341,12 +343,33 @@ absl::StatusOr<std::unique_ptr<llvm::Module>> EmitterBase::CreateLLVMModule(
   AddLoopTransformationPasses(pm, device);
   AddLoweringPasses(pm, device);
 
+  // Debug output: Print module before running pass pipeline
+  if (VLOG_IS_ON(1)) {
+    VLOG(1) << "Module before RunPassPipeline:";
+    module.get()->dump();
+  }
+
   auto pipeline_status = RunPassPipeline(module.get(), *fusion.GetModule(), pm,
                                          entry_function_name);
+
+  // Debug output: Print module after running pass pipeline
+  if (VLOG_IS_ON(1)) {
+    VLOG(1) << "Module after RunPassPipeline:";
+    module.get()->dump();
+  }
 
   auto llvm_module = mlir::translateModuleToLLVMIR(module.get(), llvm_context);
   TF_RET_CHECK(llvm_module != nullptr)
       << "Failed to translate module to LLVM IR.";
+
+  // Debug output: Print translated LLVM IR module
+  if (VLOG_IS_ON(1)) {
+    VLOG(1) << "Translated LLVM IR Module:";
+    std::string llvm_ir_str;
+    llvm::raw_string_ostream os(llvm_ir_str);
+    llvm_module->print(os, nullptr);
+    VLOG(1) << os.str();
+  }
 
   return llvm_module;
 }
@@ -416,6 +439,7 @@ mlir::DialectRegistry EmitterBase::GetDialectRegistry() {
   mlir::DialectRegistry registry;
   registry.insert<
       mlir::DLTIDialect, mlir::NVVM::NVVMDialect, mlir::ROCDL::ROCDLDialect,
+      mlir::MTGPU::MTGPUDialect, 
       mlir::affine::AffineDialect, mlir::arith::ArithDialect,
       mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,
       mlir::gpu::GPUDialect, mlir::math::MathDialect, mlir::mhlo::MhloDialect,
@@ -426,6 +450,7 @@ mlir::DialectRegistry EmitterBase::GetDialectRegistry() {
   mlir::registerBuiltinDialectTranslation(registry);
   mlir::registerLLVMDialectTranslation(registry);
   mlir::registerNVVMDialectTranslation(registry);
+  mlir::registerMTGPUDialectTranslation(registry);
   mlir::registerROCDLDialectTranslation(registry);
   return registry;
 }
