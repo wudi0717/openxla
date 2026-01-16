@@ -203,6 +203,18 @@ cc_library(
 )
 
 cc_library(
+    name = "mupti",
+    srcs = glob(["%{musa_root}/lib/libmupti*.so*"]),
+    hdrs = glob(["%{musa_root}/include/mupti*.h"]),
+    includes = [
+        "%{musa_root}/include/",
+    ],
+    strip_include_prefix = "%{musa_root}",
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
     name = "system_libs",
     srcs = glob([
         "musa_dist/usr/lib/**/libelf.so*",
