@@ -490,6 +490,36 @@ cc_library(
 #     ],
 # )
 
+cc_library(
+    name = "mupti_if_static",
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = if_static([
+        "@local_config_musa//musa:mupti",
+    ]),
+)
+
+cc_library(
+    name = "mupti_wrapper",
+    srcs = ["mupti_wrapper.h"],
+    hdrs = ["mupti_wrapper.h"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ],
+    deps = [
+        ":musa_executor",
+        ":mupti_if_static",  # buildcleaner: keep
+        "//xla/tsl/platform:env",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform",
+        "@tsl//tsl/platform:dso_loader",
+    ],
+    alwayslink = True,
+)
+
 musa_library(
     name = "musa_helpers",
     srcs = ["musa_helpers.cu.cc"],

@@ -1,5 +1,6 @@
 load("@local_config_cuda//cuda:build_defs.bzl", "cuda_library")
 load("@local_config_rocm//rocm:build_defs.bzl", "if_rocm_is_configured")
+load("@local_config_musa//musa:build_defs.bzl", "if_musa_is_configured")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//xla:xla.default.bzl", "xla_cc_test")
 load("//xla/tests:build_defs.bzl", "xla_test")
@@ -23,6 +24,8 @@ cc_library(
             ":device_tracer_cuda",
         ]) + if_rocm_is_configured([
             ":device_tracer_rocm",
+        ]) + if_musa_is_configured([
+            ":device_tracer_musa",
         ]),
 )
 
@@ -49,6 +52,38 @@ cc_library(
         "@tsl//tsl/profiler/lib:profiler_factory",
         "@tsl//tsl/profiler/lib:profiler_interface",
         "@tsl//tsl/profiler/protobuf:xplane_proto_cc",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "device_tracer_musa",
+    srcs = ["device_tracer_musa.cc"],
+    # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
+    tags = [
+        "gpu",
+        "manual",
+        "musa-only",
+    ],
+    deps = [
+        ":musa_collector",
+        ":musa_tracer",
+        "//xla/stream_executor/musa:mupti_wrapper",
+        "//xla/tsl/platform:env_time",
+        "//xla/tsl/platform:errors",
+        "//xla/tsl/profiler/backends/cpu:annotation_stack",
+        "//xla/tsl/profiler/utils:parse_annotation",
+        "//xla/tsl/profiler/utils:trace_utils",
+        "//xla/tsl/profiler/utils:xplane_builder",
+        "//xla/tsl/profiler/utils:xplane_schema",
+        "//xla/tsl/profiler/utils:xplane_utils",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/profiler/lib:profiler_factory",
+        "@tsl//tsl/profiler/lib:profiler_interface",
     ],
     alwayslink = True,
 )
@@ -400,6 +435,82 @@ cc_library(
         "@tsl//tsl/platform:types",
         "@tsl//tsl/profiler/lib:profiler_factory",
         "@tsl//tsl/profiler/lib:profiler_interface",
+    ],
+)
+
+cc_library(
+    name = "musa_collector",
+    srcs = ["musa_collector.cc"],
+    hdrs = ["musa_collector.h"],
+    # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ] + if_google([
+        # TODO(b/360374983): Remove this tag once the target can be built without --config=rocm.
+        "manual",
+    ]),
+    deps = [
+        "//xla/stream_executor/musa:mupti_wrapper",
+        "//xla/tsl/profiler/backends/cpu:annotation_stack",
+        "//xla/tsl/profiler/utils:parse_annotation",
+        "//xla/tsl/profiler/utils:xplane_builder",
+        "//xla/tsl/profiler/utils:xplane_schema",
+        "//xla/tsl/profiler/utils:xplane_utils",
+        "//xla/tsl/util:env_var",
+        "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/container:node_hash_map",
+        "@com_google_absl//absl/container:node_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/synchronization",
+        "@tsl//tsl/platform:abi",
+        "@tsl//tsl/platform:env_time",
+        "@tsl//tsl/platform:errors",
+        "@tsl//tsl/platform:macros",
+        "@tsl//tsl/platform:status",
+        "@tsl//tsl/platform:thread_annotations",
+        "@tsl//tsl/platform:types",
+        "@tsl//tsl/profiler/lib:profiler_factory",
+        "@tsl//tsl/profiler/lib:profiler_interface",
+    ],
+)
+
+cc_library(
+    name = "musa_tracer",
+    srcs = ["musa_tracer.cc"],
+    hdrs = ["musa_tracer.h"],
+    # copybara:uncomment compatible_with = ["//buildenv/target:non_prod"],
+    tags = [
+        "gpu",
+        "musa-only",
+    ] + if_google([
+        # TODO(b/360374983): Remove this tag once the target can be built without --config=rocm.
+        "manual",
+    ]),
+    deps = [
+        ":musa_collector",
+        "//xla/stream_executor/musa:mupti_wrapper",
+        "//xla/tsl/profiler/backends/cpu:annotation_stack",
+        "//xla/tsl/profiler/utils:time_utils",
+        "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/container:node_hash_map",
+        "@com_google_absl//absl/container:node_hash_set",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/synchronization",
+        "@local_config_musa//musa:musa_headers",
+        "@tsl//tsl/platform:env",
+        "@tsl//tsl/platform:errors",
+        "@tsl//tsl/platform:logging",
+        "@tsl//tsl/platform:macros",
+        "@tsl//tsl/platform:platform_port",
+        "@tsl//tsl/platform:status",
+        "@tsl//tsl/platform:thread_annotations",
+        "@tsl//tsl/platform:types",
     ],
 )
 
