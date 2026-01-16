@@ -735,7 +735,7 @@ cc_library(
 musa_library(
     name = "topk_kernel_musa",
     srcs = [
-        # "topk_kernel_musa_bfloat16.cu.cc",
+        "topk_kernel_musa_bfloat16.cu.cc",
         "topk_kernel_musa_common.cu.h",
         "topk_kernel_musa_float.cu.cc",
     ],

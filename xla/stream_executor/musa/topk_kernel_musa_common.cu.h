@@ -29,11 +29,7 @@ limitations under the License.
 #include "xla/stream_executor/musa/musa_platform_id.h"
 #include "xla/tsl/lib/math/math_util.h"
 
-#ifdef __AMDGCN_WAVEFRONT_SIZE
-#define WAVEFRONT_SIZE __AMDGCN_WAVEFRONT_SIZE
-#else
-#define WAVEFRONT_SIZE 64
-#endif
+#define WAVEFRONT_SIZE 32
 
 namespace stream_executor::musa {
 
@@ -204,8 +200,8 @@ struct TopK {
     constexpr uint32_t WarpSize = WAVEFRONT_SIZE;
     KVT tmp[K];
     // We only use one warp for this step.
-    if (threadIdx.x >= WarpSize) return;
     __syncthreads();
+    if (threadIdx.x >= WarpSize) return;
 #pragma unroll
     for (int i = 0; i < K; i++) {
       tmp[i] = buffer_[i * WarpSize + threadIdx.x];
