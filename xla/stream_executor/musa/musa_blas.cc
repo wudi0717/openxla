@@ -164,6 +164,9 @@ MUSABlas::~MUSABlas() {
 }
 
 bool MUSABlas::SetStream(Stream *stream) {
+  if (current_stream_ == stream) {
+    return true;
+  }
   CHECK(blas_ != nullptr);
   auto handle =
       (stream != nullptr)
@@ -172,8 +175,10 @@ bool MUSABlas::SetStream(Stream *stream) {
   if (auto ret = wrap::mublasSetStream(blas_, handle);
       ret != MUBLAS_STATUS_SUCCESS) {
     LOG(ERROR) << "failed to set stream for muBLAS calls: " << ToString(ret);
+    current_stream_ = nullptr; 
     return false;
   }
+  current_stream_ = stream;
   return true;
 }
 
@@ -385,7 +390,7 @@ absl::Status MUSABlas::DoBlasInternalImpl(FuncT mublas_func, Stream *stream,
 #endif
 
   ret = mublas_func(blas_, std::forward<Args>(args)...);
-  SetStream(nullptr);  // Resetting stream after the function call
+  // SetStream(nullptr);  // Resetting stream after the function call
 
   if (ret != MUBLAS_STATUS_SUCCESS) {
     auto err_str =
