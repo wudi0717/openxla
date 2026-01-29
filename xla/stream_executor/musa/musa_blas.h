@@ -164,7 +164,6 @@ class MUSABlas : public blas::BlasSupport {
   }
 
  private:
-  Stream* current_stream_ = nullptr;
   // Tells muBlas to enqueue the BLAS operation onto a particular Stream.
   //
   // muBlas is stateful, and only be associated with one stream (in order to
