@@ -1,0 +1,3 @@
+[submodule "llvm-mtgpu"]
+	path = llvm-mtgpu
+	url = https://gitee.com/PerfXLab/llvm-for-xla.git
