@@ -4,7 +4,7 @@ workspace(name = "xla")
 # Temporary hard-coded LLVM project directory.
 local_repository(
     name = "llvm-project",
-    path = "/home/mccxadmin/jiangxiyue/llvm-project",
+    path = "./llvm-mtgpu",
 )
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
