@@ -177,7 +177,8 @@ struct TargetIntrinsics GetIntrinsic(TargetIntrinsicID intrin) {
                         .addAttribute(llvm::Attribute::Convergent),
                     b_);
               },
-              llvm::Intrinsic::musa_barrier_sync,
+              //llvm::Intrinsic::musa_barrier_sync,
+		llvm::Intrinsic::musa_barrier0,
             };
     }
     case TargetIntrinsicID::kBlockDimx: {
