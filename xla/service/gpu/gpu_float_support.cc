@@ -117,11 +117,12 @@ bool GpuFloatSupport::IsSupported(const HloInstruction& hlo) const {
       return true;
     case HloOpcode::kConvert:
       {
-      const PrimitiveType lhs_type = hlo.operand(0)->shape().element_type();
+	// 2026-02-06 segmentation fault
+      /*const PrimitiveType lhs_type = hlo.operand(0)->shape().element_type();
       const PrimitiveType rhs_type = hlo.operand(1)->shape().element_type();
       VLOG(1) << "Convert: " << hlo.ToString();
       if (LowPrecisionType() == BF16 && (lhs_type == S8 || lhs_type == S32 || lhs_type == U8))
-        return false;
+        return false;*/
 
       return true;
       }
