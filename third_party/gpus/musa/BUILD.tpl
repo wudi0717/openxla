@@ -113,10 +113,10 @@ cc_library(
 
 cc_library(
     name = "mublas",
-    srcs = glob(["%{musa_root}/lib/libmublas*.so*"]),
+    srcs = glob(["%{musa_root}/lib/libmublas.so"]),
     hdrs = glob(["%{musa_root}/include/mublas*.h"]),
     data = glob([
-        "%{musa_root}/lib/libmublas*.so*",
+        "%{musa_root}/lib/libmublas.so",
     ]),
     includes = [
         "%{musa_root}/include",

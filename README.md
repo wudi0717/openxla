@@ -28,6 +28,21 @@ build this repo. Everything here is intended for XLA contributors who want to
 develop the compiler and XLA integrators who want to debug or add support for ML
 frontends and hardware backends.
 
+## Install step by step
+
+First install bazel 7.4.1;
+install musa runtime into local dir ${musa}
+rm -rf ${musa}/include/llvm ${musa}/include/mlir ${musa}/include/mlir-c ${musa}/include/llvm-c/
+cp /usr/lib/x86_64-linux-gnu/libmusa.so ${musa}/lib/stub/libmusa.so
+export MUSA_HOME=${musa}
+git clone --recurse-submodules https://gitee.com/PerfXLab/openxla.git
+cd openxla
+./configure.py --backend=MUSA
+bazel build -c dbg --strip=never  --verbose_failures  --spawn_strategy=local   --test_output=all   //xla/...
+
+Test
+./bazel-bin/xla/tools/run_hlo_module --platform=MUSA --input_format=hlo ~/moon/github/openxla/xla/tests/fuzz/rand_000006.hlo
+
 ## Contribute
 
 If you'd like to contribute to XLA, review
