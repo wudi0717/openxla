@@ -237,17 +237,8 @@ absl::Status MTGPUCompiler::OptimizeHloPostLayoutAssignment(
 // enabled.
 bool MTGPUCompiler::RequiresCollectiveScheduleLinearizer(
     const HloModule* module, se::StreamExecutor* stream_exec) {
-  if (stream_exec == nullptr || !GpuConvAlgorithmPicker::IsEnabled(module)) {
-    return false;
-  }
-  for (const HloComputation* comp : module->MakeNonfusionComputations()) {
-    for (const HloInstruction* inst : comp->instructions()) {
-      if (GpuConvAlgorithmPicker::IsCandidate(inst)) {
-        return true;
-      }
-    }
-  }
-  // No convolution auto-tuning candidates found in the module.
+  (void)module;
+  (void)stream_exec;
   return false;
 }
 

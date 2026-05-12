@@ -1,0 +1,15 @@
+[2026-04-29_10:45:52.891] pid:2152493, Application: python encountered MUSA_ERROR_INVALID_VALUE in stream 63 of context 0 of device 0 when executing a command of type Command Barrier
+ExceptionType: None
+
+[2026-04-29_10:45:53.057] pid:2152493, Application: python encountered MUSA_ERROR_INVALID_VALUE in stream 5 of context 0 of device 0 when executing a command of type Command Barrier
+ExceptionType: None
+
+[2026-04-29_10:45:53.308] pid:2152493, Application: python encountered MUSA_ERROR_INVALID_VALUE in stream 6 of context 0 of device 0 when executing a command of type Command Barrier
+ExceptionType: None
+
+[2026-04-29_10:45:53.308] pid:2152493, Application: python encountered MUSA_ERROR_INVALID_VALUE in stream 6 of context 0 of device 0 when executing a command of type Command Barrier
+ExceptionType: None
+
+[2026-04-29_10:45:53.417] pid:2152493, Application: python encountered MUSA_ERROR_INVALID_VALUE in stream 64 of context 0 of device 0 when executing a command of type Command Barrier
+ExceptionType: None
+

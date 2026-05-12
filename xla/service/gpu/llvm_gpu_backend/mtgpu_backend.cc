@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstdio>
 #include <fstream>
-#include <random>
 #include <functional>
 #include <ios>
 #include <memory>
@@ -189,6 +189,117 @@ void HsacoCache::Add(const std::string& ir, uint64_t hash,
   g_hsacoCache.cache.back().gfx = gfx;
   g_hsacoCache.cache.back().hsaco = hsaco;
 }
+
+std::mutex& MtgpuExternalToolchainMutex() {
+  static auto* mutex = new std::mutex;
+  return *mutex;
+}
+
+bool ShouldLogMtgpuToolchain() {
+  bool enabled = false;
+  tsl::ReadBoolFromEnvVar("TF_MUSA_XLA_TOOLCHAIN_LOG",
+                          /*default_val=*/false, &enabled)
+      .IgnoreError();
+  return enabled;
+}
+
+void LogMtgpuToolchain(const char* phase, const std::string& detail) {
+  if (!ShouldLogMtgpuToolchain()) {
+    return;
+  }
+  std::fprintf(stderr, "[mtgpu_backend] %s: %s\n", phase, detail.c_str());
+  std::fflush(stderr);
+}
+
+std::string ShellQuote(const std::string& path) {
+  return absl::StrCat("\"", path, "\"");
+}
+
+absl::Status RunMtgpuToolCommand(const std::string& command,
+                                 const char* tool_name) {
+  const std::string begin_phase = absl::StrCat(tool_name, " begin");
+  LogMtgpuToolchain(begin_phase.c_str(), command);
+  const int rc = std::system(command.c_str());
+  if (rc != 0) {
+    return absl::InternalError(
+        absl::StrCat("MTGPU backend failed while running ", tool_name, ": ",
+                     command, " (rc=", rc, ")"));
+  }
+  const std::string end_phase = absl::StrCat(tool_name, " end");
+  LogMtgpuToolchain(end_phase.c_str(), command);
+  return absl::OkStatus();
+}
+
+absl::StatusOr<std::string> MakeMtgpuTempBasePath() {
+  std::string temp_base;
+  if (!tsl::Env::Default()->LocalTempFilename(&temp_base)) {
+    return absl::InternalError(
+        "Unable to create a temporary file path for MTGPU backend codegen.");
+  }
+  return temp_base;
+}
+
+std::string ResolveMtgpuLibdevicePath() {
+  auto* env = tsl::Env::Default();
+  if (const char* explicit_path = std::getenv("MUSA_LIBDEVICE_PATH")) {
+    if (env->FileExists(explicit_path).ok()) {
+      return explicit_path;
+    }
+  }
+
+  const std::string musdl_root = tsl::MusdlRoot();
+  for (const char* filename :
+       {"libdevice.31.ll", "libdevice.31.bc", "libdevice.ll",
+        "libdevice.bc"}) {
+    const std::string path = tsl::io::JoinPath(musdl_root, filename);
+    if (env->FileExists(path).ok()) {
+      return path;
+    }
+  }
+
+  const std::string legacy_path =
+      "/data/moon/github/openxla/third_party/gpus/musa/libdevice.31.ll";
+  if (env->FileExists(legacy_path).ok()) {
+    return legacy_path;
+  }
+  return "";
+}
+
+absl::StatusOr<std::vector<uint8_t>> ReadMtgpuBinaryFile(
+    const std::string& path) {
+  std::ifstream bin(path, std::ios::binary | std::ios::ate);
+  if (!bin) {
+    return absl::InternalError(
+        absl::StrCat("Unable to open generated MTGPU binary: ", path));
+  }
+  std::streamsize size = bin.tellg();
+  if (size < 0) {
+    return absl::InternalError(
+        absl::StrCat("Unable to stat generated MTGPU binary: ", path));
+  }
+  bin.seekg(0, std::ios::beg);
+  std::vector<uint8_t> bytes(static_cast<size_t>(size));
+  if (size > 0 &&
+      !bin.read(reinterpret_cast<char*>(bytes.data()), size)) {
+    return absl::InternalError(
+        absl::StrCat("Unable to read generated MTGPU binary: ", path));
+  }
+  return bytes;
+}
+
+struct MtgpuTempFileCleanup {
+  bool keep = false;
+  std::vector<std::string> paths;
+
+  ~MtgpuTempFileCleanup() {
+    if (keep) {
+      return;
+    }
+    for (const std::string& path : paths) {
+      tsl::Env::Default()->DeleteFile(path).IgnoreError();
+    }
+  }
+};
 
 // Emits the given module to HSA Code Object. target_machine is an initialized
 // TargetMachine for the MTGPU target.
@@ -461,17 +572,6 @@ std::string LibDevicePath(std::string gcn_arch_name,
     }
   }
   return "";
-}
-
-static std::string randomTmpPath() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 15);
-    std::string random_name = "temp_";
-    for (int i = 0; i < 16; ++i) {
-      random_name += "0123456789abcdef"[dis(gen)];
-    }
-    return random_name;
 }
 
 #include "musa_intrinsic.def"
@@ -919,6 +1019,24 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     llvm::Module* module, se::GpuComputeCapability gpu_version,
     const DebugOptions& debug_options,
     const std::string& module_config_cache_key) {
+  (void)gpu_version;
+  const std::string module_name = module->getName().str();
+  LogMtgpuToolchain("compile begin", module_name);
+  bool serialize_toolchain_compile = true;
+  TF_CHECK_OK(tsl::ReadBoolFromEnvVar("TF_MUSA_SERIALIZE_TOOLCHAIN_COMPILE",
+                                      /*default_val=*/true,
+                                      &serialize_toolchain_compile));
+  std::unique_lock<std::mutex> compile_lock(MtgpuExternalToolchainMutex(),
+                                            std::defer_lock);
+  if (serialize_toolchain_compile) {
+    LogMtgpuToolchain("toolchain mutex wait", module_name);
+    compile_lock.lock();
+    LogMtgpuToolchain("toolchain mutex acquired", module_name);
+  }
+
+  auto llvm_opts = GetMTGPUBackendOptions(debug_options);
+  llvm_ir::LLVMCommandLineOptionsLock llvm_lock(llvm_opts);
+
   std::vector<uint8_t> hsaco;
   std::string str;
   llvm::raw_string_ostream stream(str);
@@ -944,47 +1062,51 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
   uint64_t hash;
   if (HsacoCache::Find(str, hash, gcn_arch_name, hsaco)) {
     VLOG(1) << "HSACO cache hit";
+    LogMtgpuToolchain("cache hit", module_name);
     return hsaco;
   }
   VLOG(1) << "HSACO cache miss";
-  
-  std::string temp_name = randomTmpPath();
-  std::string objFile = temp_name+".o";
-  std::string mubinFile = temp_name+".mubin";
-  std::string optFile = temp_name+"_opt.ll";
-  std::string orgFile = temp_name+"_org.ll";
+  LogMtgpuToolchain("cache miss", module_name);
+
+  bool keep_tempfiles = false;
+  TF_CHECK_OK(tsl::ReadBoolFromEnvVar("TF_MUSA_KEEP_XLA_TEMPFILES",
+                                      /*default_val=*/false, &keep_tempfiles));
+
+  TF_ASSIGN_OR_RETURN(std::string temp_base, MakeMtgpuTempBasePath());
+  LogMtgpuToolchain("temp base", temp_base);
+  MtgpuTempFileCleanup cleanup;
+  cleanup.keep = keep_tempfiles;
+
+  std::string objFile = temp_base + ".o";
+  std::string mubinFile = temp_base + ".mubin";
+  std::string optFile = temp_base + "_opt.ll";
+  std::string orgFile = temp_base + "_org.ll";
   std::string linkFile;
-  std::string llFile;
-  //Just for debug
-  const std::filesystem::path file = "xla_test_debug.ll";
-  const std::filesystem::path mufile = "xla_test_debug.mubin";
-  if (std::filesystem::exists(mufile) && std::filesystem::is_regular_file(mufile)) {
-    std::ifstream bin(mufile, std::ios::binary | std::ios::ate);
-    if (!bin) throw std::runtime_error("cannot open mubin");
-    size_t sz = bin.tellg();
-    bin.seekg(0, std::ios::beg);
-    hsaco.resize(sz);
-    bin.read(reinterpret_cast<char*>(hsaco.data()), sz);
-    bin.close();
+  cleanup.paths = {objFile, mubinFile, optFile, orgFile};
 
+  bool enable_debug_replay = false;
+  TF_CHECK_OK(tsl::ReadBoolFromEnvVar("TF_MUSA_XLA_DEBUG_REPLAY",
+                                      /*default_val=*/false,
+                                      &enable_debug_replay));
+  const std::string debug_ll = "xla_test_debug.ll";
+  const std::string debug_mubin = "xla_test_debug.mubin";
+  auto* env = tsl::Env::Default();
+  if (enable_debug_replay && env->FileExists(debug_mubin).ok()) {
+    TF_ASSIGN_OR_RETURN(hsaco, ReadMtgpuBinaryFile(debug_mubin));
     HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
-
     return hsaco;
   }
-  if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file)) {
-    linkFile = "xla_test_debug.ll";
-    llFile = "xla_test_debug.ll";
-  }
-  else
-  {
-    //Dump org .ll
+  if (enable_debug_replay && env->FileExists(debug_ll).ok()) {
+    linkFile = debug_ll;
+  } else {
     std::error_code EC;
     llvm::raw_fd_ostream f_os(orgFile, EC, llvm::sys::fs::OF_Text);
-    if (EC) throw std::runtime_error("cannot open " + orgFile);
+    if (EC) {
+      return absl::InternalError(
+          absl::StrCat("cannot open ", orgFile, ": ", EC.message()));
+    }
     module->print(f_os, nullptr);
     f_os.close();
-
-    //Change func call convension.
 
     convertNvvmToMusaIntrinsics(*module);
     convertIRToMusaIntrinsics(*module);
@@ -994,63 +1116,65 @@ absl::StatusOr<std::vector<uint8_t>> CompileToHsaco(
     convertBF16BinOpToMusaIntrinsics(*module);
     preserveGlobalVars(*module);
 
-    llFile = temp_name+".ll";
-    linkFile = temp_name+"_link.ll";
-    std::string bcFile = "/data/moon/github/openxla/third_party/gpus/musa/libdevice.31.ll";
+    std::string llFile = temp_base + ".ll";
+    linkFile = temp_base + "_link.ll";
+    cleanup.paths.push_back(llFile);
+    cleanup.paths.push_back(linkFile);
+    const std::string bcFile = ResolveMtgpuLibdevicePath();
+    if (bcFile.empty()) {
+      return absl::InternalError(
+          "Unable to locate MUSA libdevice. Set MUSA_LIBDEVICE_PATH or "
+          "MUSA_DEVICE_LIB_PATH so MTGPU backend can link device libraries.");
+    }
+    LogMtgpuToolchain("libdevice", bcFile);
 
     std::string ir_content;
     llvm::raw_string_ostream ir_stream(ir_content);
     module->print(ir_stream, nullptr);
     ir_stream.flush();
 
-    //Replace ptx_kernel to mtgpu_kernel
-    std::regex ptx_kernel_regex("ptx_kernel");
-    ir_content = std::regex_replace(ir_content, ptx_kernel_regex, "mtgpu_kernel");
+    ir_content = std::regex_replace(ir_content, std::regex("ptx_kernel"),
+                                    "mtgpu_kernel");
 
     llvm::raw_fd_ostream os(llFile, EC, llvm::sys::fs::OF_Text);
-    if (EC) throw std::runtime_error("cannot open " + llFile);
+    if (EC) {
+      return absl::InternalError(
+          absl::StrCat("cannot open ", llFile, ": ", EC.message()));
+    }
     os << ir_content;
     os.close();
 
-    std::string llvmlinkCmd =
-    "llvm-link \"" + llFile + "\" \"" + bcFile + "\" --only-needed -S -o \"" + linkFile + "\"";
-    if (std::system(llvmlinkCmd.c_str()) != 0)
-      throw std::runtime_error("llvm-link failed");
+    TF_RETURN_IF_ERROR(RunMtgpuToolCommand(
+        absl::StrCat("llvm-link ", ShellQuote(llFile), " ",
+                     ShellQuote(bcFile), " --only-needed -S -o ",
+                     ShellQuote(linkFile)),
+        "llvm-link"));
   }
 
-    std::string optCmd = "opt -O2 \"" + linkFile + "\" -S -o \"" + optFile + "\"";
-    if (std::system(optCmd.c_str()) != 0)
-      throw std::runtime_error("opt failed");
+  const char* opt_level = debug_options.xla_gpu_disable_gpuasm_optimizations()
+                              ? "-O0"
+                              : "-O2";
+  TF_RETURN_IF_ERROR(RunMtgpuToolCommand(
+      absl::StrCat("opt ", opt_level, " ", ShellQuote(linkFile), " -S -o ",
+                   ShellQuote(optFile)),
+      "opt"));
 
-    std::string llcCmd = "llc \"" + optFile + "\" -march=mtgpu -mcpu=mp_31 "
-                         "-filetype=obj -o \"" + objFile + "\"";
-    if (std::system(llcCmd.c_str()) != 0)
-      throw std::runtime_error("llc failed");
-    // 5. lld
-  std::string lldCmd = "lld -flavor gnu -shared \"" + objFile + "\" -o \"" + mubinFile + "\"";
-  if (std::system(lldCmd.c_str()) != 0)
-    throw std::runtime_error("lld failed");
+  TF_RETURN_IF_ERROR(RunMtgpuToolCommand(
+      absl::StrCat("llc ", ShellQuote(optFile),
+                   " -march=mtgpu -mcpu=mp_31 -filetype=obj -o ",
+                   ShellQuote(objFile)),
+      "llc"));
 
-    // 6. 读二进制
-  std::ifstream bin(mubinFile, std::ios::binary | std::ios::ate);
-  if (!bin) throw std::runtime_error("cannot open mubin");
-  size_t sz = bin.tellg();
-  bin.seekg(0, std::ios::beg);
-  hsaco.resize(sz);
-  bin.read(reinterpret_cast<char*>(hsaco.data()), sz);
-  bin.close();
+  TF_RETURN_IF_ERROR(RunMtgpuToolCommand(
+      absl::StrCat("lld -flavor gnu -shared ", ShellQuote(objFile), " -o ",
+                   ShellQuote(mubinFile)),
+      "lld"));
 
-    // 7. 清理
-  //std::remove(llFile.c_str());
-  //std::remove(objFile.c_str());
-  //std::remove(mubinFile.c_str());
-  //std::cout << llFile;
+  TF_ASSIGN_OR_RETURN(hsaco, ReadMtgpuBinaryFile(mubinFile));
 
-
-  //Cache hsaco
   HsacoCache::Add(str, hash, gcn_arch_name, hsaco);
-  //module->dropAllReferences();  // 清空 use-list
 
+  LogMtgpuToolchain("compile end", module_name);
   return hsaco;
 }
 

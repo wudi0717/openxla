@@ -18,6 +18,9 @@ limitations under the License.
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -286,6 +289,7 @@ limitations under the License.
 #include "xla/stream_executor/device_description.h"
 #include "xla/stream_executor/device_description.pb.h"
 #include "xla/stream_executor/dnn.h"
+#include "xla/stream_executor/musa/musa_platform_id.h"
 #include "xla/stream_executor/platform.h"
 #include "xla/stream_executor/platform_manager.h"
 #include "xla/stream_executor/semantic_version.h"
@@ -317,6 +321,21 @@ namespace {
 
 using MaybeOwningThreadPool = MaybeOwning<tsl::thread::ThreadPool>;
 
+bool ShouldLogMusaGpuCompiler() {
+  const char* env = std::getenv("TF_MUSA_XLA_TOOLCHAIN_LOG");
+  return env != nullptr && env[0] != '\0' && std::strcmp(env, "0") != 0 &&
+         std::strcmp(env, "false") != 0 && std::strcmp(env, "False") != 0 &&
+         std::strcmp(env, "FALSE") != 0;
+}
+
+void LogMusaGpuCompiler(const char* phase, const std::string& detail) {
+  if (!ShouldLogMusaGpuCompiler()) {
+    return;
+  }
+  std::fprintf(stderr, "[gpu_compiler] %s: %s\n", phase, detail.c_str());
+  std::fflush(stderr);
+}
+
 MaybeOwningThreadPool CreateMaybeOwningThreadPool(
     int parallelism, tsl::thread::ThreadPool* default_thread_pool,
     int default_parallelism) {
@@ -346,6 +365,14 @@ MaybeOwningThreadPool CreateMaybeOwningThreadPool(
     default:
       return MaybeOwningThreadPool(create_thread_pool(parallelism));
   }
+}
+
+int DefaultCompilationParallelismForPlatform(se::Platform::Id platform_id,
+                                             int default_parallelism) {
+  if (platform_id == stream_executor::musa::kMUSaPlatformId) {
+    return 1;
+  }
+  return default_parallelism;
 }
 
 DeviceOrDevicelessConfig GetDeviceConfig(
@@ -1480,7 +1507,8 @@ absl::Status GpuCompiler::OptimizeHloModule(
           .debug_options()
           .xla_gpu_force_compilation_parallelism(),
       /*default_thread_pool=*/options.thread_pool,
-      /*default_parallelism=*/tsl::port::MaxParallelism());
+      /*default_parallelism=*/DefaultCompilationParallelismForPlatform(
+          PlatformId(), tsl::port::MaxParallelism()));
 
   AlgebraicSimplifierOptions layout_insensitive_algsimp_opts =
       GetAlgebraicSimplifierOptions(AlgebraicSimplifierMode::kLayoutInsensitive,
@@ -2138,6 +2166,9 @@ GpuCompiler::CompileSingleModule(
     const HloModule* debug_module, llvm::Module* llvm_module, bool relocatable,
     const CompileOptions& options, std::optional<int> shard_number) {
   tsl::profiler::TraceMe traceme("CompileSingleModule");
+  const std::string module_name =
+      debug_module != nullptr ? debug_module->name() : llvm_module->getName().str();
+  LogMusaGpuCompiler("compile single begin", module_name);
   {
     // This may print multiple lines per HLO compilation because of the
     // parallelized compilation of LLVM modules.
@@ -2169,6 +2200,7 @@ GpuCompiler::CompileSingleModule(
       BackendCompileResult result,
       CompileTargetBinary(module_config, llvm_module, device_description,
                           relocatable, debug_module, options, shard_number));
+  LogMusaGpuCompiler("compile target returned", module_name);
 
   const bool should_dump = DumpingEnabledForHloModule(
       debug_module ? debug_module->name() : "", module_config.debug_options());
@@ -2190,6 +2222,7 @@ GpuCompiler::CompileSingleModule(
     user_post_optimization_hook_(*llvm_module);
   }
 
+  LogMusaGpuCompiler("compile single end", module_name);
   return result;
 }
 
@@ -2303,7 +2336,8 @@ absl::StatusOr<GpuCompiler::BackendCompileResult> GpuCompiler::CompileAndLink(
       /*parallelism=*/module_config.debug_options()
           .xla_gpu_force_compilation_parallelism(),
       /*default_thread_pool=*/options.thread_pool,
-      /*default_parallelism=*/1);
+      /*default_parallelism=*/DefaultCompilationParallelismForPlatform(
+          PlatformId(), 1));
   // Only single-function module are cacheable -> for caching try to get 1
   // function per module. If caching is not used limit the number of modules to
   // the number of threads.
@@ -2560,6 +2594,8 @@ GpuCompiler::CompileToBackendResult(
 absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend(
     std::unique_ptr<HloModule> module, se::StreamExecutor* stream_exec,
     const CompileOptions& options) {
+  const std::string module_name = module->name();
+  LogMusaGpuCompiler("run backend begin", module_name);
   tsl::profiler::ScopedAnnotation backend_annotation{[&] {
     return absl::StrFormat("XlaCompileBackend:#module=%s,program_id=%d#",
                            module->name(), module->unique_id());
@@ -2626,6 +2662,7 @@ absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend(
       CompileResultWithMetadata res,
       CompileToBackendResult(module.get(), &llvm_context, stream_exec, options,
                              gpu_device_info));
+  LogMusaGpuCompiler("backend result ready", module_name);
 
   if (DumpingEnabledForHloModule(*module)) {
     DumpToFileInDirOrStdout(
@@ -2645,6 +2682,7 @@ absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend(
 
   std::unique_ptr<GpuAliasInfo> alias_info = GetAliasInfo(gpu_device_info);
   const GpuAliasInfo* alias_info_ptr = alias_info.get();
+  LogMusaGpuCompiler("gpu executable create begin", module_name);
   TF_ASSIGN_OR_RETURN(
       auto gpu_executable,
       GpuExecutable::Create(GpuExecutable::Params{
@@ -2674,6 +2712,7 @@ absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend(
               ? std::unique_ptr<HloModule>()
               : std::move(module),
           /*enable_debug_info_manager=*/!options.is_autotuning_compilation}));
+  LogMusaGpuCompiler("gpu executable create end", module_name);
 
   if (embed_ir_in_executable) {
     std::string ir_module_string_before_opt =
@@ -2695,6 +2734,7 @@ absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend(
         gpu_executable->buffer_assignment()->StatsString(alias_info_ptr));
   }
 
+  LogMusaGpuCompiler("run backend end", module_name);
   return static_cast<std::unique_ptr<Executable>>(std::move(gpu_executable));
 }
 

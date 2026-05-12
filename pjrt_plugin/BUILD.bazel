@@ -1,0 +1,57 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+TF215_WHEEL_ROOT = "/workspace/openxla/pjrt_plugin/tf2.15/lib/python3.10/site-packages/tensorflow"
+
+cc_library(
+    name = "musa_pjrt_core",
+    srcs = [
+        "src/pjrt_api.cc",
+    ],
+    hdrs = [],
+    # 🔥 修改点 1：把虚拟环境中的 tensorflow/include 目录加入到搜索路径中
+    includes = [
+        ".",
+        TF215_WHEEL_ROOT + "/include",
+    ],
+    deps = [
+        "//xla/c:c_api_decl",
+        "//xla/stream_executor/tpu:c_api_decl",
+        "//xla/stream_executor/tpu:libtftpu_header",
+        "//xla/tsl/c:tsl_status",
+        "//xla/pjrt/c:pjrt_c_api_hdrs",
+        "//xla/pjrt/c:pjrt_c_api_helpers",
+        "//xla/pjrt/c:pjrt_c_api_wrapper_impl",
+        "//xla/pjrt:pjrt_client",
+        "//xla/pjrt/gpu:se_gpu_pjrt_client",
+        "//xla/stream_executor/musa:stream_executor_musa",
+        "//xla/stream_executor:platform_manager",
+        "//xla/backends/gpu/collectives:gpu_collectives_plugin",
+        "//xla/service/gpu:mtgpu_compiler",
+        # 如果你确实有 TF 的源码树映射，可以把下面这行取消注释：
+        # "//tensorflow/core/common_runtime/next_pluggable_device/c:plugin_c_api_hdrs",
+    ],
+    alwayslink = True,
+)
+
+cc_binary(
+    name = "libmusa_pjrt_plugin_zy.so",
+    linkshared = True,
+    linkopts = [
+        "-Wl,-Bsymbolic",
+        "-Wl,--exclude-libs,ALL",
+        # 🔥 核心修改 4：更新 Python 3.10 和 TF 2.15 路径
+        TF215_WHEEL_ROOT + "/libtensorflow_framework.so.2",
+        "-Wl,-rpath," + TF215_WHEEL_ROOT,
+    ],
+    deps = [
+        ":musa_pjrt_core",
+    ],
+)
+
+cc_binary(
+    name = "libmusa_tf215_registry_bridge.so",
+    srcs = [
+        "musa_tf215_registry_bridge.cc",
+    ],
+    linkshared = True,
+)

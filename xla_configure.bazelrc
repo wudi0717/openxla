@@ -1,0 +1,14 @@
+build --action_env GCC_HOST_COMPILER_PATH=/usr/bin/x86_64-linux-gnu-gcc-11
+build --config musa
+build --action_env LD_LIBRARY_PATH=/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/local/musa/lib:/usr/local/openmpi/lib
+build --define=xnn_enable_avxvnniint8=false
+build --define=xnn_enable_avx512fp16=false
+build --action_env PYTHON_BIN_PATH=/usr/bin/python3
+build --python_path /usr/bin/python3
+test --test_env LD_LIBRARY_PATH
+test --test_size_filters small,medium
+build --copt -Wno-sign-compare
+build --build_tag_filters -no_oss,-rocm-only,-cuda-only,-oneapi-only,-no-oneapi
+build --test_tag_filters -no_oss,-rocm-only,-cuda-only,-oneapi-only,-no-oneapi
+test --build_tag_filters -no_oss,-rocm-only,-cuda-only,-oneapi-only,-no-oneapi
+test --test_tag_filters -no_oss,-rocm-only,-cuda-only,-oneapi-only,-no-oneapi

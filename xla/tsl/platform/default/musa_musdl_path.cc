@@ -15,20 +15,21 @@ limitations under the License.
 
 #include "xla/tsl/platform/musa_musdl_path.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include "tsl/platform/path.h"
-
-#include "xla/tsl/platform/logging.h"
 
 namespace tsl {
 
 std::string MusaRoot() {
 #if TENSORFLOW_USE_MUSA
   if (const char* musa_path_env = std::getenv("MUSA_PATH")) {
-    VLOG(3) << "MUSA root = " << musa_path_env;
     return musa_path_env;
   }
+  if (const char* musa_home_env = std::getenv("MUSA_HOME")) {
+    return musa_home_env;
+  }
+  return "/usr/local/musa";
 #else
   return "";
 #endif
@@ -37,9 +38,12 @@ std::string MusaRoot() {
 std::string MusdlRoot() {
   if (const char* device_lib_path_env = std::getenv("MUSA_DEVICE_LIB_PATH")) {
     return device_lib_path_env;
-  } else {
-    return io::JoinPath(MusaRoot(), "mtgpu/bitcode");
   }
+  std::string musa_root = MusaRoot();
+  if (musa_root.empty()) {
+    return "";
+  }
+  return io::JoinPath(musa_root, "mtgpu/bitcode");
 }
 
 }  // namespace tsl

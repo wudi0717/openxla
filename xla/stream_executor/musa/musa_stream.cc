@@ -215,16 +215,19 @@ absl::Status MusaStream::WaitFor(Stream* other) {
   MusaStream* other_stream = static_cast<MusaStream*>(other);
 
   TF_RETURN_IF_ERROR(other_stream->RecordCompletedEvent());
+  absl::MutexLock lock(&operation_mu_);
   return WaitStreamOnEvent(executor_, stream_handle_,
                            other_stream->completed_event_.GetHandle());
 }
 
 absl::Status MusaStream::RecordEvent(Event* event) {
+  absl::MutexLock lock(&operation_mu_);
   return RecordGpuEvent(executor_, static_cast<MusaEvent*>(event)->GetHandle(),
                         stream_handle_);
 }
 
 absl::Status MusaStream::WaitFor(Event* event) {
+  absl::MutexLock lock(&operation_mu_);
   return WaitStreamOnEvent(executor_, stream_handle_,
                            static_cast<MusaEvent*>(event)->GetHandle());
 }
@@ -271,6 +274,7 @@ absl::Status MusaStream::Memset32(DeviceMemoryBase* location, uint32_t pattern,
   if (size % sizeof(uint32_t) != 0) {
     return absl::InvalidArgumentError("size must be a multiple of 4 bytes.");
   }
+  absl::MutexLock lock(&operation_mu_);
   std::unique_ptr<ActivateContext> activation = executor_->Activate();
   return musa::ToStatus(
       muMemsetD32Async(absl::bit_cast<MUdeviceptr>(location->opaque()), pattern,
@@ -284,6 +288,7 @@ absl::Status MusaStream::MemZero(DeviceMemoryBase* location, uint64_t size) {
       size % sizeof(uint32_t) == 0) {
     return Memset32(location, 0x0, size);
   } else {
+    absl::MutexLock lock(&operation_mu_);
     std::unique_ptr<ActivateContext> activation = executor_->Activate();
     return musa::ToStatus(
         muMemsetD8Async(absl::bit_cast<MUdeviceptr>(location->opaque()), 0x0,
@@ -295,6 +300,7 @@ absl::Status MusaStream::MemZero(DeviceMemoryBase* location, uint64_t size) {
 absl::Status MusaStream::Memcpy(DeviceMemoryBase* gpu_dst,
                                 const DeviceMemoryBase& gpu_src,
                                 uint64_t size) {
+  absl::MutexLock lock(&operation_mu_);
   return AsynchronousMemcpyD2D(
       executor_, absl::bit_cast<MUdeviceptr>(gpu_dst->opaque()),
       absl::bit_cast<MUdeviceptr>(gpu_src.opaque()), size, stream_handle_);
@@ -302,6 +308,7 @@ absl::Status MusaStream::Memcpy(DeviceMemoryBase* gpu_dst,
 
 absl::Status MusaStream::Memcpy(DeviceMemoryBase* gpu_dst, const void* host_src,
                                 uint64_t size) {
+  absl::MutexLock lock(&operation_mu_);
   return AsynchronousMemcpyH2D(
       executor_, absl::bit_cast<MUdeviceptr>(gpu_dst->opaque()), host_src,
       size, stream_handle_);
@@ -309,6 +316,7 @@ absl::Status MusaStream::Memcpy(DeviceMemoryBase* gpu_dst, const void* host_src,
 
 absl::Status MusaStream::Memcpy(void* host_dst, const DeviceMemoryBase& gpu_src,
                                 uint64_t size) {
+  absl::MutexLock lock(&operation_mu_);
   return AsynchronousMemcpyD2H(executor_, host_dst,
                                absl::bit_cast<MUdeviceptr>(gpu_src.opaque()),
                                size, stream_handle_);
@@ -341,6 +349,7 @@ absl::Status MusaStream::DoHostCallbackWithStatus(
           no_pending_host_callbacks_ = num_pending_host_callbacks_ <= 0;
         }
       });
+  absl::MutexLock operation_lock(&operation_mu_);
   TF_RETURN_IF_ERROR(musa::ToStatus(
       muLaunchHostFunc(stream_handle_, InternalHostCallback, callback_ptr)));
   int num_pending_host_callbacks =
@@ -454,6 +463,7 @@ absl::Status LaunchMusaKernel(
 }  // namespace
 
 absl::Status MusaStream::BlockHostUntilDone() {
+  absl::MutexLock operation_lock(&operation_mu_);
   TF_RETURN_IF_ERROR(SynchronizeStream(executor_, stream_handle_));
   absl::MutexLock lock(&mutex_);
   mutex_.Await(absl::Condition(&no_pending_host_callbacks_));
@@ -464,6 +474,7 @@ absl::Status MusaStream::LaunchKernel(
     const ThreadDim& thread_dims, const BlockDim& block_dims,
     const std::optional<ClusterDim>& cluster_dims, void* function,
     absl::string_view name, void** args, int64_t shmem_bytes) {
+  absl::MutexLock lock(&operation_mu_);
   if (cluster_dims.has_value()) {
     return LaunchMusaKernel(executor_, name, static_cast<MUfunction>(function),
                             cluster_dims->x, cluster_dims->y, cluster_dims->z,

@@ -180,6 +180,7 @@ cc_library(
         "@local_config_cuda//cuda:cuda_headers",
     ]) + if_musa([
         # keep sorted
+        "//xla/stream_executor/musa:musa_platform_id",
         "@local_config_musa//musa:musa_headers",
     ]) + if_rocm([
         # keep sorted

@@ -1,40 +1,34 @@
-# Copyright 2023 The OpenXLA Authors
-#
+
+pjrt_plugin/musa_test/musa_model/*.0
+pjrt_plugin/musa_test/musa_model/*.ll
+pjrt_plugin/musa_test/musa_model/*.mubin
 
 
-# Ignore the bazel directories when this directory is used as a local repository.
+pjrt_plugin/tf2.15/
+pjrt_plugin/tf_include/
+pjrt_plugin/venv_tf/
+plugin_pjrt
+
+*.pyc
+__pycache__/
+.DS_Store
+
+
+# Bazel build outputs
 bazel-*
-bazel-bin
-bazel-out
-bazel-testlogs
+bazel-bin/
+bazel-out/
+bazel-testlogs/
 
-# Ignore files produced by `configure`
-.tf_configure.bazelrc
-xla_configure.bazelrc
-tools/python_bin_path.sh
+*.tar
+*.tar.xz
+*.zip
 
-# Emacs autosaves
-*~
-\#*\#
-
-# Visual Studio files
-.vs/
-.vscode/
-*.sdf
-*.opensdf
-*.VC.opendb
-*.suo
-*.user
-
-# Ignore jxy debug files
-xla/tests/test_results
-xla/tests/data/test_result*
-compile.log
-target_config
-tasks
-todo
-*.swp
-build_run_hlo_module.sh
-debug_musa.gdb
-debug_run_hlo_module.sh
-.clangd
+# Build artifacts
+*.o
+*.so
+*.a
+*.lo
+*.pyc
+__pycache__/
+.cache/

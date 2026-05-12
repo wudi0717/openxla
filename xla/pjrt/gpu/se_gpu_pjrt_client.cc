@@ -141,6 +141,10 @@ limitations under the License.
 #include "xla/stream_executor/integrations/tf_allocator_adapter.h"
 #include "xla/util.h"
 
+#if defined(TENSORFLOW_USE_MUSA)
+#include "xla/stream_executor/musa/musa_platform_id.h"
+#endif
+
 namespace xla {
 
 absl::Status RunCallbackOnStream(se::Stream* stream,
@@ -1297,18 +1301,54 @@ absl::StatusOr<std::unique_ptr<tsl::Allocator>> CreateCudaAsyncAllocator(
 
 #endif  // defined(GOOGLE_CUDA) && CUDA_VERSION >= 11020
 
+bool IsMusaExecutor(se::StreamExecutor* executor) {
+#if defined(TENSORFLOW_USE_MUSA)
+  return executor->GetPlatform()->id() == stream_executor::musa::kMUSaPlatformId;
+#else
+  return false;
+#endif
+}
+
+bool MusaEnvEnabled(const char* name, bool default_value) {
+  const char* env = std::getenv(name);
+  if (env == nullptr || env[0] == '\0') {
+    return default_value;
+  }
+  return std::strcmp(env, "0") != 0 && std::strcmp(env, "false") != 0 &&
+         std::strcmp(env, "False") != 0 && std::strcmp(env, "FALSE") != 0;
+}
+
+LocalDeviceState::AllocationModel MusaAllocationModel() {
+  const char* env = std::getenv("MUSA_PJRT_ALLOCATION_MODEL");
+  if (env != nullptr &&
+      (std::strcmp(env, "synchronous") == 0 ||
+       std::strcmp(env, "SYNCHRONOUS") == 0 ||
+       std::strcmp(env, "sync") == 0 || std::strcmp(env, "SYNC") == 0)) {
+    return LocalDeviceState::kSynchronous;
+  }
+  return LocalDeviceState::kComputeSynchronized;
+}
+
 // Builds a LocalDeviceState for each GPU present.
 absl::StatusOr<std::map<int, std::unique_ptr<LocalDeviceState>>>
 BuildLocalDeviceStates(LocalClient* xla_client) {
   std::map<int, std::unique_ptr<LocalDeviceState>> addressable_devices;
   for (se::StreamExecutor* executor :
        xla_client->backend().stream_executors()) {
+    const bool is_musa = IsMusaExecutor(executor);
+    const LocalDeviceState::AllocationModel allocation_model =
+        is_musa ? MusaAllocationModel()
+                : LocalDeviceState::kComputeSynchronized;
+    const bool allow_event_reuse =
+        is_musa ? MusaEnvEnabled("MUSA_PJRT_ALLOW_EVENT_REUSE",
+                                 /*default_value=*/false)
+                : true;
     addressable_devices.emplace(
         executor->device_ordinal(),
         std::make_unique<LocalDeviceState>(
-            executor, xla_client, LocalDeviceState::kComputeSynchronized,
+            executor, xla_client, allocation_model,
             /*max_inflight_computations=*/32,
-            /*allow_event_reuse=*/true, /*use_callback_stream=*/true));
+            allow_event_reuse, /*use_callback_stream=*/true));
   }
   return std::move(addressable_devices);
 }

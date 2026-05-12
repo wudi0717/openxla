@@ -296,7 +296,7 @@ cc_library(
         "gpu",
         "no-oneapi",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
     deps = [
         ":gpu_clique_key",
         ":gpu_collectives",

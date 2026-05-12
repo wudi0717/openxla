@@ -1204,7 +1204,7 @@ cc_library(
         "@com_google_absl//absl/base",
         "@eigen_archive//:eigen3",
         "@tsl//tsl/platform:logging",
-        "@tsl//tsl/platform:types",
+        "//xla/tsl/platform:types",
     ] + acl_deps(),
 )
 
@@ -1226,7 +1226,7 @@ cc_library(
         "@com_google_absl//absl/base",
         "@eigen_archive//:eigen3",
         "@tsl//tsl/platform:logging",
-        "@tsl//tsl/platform:types",
+        "//xla/tsl/platform:types",
     ] + acl_deps(),
 )
 

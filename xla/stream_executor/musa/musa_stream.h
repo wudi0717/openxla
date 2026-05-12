@@ -23,6 +23,7 @@ limitations under the License.
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/synchronization/mutex.h"
 #include "musa_runtime.h"
 #include "xla/stream_executor/device_memory.h"
 #include "xla/stream_executor/event.h"
@@ -93,6 +94,7 @@ class MusaStream : public StreamCommon {
   StreamExecutor* executor_;
   MusaEvent completed_event_;
   MUstream stream_handle_;
+  absl::Mutex operation_mu_;
   absl::Mutex mutex_;
   bool no_pending_host_callbacks_ ABSL_GUARDED_BY(mutex_) = true;
   std::atomic<int> num_pending_host_callbacks_ = 0;
